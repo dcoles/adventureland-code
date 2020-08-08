@@ -6,8 +6,8 @@ const MIN_MP = 100;
 
 /** Log error. */
 export function error(status, err) {
-	set_message(status, "red");
-	safe_log(err.stack, "red");
+	set_message(status, 'red');
+	safe_log(err.stack, 'red');
 
 	// Log in browser console
 	console.log(status, err);
@@ -25,8 +25,8 @@ export function regen_hp_or_mp() {
         action = 'mp';
     }
 
-    if (action && !is_on_cooldown("use_" + action)) {
-        use_skill("regen_" + action);
+    if (action && !is_on_cooldown('use_' + action)) {
+        use_skill('regen_' + action);
     }
 }
 
@@ -51,7 +51,7 @@ export function get_nearest_monster(args) {
 	let target_distance = Infinity;
 
 	for (let [id, entity] of Object.entries(parent.entities)) {
-		if (entity.type !== "monster") continue;
+		if (entity.type !== 'monster') continue;
 		if (args.valid && !args.valid.has(entity.mtype)) continue;
 		if (args.path_check && !can_move_to(entity)) continue;
 

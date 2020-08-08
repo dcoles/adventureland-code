@@ -3,7 +3,7 @@
  *
  * See: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode
  */
-"use strict";
+'use strict';
 
 import {
 	error,
@@ -51,23 +51,23 @@ function heartbeat() {
 	loot();
 
 	if (character.hp < CRITICAL_HP_RATIO * character.max_hp) {
-		set_message("Critical HP!")
-		use_skill("use_town");
+		set_message('Critical HP!')
+		use_skill('use_town');
 		return;
 	}
 
 	let target = pick_target();
 	if (!target) {
-		set_message("No Monsters");
+		set_message('No Monsters');
 		return;
 	}
 
 	change_target(target);
 	if (!is_in_range(target)) {
-		set_message("Advancing");
+		set_message('Advancing');
 		move_towards(target);
 	} else if (can_attack(target)) {
-		set_message("Attacking");
+		set_message('Attacking');
 		attack(target);
 	}
 }
@@ -82,5 +82,5 @@ function main() {
 try {
 	main();
 } catch (err) {
-	error("ERROR", err);
+	error('ERROR', err);
 }
