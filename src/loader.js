@@ -20,6 +20,8 @@ fetch(URL)
 	.then((response) => response.text())
 	.then((code) => eval(code))
 	.catch((err) => {
-		set_message("FETCH ERROR");
+		set_message("FETCH ERROR", "red");
 		console.log("Error loading code:", err);
+		log("Error loading code:", "red");
+		safe_log(err.stack, "red");
 	});
