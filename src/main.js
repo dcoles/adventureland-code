@@ -10,6 +10,7 @@ import {
 	regen_hp_or_mp,
 	move_towards,
 	get_nearest_monster,
+	is_in_town,
 } from './lib.js';
 
 const HEARTBEAT_INTERVAL_MS = 250;
@@ -22,7 +23,7 @@ const IDLE = 'Idle';
 const FIND_TARGET = 'Finding target';
 const ADVANCE = 'Advancing';
 const ATTACK = 'Attacking';
-const FLEE_TO_TOWN = 'Fleeing to Town';
+const FLEE_TO_TOWN = 'Flee Town';
 
 /** Current behaviour */
 let state = IDLE;
@@ -56,16 +57,22 @@ function pick_target() {
 
 /** Calculate critical HP */
 function critical_hp() {
-	return CRITICAL_HP_RATIO * character.hp;
+	return CRITICAL_HP_RATIO * character.max_hp;
 }
 
 /** Regular heartbeat */
 function heartbeat() {
+	set_message(state);
+
 	// Always do these actions
 	regen_hp_or_mp();
 	loot();
 
-	if (character.hp < critical_hp()) {
+	// Emergency actions
+	if (character.hp < critical_hp()
+			&& !is_in_town(character)
+			&& state !== FLEE_TO_TOWN) {
+		log('HP is critically low!', 'orange');
 		state = FLEE_TO_TOWN;
 	}
 
@@ -108,6 +115,11 @@ function heartbeat() {
 			break;
 
 		case FLEE_TO_TOWN:
+			if (is_in_town(character)) {
+				state = IDLE;
+				return;
+			}
+
 			use_skill('use_town');
 			break;
 	
@@ -116,8 +128,6 @@ function heartbeat() {
 			state = IDLE;
 			break;
 	}
-
-	set_message(state);
 }
 
 /** Main function */

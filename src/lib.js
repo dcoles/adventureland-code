@@ -1,5 +1,7 @@
 // Common functions
 
+const ORIGIN = {x: 0, y: 0};
+const TOWN_RADIUS = 600;
 const HP_REGEN = 50;
 const MP_REGEN = 100;
 const MIN_MP = 100;
@@ -11,6 +13,11 @@ export function error(status, err) {
 
 	// Log in browser console
 	console.log(status, err);
+}
+
+/** Is the target in Town? */
+export function is_in_town(target) {
+    return simple_distance(target, ORIGIN) < TOWN_RADIUS;
 }
 
 /** Try to regenerate health/mana if possible. */
