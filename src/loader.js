@@ -6,22 +6,9 @@
  * steal personal data, cause your cat to run away and other nasty things.
  */
 
- /**
-  * Enable strict mode to help catch more bugs.
-  *
-  * See: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode
-  */
- "use strict";
-
-/** URL to fetch code from */
+// URL to fetch code from
 const URL = "http://127.0.0.1:5500/src/main.js";
 
-fetch(URL)
-	.then((response) => response.text())
-	.then((code) => eval(code))
-	.catch((err) => {
-		set_message("FETCH ERROR", "red");
-		console.log("Error loading code:", err);
-		log("Error loading code:", "red");
-		safe_log(err.stack, "red");
-	});
+const script = document.createElement("script");
+script.src = URL;
+document.head.appendChild(script);
