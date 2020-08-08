@@ -71,3 +71,16 @@ export function get_nearest_monster(args) {
 
 	return target;
 }
+
+/** Move directly away from target */
+export function retreat(target, retreat_dist) {
+	// Calculate unit-vector
+	const dist = distance(character, target);
+	const dx = (character.x - target.x) / dist;
+	const dy = (character.y - target.y) / dist;
+
+	// Retreat `retreat_dist` directly away
+	move_towards({
+		x: character.x + retreat_dist * dx,
+		y: character.y + retreat_dist * dy});
+}

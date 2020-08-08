@@ -11,19 +11,22 @@ import {
 	move_towards,
 	get_nearest_monster,
 	is_in_town,
+	retreat,
 } from './lib.js';
 
 const HEARTBEAT_INTERVAL_MS = 250;
 const TARGET_MAX_HP_RATIO = 10.00;
 const TARGET_MAX_ATTACK_RATIO = 0.80;
-const TARGET_MIN_XP_RATIO = 0.003;
+const TARGET_MIN_XP_RATIO = 0.01;
 const CRITICAL_HP_RATIO = 0.10;
+const TARGET_MIN_DISTANCE = 30;
 
 const IDLE = 'Idle';
-const FIND_TARGET = 'Finding target';
-const ADVANCE = 'Advancing';
-const ATTACK = 'Attacking';
-const FLEE_TO_TOWN = 'Flee Town';
+const FIND_TARGET = 'Find target';
+const ADVANCE = 'Advance';
+const ATTACK = 'Attack';
+const RETREAT = 'Retreat';
+const FLEE_TO_TOWN = 'Flee to Town';
 
 /** Current behaviour */
 let state = IDLE;
@@ -35,7 +38,7 @@ function valid_monster_types() {
 	for (let [mtype, monster] of Object.entries(G.monsters)) {
 		if (monster.hp > TARGET_MAX_HP_RATIO * character.hp) continue;
 		if (monster.attack > TARGET_MAX_ATTACK_RATIO * character.attack) continue;
-		if (monster.xp < TARGET_MIN_XP_RATIO * character.xp) continue;
+		if (monster.xp < TARGET_MIN_XP_RATIO * character.max_xp) continue;
 
 		valid.add(mtype);
 	}
@@ -53,6 +56,12 @@ function pick_target() {
 	}
 
 	return target;
+}
+
+/** Update current state */
+function update_state(new_state) {
+	set_message(new_state);
+	state = new_state;
 }
 
 /** Calculate critical HP */
@@ -73,28 +82,33 @@ function heartbeat() {
 			&& !is_in_town(character)
 			&& state !== FLEE_TO_TOWN) {
 		log('HP is critically low!', 'orange');
-		state = FLEE_TO_TOWN;
+		update_state(FLEE_TO_TOWN);
 	}
 
 	let target = get_target();
 	switch (state) {
 		case IDLE:
+			update_state(IDLE);
 			// fallthrough
 
 		case FIND_TARGET:
+			update_state(FIND_TARGET);
+
 			target = pick_target();
 			change_target(target);
 
 			if (!target) {
-				state = IDLE;
+				update_state(IDLE);
 				return;
 			}
 
 			// fallthrough
 
 		case ADVANCE:
+			update_state(ADVANCE);
+
 			if (!target) {
-				state = IDLE;
+				update_state(IDLE);
 				return;
 			}
 
@@ -106,6 +120,19 @@ function heartbeat() {
 			// fallthrough
 
 		case ATTACK:
+			update_state(ATTACK);
+
+			if (!target) {
+				update_state(IDLE);
+				return;
+			}
+
+			if (distance(character, target) < TARGET_MIN_DISTANCE) {
+				// Too close!
+				update_state(RETREAT);
+				return;
+			}
+
 			if (is_on_cooldown('attack')) {
 				// Wait...
 				return;
@@ -114,10 +141,34 @@ function heartbeat() {
 			attack(target);
 			break;
 
-		case FLEE_TO_TOWN:
-			if (is_in_town(character)) {
-				state = IDLE;
+		case RETREAT:
+			update_state(RETREAT);
+
+			if (!target) {
+				update_state(IDLE);
 				return;
+			}
+
+			const dist = distance(character, target);
+			if (dist >= TARGET_MIN_DISTANCE) {
+				update_state(IDLE);
+				return;
+			}
+
+			retreat(target, TARGET_MIN_DISTANCE * 1.5);
+			update_state(ATTACK);
+			break;
+
+		case FLEE_TO_TOWN:
+			update_state(FLEE_TO_TOWN);
+
+			if (is_in_town(character)) {
+				update_state(IDLE);
+				return;
+			}
+
+			if (target) {
+				retreat(target, TARGET_MIN_DISTANCE * 2);
 			}
 
 			use_skill('use_town');
@@ -125,7 +176,7 @@ function heartbeat() {
 	
 		default:
 			log('Unknown state: ' + state, 'red');
-			state = IDLE;
+			update_state(IDLE);
 			break;
 	}
 }
