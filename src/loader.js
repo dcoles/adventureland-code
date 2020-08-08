@@ -11,4 +11,5 @@ const URL = "http://127.0.0.1:5500/src/main.js";
 
 const script = document.createElement("script");
 script.src = URL;
+script.type = "module";
 document.head.appendChild(script);
