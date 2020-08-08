@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "noLib": true
+    },
+    "include": [
+        "adventureland/**/*",
+        "src/**/*"
+    ]
+}

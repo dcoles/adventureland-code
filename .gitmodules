@@ -1,0 +1,3 @@
+[submodule "adventureland"]
+	path = adventureland
+	url = git@github.com:kaansoral/adventureland.git
