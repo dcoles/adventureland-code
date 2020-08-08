@@ -2,6 +2,7 @@
 
 const HP_REGEN = 50;
 const MP_REGEN = 100;
+const MIN_MP = 100;
 
 /** Log error. */
 export function error(status, err) {
@@ -14,13 +15,19 @@ export function error(status, err) {
 
 /** Try to regenerate health/mana if possible. */
 export function regen_hp_or_mp() {
-	if (!is_on_cooldown("use_hp")
-		&& character.hp < character.max_hp - HP_REGEN) {
-		use_skill("regen_hp");
-	} else if (!is_on_cooldown("use_mp")
-		&& character.mp < character.max_mp - MP_REGEN) {
-		use_skill("regen_mp");
-	}
+    let action = null;
+
+    if (character.mp < MIN_MP) {
+        action = 'mp';
+    } else if (character.hp < character.max_hp - HP_REGEN) {
+        action = 'hp';
+    } else if (character.mp < character.max_mp - MP_REGEN) {
+        action = 'mp';
+    }
+
+    if (action && !is_on_cooldown("use_" + action)) {
+        use_skill("regen_" + action);
+    }
 }
 
 /** Move towards a target. */
