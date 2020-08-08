@@ -7,10 +7,11 @@
 
 const HP_REGEN = 50;
 const MP_REGEN = 100;
-const TICK = 250;  // ms
+const HEARTBEAT_INTERVAL = 250;  // ms
 
 const attack_mode = true;
 
+/** Try to regenerate health/mana if possible. */
 function regen_hp_or_mp() {
 	if (!is_on_cooldown("use_hp")
 		&& character.hp < character.max_hp - HP_REGEN) {
@@ -48,7 +49,8 @@ function move_towards(target) {
 	);
 }
 
-setInterval(function () {
+/** Regular heartbeat */
+function heartbeat() {
 	use_hp_or_mp();
 	regen_hp_or_mp();
 	loot();
@@ -62,5 +64,26 @@ setInterval(function () {
 		set_message("Attacking");
 		attack(target);
 	}
+}
 
-}, TICK);
+/** Log error */
+function error(status, err) {
+	set_message(status, "red");
+	safe_log(err.stack, "red");
+
+	// Log in browser console
+	console.log(status, err);
+}
+
+/** Main function */
+function main() {
+	// Start heartbeat
+	setInterval(heartbeat, HEARTBEAT_INTERVAL);
+}
+
+// Run and log any uncaught errors
+try {
+	main();
+} catch (err) {
+	error("ERROR", err);
+}
