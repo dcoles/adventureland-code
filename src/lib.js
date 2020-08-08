@@ -38,3 +38,29 @@ export function move_towards(target) {
 		character.y + (target.y - character.y) / 2
 	);
 }
+
+/**
+ * Get nearest monster.
+ *
+ * @param {object} args Additional options
+ * @param {Set} args.valid Set of valid monster types (default: All monsters)
+ * @param {boolean} args.path_check Checks if the character can move to the target
+ */
+export function get_nearest_monster(args) {
+	let target = null;
+	let target_distance = Infinity;
+
+	for (let [id, entity] of Object.entries(parent.entities)) {
+		if (entity.type !== "monster") continue;
+		if (args.valid && !args.valid.has(entity.mtype)) continue;
+		if (args.path_check && !can_move_to(entity)) continue;
+
+		const distance = parent.distance(character, entity);
+		if (distance > target_distance) continue;
+
+		target = entity;
+		target_distance = distance;
+	}
+
+	return target;
+}
