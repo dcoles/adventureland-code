@@ -184,6 +184,11 @@ function heartbeat() {
 function main() {
 	log('Starting...');
 
+	// Log all events
+	game.all((name, data) => {
+		console.log('EVENT:', name, data);
+	});
+
 	// Start heartbeat
 	setInterval(heartbeat, HEARTBEAT_INTERVAL_MS);
 }
