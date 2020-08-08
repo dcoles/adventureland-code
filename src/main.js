@@ -1,3 +1,10 @@
+/**
+ * Enable strict mode to help catch more bugs.
+ *
+ * See: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode
+ */
+"use strict";
+
 const HP_REGEN = 50;
 const MP_REGEN = 100;
 const TICK = 250;  // ms
