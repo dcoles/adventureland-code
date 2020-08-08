@@ -65,8 +65,8 @@ function update_state(new_state) {
 }
 
 /** Calculate critical HP */
-function critical_hp() {
-	return CRITICAL_HP_RATIO * character.max_hp;
+function is_hp_critically_low() {
+	return character.hp < CRITICAL_HP_RATIO * character.max_hp;
 }
 
 /** Regular heartbeat */
@@ -78,8 +78,7 @@ function heartbeat() {
 	loot();
 
 	// Emergency actions
-	if (character.hp < critical_hp()
-			&& !is_in_town(character)
+	if (is_hp_critically_low() && !is_in_town(character)
 			&& state !== FLEE_TO_TOWN) {
 		log('HP is critically low!', 'orange');
 		update_state(FLEE_TO_TOWN);
