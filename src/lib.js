@@ -10,19 +10,6 @@ const HP_REGEN = 50;
 const MP_REGEN = 100;
 const MIN_MP = 100;
 
-/** Log error. */
-export function error(status, err) {
-	set_message(status, 'red');
-	if (err.stack) {
-		safe_log(err.stack, 'red');
-	} else {
-		safe_log(err, 'red');
-	}
-
-	// Log in browser console
-	console.log(status, err);
-}
-
 /** Is the target in Town? */
 export function is_in_town(target) {
 	return simple_distance(target, ORIGIN) < TOWN_RADIUS;

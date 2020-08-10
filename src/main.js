@@ -5,8 +5,9 @@
  */
 'use strict';
 
+import * as logging from './logging.js';
+
 import {
-	error,
 	regen_hp_or_mp,
 	move_towards,
 	get_nearest_monster,
@@ -27,6 +28,7 @@ const TARGET_RETREAT_DISTANCE = 30;
 const CRITICAL_HP_RATIO = 0.10;
 const MAX_MOVEMENT_DISTANCE = 100;
 
+const STOP = 'Stop';
 const IDLE = 'Idle';
 const ADVANCE = 'Advance';
 const ATTACK = 'Attack';
@@ -34,13 +36,24 @@ const RETREAT = 'Retreat';
 const FLEE_TO_TOWN = 'Flee to Town';
 
 /** Current behaviour */
-let state = IDLE;
+let state = STOP;
 
 /** Update current state */
 function update_state(new_state) {
+	if (new_state === state) {
+		return;
+	}
+
 	set_message(new_state);
-	console.log(new_state);
+	logging.info('New state', new_state);
 	state = new_state;
+}
+
+/** Critical error */
+export function critical(text, obj) {
+	set_message('ERROR', 'red');
+	state = STOP;
+	logging.error(text, obj);
 }
 
 /** What are valid monster types to attack? */
@@ -92,13 +105,18 @@ async function mainloop() {
 
 		target = get_target();
 		switch (state) {
+			case STOP:
+				// Do nothing
+				await sleep(IDLE_MS);
+				break;
+
 			case IDLE:
 				await sleep(IDLE_MS);
 
 				// Pick a new target
 				target = pick_target();
 				if (target) {
-					log('Target: ' + target.name);
+					logging.info('Target', target);
 					change_target(target);
 					update_state(ADVANCE);
 				} else {
@@ -173,7 +191,7 @@ async function mainloop() {
 			break;
 
 		default:
-			error('UNHANDLED STATE', {state: state});
+			critical('Unhandled state', state);
 			return;
 		}
 
@@ -185,15 +203,16 @@ async function mainloop() {
 /** Main function */
 function main() {
 	log('Starting code');
+	update_state(IDLE);
 
 	// Log all events
 	game.all((name, data) => {
-		console.log('EVENT:', name, data);
+		//console.log('EVENT:', name, data);
 	});
 
 	// Run event loop
 	mainloop().catch((err) => {
-		error('ERROR', err);
+		throw err;
 	})
 }
 
@@ -201,5 +220,5 @@ function main() {
 try {
 	main();
 } catch (err) {
-	error('ERROR', err);
+	critical('Unhandled exception', err);
 }
