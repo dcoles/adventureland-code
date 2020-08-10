@@ -6,19 +6,15 @@
 'use strict';
 
 import * as logging from './logging.js';
-
 import {
-	regen_hp_or_mp,
 	move_towards,
 	get_nearest_monster,
 	is_in_town,
 	retreat,
-	sleep_until_ready,
 } from './lib.js';
-
-import {
-	sleep
-} from './util.js';
+import { sleep } from './util.js';
+import { Character } from './Character.js';
+import { Skill } from './Skill.js';
 
 const IDLE_MS = 250;
 const TARGET_MAX_HP_RATIO = 10.00;
@@ -95,7 +91,6 @@ async function mainloop() {
 	let target;
 	do {
 		// Always do these actions
-		regen_hp_or_mp();
 		loot();
 
 		// Emergency maneuvers
@@ -143,7 +138,7 @@ async function mainloop() {
 				break;
 			}
 
-			await sleep_until_ready('attack');
+			await Skill.wait_until_ready('attack');
 
 			if (!is_in_range(target)) {
 				update_state(ADVANCE);
@@ -185,7 +180,7 @@ async function mainloop() {
 				await retreat(target, character.range);
 			}
 
-			await sleep_until_ready('use_town');
+			await Skill.wait_until_ready('use_town');
 			use_skill('use_town');
 
 			break;
@@ -203,6 +198,10 @@ async function mainloop() {
 /** Main function */
 function main() {
 	log('Starting code');
+
+	const char = new Character();
+	char.skills.regen_hp.autocast();
+
 	update_state(IDLE);
 
 	// Log all events

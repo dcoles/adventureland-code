@@ -1,35 +1,13 @@
 // Common functions
 
-import {
-	sleep_until, sleep,
-} from "./util.js";
+import { sleep } from "./util.js";
 
 const ORIGIN = { x: 0, y: 0 };
 const TOWN_RADIUS = 600;
-const HP_REGEN = 50;
-const MP_REGEN = 100;
-const MIN_MP = 100;
 
 /** Is the target in Town? */
 export function is_in_town(target) {
 	return simple_distance(target, ORIGIN) < TOWN_RADIUS;
-}
-
-/** Try to regenerate health/mana if possible. */
-export function regen_hp_or_mp() {
-	let action = null;
-
-	if (character.mp < MIN_MP) {
-		action = 'mp';
-	} else if (character.hp < character.max_hp - HP_REGEN) {
-		action = 'hp';
-	} else if (character.mp < character.max_mp - MP_REGEN) {
-		action = 'mp';
-	}
-
-	if (action && !is_on_cooldown('use_' + action)) {
-		use_skill('regen_' + action);
-	}
 }
 
 /** Move towards a target. */
@@ -95,9 +73,4 @@ export async function retreat(target, retreat_dist) {
 /** Time for target to move distance in milliseconds */
 export function movement_time(target, distance) {
 	return distance / target.speed * 1000;
-}
-
-/** Sleep until skill is ready to use (off cooldown) */
-export async function sleep_until_ready(skill) {
-	await sleep_until(parent.next_skill[skill]);
 }
