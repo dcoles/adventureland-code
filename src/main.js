@@ -15,6 +15,7 @@ import {
 import { sleep } from './util.js';
 import { Character } from './Character.js';
 import { Skill } from './Skill.js';
+import { BattleLog } from './BattleLog.js';
 
 const IDLE_MS = 250;
 const TARGET_MAX_HP_RATIO = 10.00;
@@ -198,6 +199,8 @@ async function mainloop() {
 /** Main function */
 function main() {
 	log('Starting code');
+
+	BattleLog.monitor();
 
 	const char = new Character();
 	char.skills.regen_hp.autocast();
