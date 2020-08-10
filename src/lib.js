@@ -3,11 +3,12 @@
 import { sleep } from "./util.js";
 
 const ORIGIN = { x: 0, y: 0 };
-const TOWN_RADIUS = 600;
+const TOWN_RADIUS = 600;  // px
 
 /** Is the target in Town? */
 export function is_in_town(target) {
-	return simple_distance(target, ORIGIN) < TOWN_RADIUS;
+	target = target || character;
+	return distance(target, ORIGIN) < TOWN_RADIUS;
 }
 
 /** Move towards a target. */

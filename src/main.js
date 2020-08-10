@@ -94,7 +94,7 @@ async function mainloop() {
 		loot();
 
 		// Emergency maneuvers
-		if (is_hp_critically_low()) {
+		if (is_hp_critically_low() && !is_in_town()) {
 			update_state(FLEE_TO_TOWN);
 		}
 
@@ -171,7 +171,7 @@ async function mainloop() {
 			break;
 
 		case FLEE_TO_TOWN:
-			if (is_in_town(character)) {
+			if (is_in_town()) {
 				update_state(IDLE);
 				break;
 			}
