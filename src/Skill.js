@@ -14,27 +14,27 @@ export class Skill {
 		if (!this.skill) {
 			throw new TypeError(`Unknown skill ${skill_id}`);
 		}
-		logging.debug(this.skill_id);
 
 		this.share_skill_id = this.skill.share || this.skill_id;
 		this.share_skill = G.skills[this.share_skill_id];
+		this.cooldown_id = skill_cooldown_id(this.skill_id);
 	}
 
 	/** Wait until skill is off cooldown */
-	static async wait_until_ready(skill_id) {
+	static async wait_until_ready(cooldown_id) {
 		await sleep(JIFFIE_MS);  // FIXME: next_skill doesn't immediately update
-		const next_skill_at = parent.next_skill[skill_id];
+		const next_skill_at = parent.next_skill[cooldown_id];
 		if (!next_skill_at) {
-			throw new TypeError(`Unknown cooldown skill: ${skill_id}`);
+			throw new TypeError(`Unknown cooldown skill: ${cooldown_id}`);
 		}
 
-		logging.debug(`Sleeping until '${skill_id}' ready`, next_skill_at);
-		await sleep_until(parent.next_skill[skill_id]);
+		logging.debug(`Sleeping until '${cooldown_id}' ready`, next_skill_at);
+		await sleep_until(parent.next_skill[cooldown_id]);
 	}
 
 	/** Wait until this skill is ready to cast. */
 	async wait_until_ready() {
-		await Skill.wait_until_ready(this.share_skill_id);
+		await Skill.wait_until_ready(this.cooldown_id);
 	}
 
 	/** Cast this skill. */
@@ -44,47 +44,88 @@ export class Skill {
 	}
 
 	/** Is this the active autocast skill? */
-	get is_active_autocast() {
-		return this === Skill.autocasts[this.share_skill_id];
+	is_autocast() {
+		const token = Skill.autocasts[this.cooldown_id];
+		return token && token.skill.skill_id === this.skill_id && token.active;
 	}
 
 	/** Autocast skill until condition is met. */
 	async autocast(target, extra_args, condition) {
-		const this_ = this;  // bind `this`
-		async function cast_condition() {
-			await this_.wait_until_ready();
-
-			if (condition && await condition() === false) {
-				logging.debug(`Condition ${condition} failed`, this_);
-				return false;
-			}
-
-			if (!this_.is_active_autocast) {
-				// No longer active autocast
-				return false;
-			}
-
-			return true;
-		}
-
-		if (this.is_active_autocast) {
+		if (this.is_autocast()) {
 			// Already on
-			logging.debug('Autocast already active', { data: this });
 			return;
 		}
 
 		logging.info(`Autocasting ${this.skill.name}`);
-		Skill.autocasts[this.share_skill_id] = this;
+		const token = acquire_autocast(this);
 
-		while (await cast_condition()) {
+		do {
+			await this.wait_until_ready();
+
+			// Is the autocast condition broken?
+			if (condition && await condition() == false) {
+				logging.debug(`Condition ${condition} failed`, this);
+				break;
+			}
+
+			// Has this autocast been deactivated?
+			if (!token.active) {
+				break;
+			}
+
 			await this.cast(target, extra_args);
-		}
+		} while (true)
 
-		if (this.is_active_autocast) {
-			delete Skill.autocasts[this.share_skill_id];
-		}
+		release_autocast(token);
 	}
 }
 
 /** Active autocast skills */
 Skill.autocasts = {};
+
+/** Aquire an active autocast for this skills cooldown slot. */
+function acquire_autocast(skill) {
+	// Release previous autocast (if any)
+	release_autocast(Skill.autocasts[skill.cooldown_id]);
+
+	// Create a new token
+	const token = {skill: skill, active: true, created: Date.now()};
+	Skill.autocasts[skill.cooldown_id] = token;
+
+	return token;
+}
+
+/** Deactive and release this autocast. */
+function release_autocast(token) {
+	if (!token) {
+		return;
+	}
+
+	// Deactivate autocast
+	token.active = false;
+
+	// Remove this autocast if it's the active one
+	if (is_active_autocast(token)) {
+		delete Skill.autocasts[token.skill.cooldown_id];
+	}
+}
+
+/** Is this the currently active autocast? */
+function is_active_autocast(token) {
+	return Skill.autocasts[token.skill.cooldown_id] === token;
+}
+
+/** The cooldown used by a certain skill. */
+function skill_cooldown_id(skill_id) {
+	const share_skill_id = G.skills[skill_id].share || skill_id;
+
+	switch (share_skill_id) {
+		case 'use_hp':
+		case 'use_mp':
+			// Same cooldown timer
+			return 'use_hp';
+
+		default:
+			return share_skill_id;
+	}
+}
