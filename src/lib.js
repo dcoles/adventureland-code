@@ -26,20 +26,21 @@ export async function move_towards(target) {
 /**
  * Get nearest monster.
  *
- * @param {object} args Additional options
- * @param {Set} args.valid Set of valid monster types (default: All monsters)
- * @param {boolean} args.min_xp Minimum XP of monsters to target
- * @param {boolean} args.path_check Checks if the character can move to the target
+ * @param {Set} criteria.valid Set of valid monster types (default: All monsters)
+ * @param {boolean} criteria.min_xp Minimum XP of monsters to target (default: `1`)
+ * @param {boolean} criteria.path_check Checks if the character can move to the target (default: `false`)
  */
-export function get_nearest_monster(args) {
+export function get_nearest_monster(criteria) {
+	criteria = criteria || {};
 	let target = null;
 	let target_distance = Infinity;
+	const min_xp = criteria.min_xp || 1;  // don't kill puppies
 
 	for (let [id, entity] of Object.entries(parent.entities)) {
 		if (entity.type !== 'monster') continue;
-		if (args.valid && !args.valid.has(entity.mtype)) continue;
-		if (args.min_xp && entity.xp < args.min_xp) continue;
-		if (args.path_check && !can_move_to(entity)) continue;
+		if (criteria.valid && !criteria.valid.has(entity.mtype)) continue;
+		if (entity.xp < min_xp) continue;
+		if (criteria.path_check && !can_move_to(entity)) continue;
 
 		const distance = parent.distance(character, entity);
 		if (distance > target_distance) continue;
