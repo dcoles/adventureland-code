@@ -1,9 +1,10 @@
 {
-    "compilerOptions": {
-        "noLib": true
-    },
-    "include": [
-        "adventureland/**/*",
-        "src/**/*"
-    ]
+	"compilerOptions": {
+		"module": "none",
+		"target": "es2017",
+	},
+	"include": [
+		"adventureland/*",
+		"src/**/*"
+	]
 }
