@@ -20,9 +20,7 @@ import { BattleLog } from './BattleLog.js';
 const IDLE_MS = 250;
 const TARGET_MAX_HP_RATIO = 10.00;
 const TARGET_MAX_ATTACK_RATIO = 0.80;
-const TARGET_MIN_XP_RATIO = 0.01;
 const TARGET_RETREAT_DISTANCE = 30;
-const CRITICAL_HP_RATIO = 0.10;
 const MAX_MOVEMENT_DISTANCE = 100;
 
 const STOP = 'Stop';
@@ -75,31 +73,67 @@ function pick_target() {
 		return target;
 	}
 
-	return get_nearest_monster({
+	if (is_hp_low()) {
+		// HP too low for combat
+		return null;
+	}
+
+	target = get_nearest_monster({
 		valid: valid_monster_types(),
-		min_xp: TARGET_MIN_XP_RATIO * character.max_xp,
+		//min_xp: TARGET_MIN_XP_RATIO * character.max_xp,
 		path_check: true,
 	});
+
+	return target;
 }
 
 /** Are we at critically low HP? */
 function is_hp_critically_low() {
-	return character.hp < CRITICAL_HP_RATIO * character.max_hp;
+	// Below 10%
+	return character.hp < character.max_hp / 10;
+}
+
+/** Are we at critically low MP? */
+function is_mp_critically_low() {
+	// Below 10%
+	return character.mp < character.max_mp / 10;
+}
+
+/** Are we at low HP? */
+function is_hp_low() {
+	// Below 50%
+	return character.hp < character.max_hp / 2;
 }
 
 /** Main loop */
 async function mainloop() {
-	let target;
+	const char = new Character();
+
+	let i = 0;
 	do {
-		// Always do these actions
+		logging.debug(`tick ${i++}`, state);
+
+		// Always loot
 		loot();
 
-		// Emergency maneuvers
-		if (is_hp_critically_low() && !is_in_town()) {
-			update_state(FLEE_TO_TOWN);
+		if (is_hp_critically_low()) {
+			// Emergency maneuvers
+			char.skills.regen_hp.autocast();
+			if (!is_in_town) {
+				update_state(FLEE_TO_TOWN);
+			}
+		} else if (is_mp_critically_low()) {
+			// Need some mana to cast!
+			char.skills.regen_mp.autocast();
+		} else if (character.hp < character.max_hp) {
+			// Restore HP
+			char.skills.regen_hp.autocast();
+		} else if (character.mp < character.max_mp) {
+			// Restore MP
+			char.skills.regen_mp.autocast();
 		}
 
-		target = get_target();
+		const target = pick_target();
 		switch (state) {
 			case STOP:
 				// Do nothing
@@ -110,9 +144,7 @@ async function mainloop() {
 				await sleep(IDLE_MS);
 
 				// Pick a new target
-				target = pick_target();
 				if (target) {
-					logging.info('Target', target);
 					change_target(target);
 					update_state(ADVANCE);
 				} else {
@@ -198,12 +230,10 @@ async function mainloop() {
 
 /** Main function */
 function main() {
-	log('Starting code');
+	logging.info('== Starting CODE ==')
+	logging.debug('Start time:', new Date());
 
 	BattleLog.monitor();
-
-	const char = new Character();
-	char.skills.regen_hp.autocast();
 
 	update_state(IDLE);
 
