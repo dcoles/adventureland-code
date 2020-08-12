@@ -157,13 +157,13 @@ async function mainloop() {
 		case RETREAT:
 			if (!target) {
 				update_state(IDLE);
-				return;
+				break;
 			}
 
 			const dist = distance(character, target);
 			if (dist >= character.range) {
 				update_state(IDLE);
-				return;
+				break;
 			}
 
 			await retreat(target, Math.min(character.range, MAX_MOVEMENT_DISTANCE));
