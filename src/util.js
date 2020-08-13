@@ -5,6 +5,7 @@
  * Promise that resolves after timeout.
  * 
  * @param {number} ms Timeout in milliseconds.
+ * @returns {Promise}
 */
 export function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));

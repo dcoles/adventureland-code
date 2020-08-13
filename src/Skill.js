@@ -1,5 +1,7 @@
+// @ts-check
+
 import * as logging from './logging.js';
-import { sleep_until } from './util.js';
+import { sleep, sleep_until } from './util.js';
 
 const JIFFIE_MS = 250;  // A short period of time
 

@@ -1,6 +1,8 @@
 // General logging functions
 // Usage:
 //   import * as log from './log.js';
+//
+// @ts-check
 
 const LOG_COLORS = {
 	debug: 'gray',
@@ -9,32 +11,57 @@ const LOG_COLORS = {
 	error: 'red',
 }
 
-/** Log at error level */
+export const ERROR = 'error';
+export const WARN = 'warn';
+export const INFO = 'info';
+export const DEBUG = 'debug';
+
+/**
+ * Log at ERROR level.
+ *
+ * @param {string} text Log text.
+ * @param {object} [obj] Additional object for context.
+ */
 export function error(text, obj) {
 	log('error', text, obj);
 }
 
-/** Log at warn level */
+/**
+ * Log at WARN level.
+ *
+ * @param {string} text Log text.
+ * @param {object} [obj] Additional object for context.
+ */
 export function warn(text, obj) {
 	log('warn', text, obj);
 }
 
-/** Log at info level */
+/**
+ * Log at INFO level.
+ *
+ * @param {string} text Log text.
+ * @param {object} [obj] Additional object for context.
+ */
 export function info(text, obj) {
 	log('info', text, obj);
 }
 
-/** Log at debug level */
+/**
+ * Log at DEBUG level.
+ *
+ * @param {string} text Log text.
+ * @param {object} [obj] Additional object for context.
+ */
 export function debug(text, obj) {
 	log('debug', text, obj);
 }
 
 /**
  * Generic log function.
- * 
- * @param {str} level One of 'error', 'warn', 'info', 'debug'
- * @param {str} text Text for log message
- * @param {object} obj Object to log
+ *
+ * @param {ERROR | WARN | DEBUG | INFO} level Debug level.
+ * @param {string} text Text for log message.
+ * @param {object} [obj] Additional object for context.
  */
 export function log(level, text, obj) {
 	const color = LOG_COLORS[level] || '';

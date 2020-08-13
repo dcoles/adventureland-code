@@ -4,6 +4,8 @@
 // Usage:
 //   import { BattleLog } from './battlelog.js';
 //   BattleLog.monitor();
+//
+// @ts-check
 
 import * as logging from './logging.js';
 
@@ -12,8 +14,9 @@ import * as logging from './logging.js';
  */
 export class BattleLog {
 	/**
-	 * @param {entity_id} options.entity_id Entity to monitor (default: `character`).
-	 * @param {bool} options.all Monitor all actors.
+	 * @param {object} [options] BattleLog options.
+	 * @param {string} [options.entity_id] Entity to monitor (default: `character`).
+	 * @param {boolean} [options.all] Monitor all actors.
 	 */
 	constructor(options) {
 		options = options || {}
@@ -22,7 +25,13 @@ export class BattleLog {
 		this.entity_id = options.entity_id || character.name;
 	}
 
-	/** Create a BattleLog and start monitoring events. */
+	/**
+	 * Create a BattleLog and start monitoring events.
+	 *
+	 * @param {object} [options] BattleLog options.
+	 * @param {string} [options.entity_id] Entity to monitor (default: `character`).
+	 * @param {boolean} [options.all] Monitor all actors.
+	 */
 	static monitor(options) {
 		const battlelog = new BattleLog(options);
 		game.on('hit', (data) => battlelog.on_hit(data));
@@ -30,6 +39,11 @@ export class BattleLog {
 		return battlelog;
 	}
 
+	/**
+	 * Called on Global 'hit' events.
+	 *
+	 * @param {object} data Event data.
+	 */
 	on_hit(data) {
 		if (!this.all && data.actor !== this.entity_id && data.target !== this.entity_id) {
 			return;
@@ -62,19 +76,36 @@ export class BattleLog {
 	}
 }
 
+/**
+ * Get the name of an actor.
+ *
+ * @param {object} actor Actor object (character or monster).
+ * @returns {string} The actor's name or '???'.
+ **/
 function actor_name(actor) {
 	if (!actor || !actor.name) {
 		return '???';
 	} else {
 		return actor.name;
-
 	}
 }
 
+/**
+ * Get the name of an actor with assocated icon.
+ *
+ * @param {object} actor Actor object (character or monster).
+ * @returns {string} The actor's icon+name or '???'.
+ **/
 function actor_name_with_icon(actor) {
 	return icon(actor) + actor_name(actor);
 }
 
+/**
+ * Get associated icon for an actor.
+ *
+ * @param {object} actor Actor object (character or monster).
+ * @returns {string} The actor's icon or ''.
+ */
 function icon(actor) {
 	if (!actor) {
 		return '';

@@ -1,24 +1,34 @@
 // Common functions
+// @ts-check
 
 import { sleep } from "./util.js";
 
 const ORIGIN = { x: 0, y: 0 };
 const TOWN_RADIUS = 600;  // px
 
-/** Is the target in Town? */
+/**
+ * Is the target in Town?
+ *
+ * @param {object} [target=character] Target to check.
+ * @returns {boolean} True if the target is in town, otherwise False.
+ **/
 export function is_in_town(target) {
 	target = target || character;
 	return distance(target, ORIGIN) < TOWN_RADIUS;
 }
 
-/** Move towards a target. */
+/**
+ * Move towards a target.
+ *
+ * @param {object} target Target to move towards.
+ **/
 export async function move_towards(target) {
 	// Walk half the distance (or until in range)
 	const dist = distance(character, target);
 	const dx = (target.x - character.x) / dist;
 	const dy = (target.y - character.y) / dist;
 
-	const movement_dist = min(dist / 2, character.range);
+	const movement_dist = Math.min(dist / 2, character.range);
 	move(character.x + movement_dist * dx, character.y + movement_dist * dy);
 	await sleep(movement_time(movement_dist));
 }
@@ -26,9 +36,10 @@ export async function move_towards(target) {
 /**
  * Get nearest monster.
  *
- * @param {Set} criteria.valid Set of valid monster types (default: All monsters)
- * @param {boolean} criteria.min_xp Minimum XP of monsters to target (default: `1`)
- * @param {boolean} criteria.path_check Checks if the character can move to the target (default: `false`)
+ * @param {object} [criteria] Criteria for matching monster.
+ * @param {Set} [criteria.valid] Set of valid monster types (default: All monsters)
+ * @param {boolean} [criteria.min_xp] Minimum XP of monsters to target (default: `1`)
+ * @param {boolean} [criteria.path_check] Checks if the character can move to the target (default: `false`)
  */
 export function get_nearest_monster(criteria) {
 	criteria = criteria || {};
@@ -52,7 +63,12 @@ export function get_nearest_monster(criteria) {
 	return target;
 }
 
-/** Move directly away from target */
+/**
+ * Move directly away from target.
+ *
+ * @param {object} target Target to retreat from.
+ * @param {number} retreat_dist Distance to retreat (in pixels).
+ */
 export async function retreat(target, retreat_dist) {
 	// Calculate unit-vector
 	const target_dist = distance(character, target);
@@ -72,7 +88,12 @@ export async function retreat(target, retreat_dist) {
 	await sleep(movement_time(character, dist));
 }
 
-/** Time for target to move distance in milliseconds */
+/** Calculate time for target to move a certain distance
+ *
+ * @param {object} target Target to measure.
+ * @param {number} distance Distance target will move.
+ * @returns {number} Duration in milliseconds.
+*/
 export function movement_time(target, distance) {
 	return distance / target.speed * 1000;
 }
