@@ -22,22 +22,6 @@ export function is_in_town(target) {
 }
 
 /**
- * Move towards a target.
- *
- * @param {object} target Target to move towards.
- **/
-export async function move_towards(target) {
-	// Walk half the distance (or until in range)
-	const dist = distance(character, target);
-	const dx = (target.x - character.x) / dist;
-	const dy = (target.y - character.y) / dist;
-
-	const movement_dist = Math.min(dist / 2, character.range);
-	move(character.x + movement_dist * dx, character.y + movement_dist * dy);
-	await sleep(movement_time(character, movement_dist));
-}
-
-/**
  * Get nearest monster.
  *
  * @param {object} [criteria] Criteria for matching monster.
@@ -65,31 +49,6 @@ export function get_nearest_monster(criteria) {
 	}
 
 	return target;
-}
-
-/**
- * Move directly away from target.
- *
- * @param {object} target Target to retreat from.
- * @param {number} retreat_dist Distance to retreat (in pixels).
- */
-export async function retreat(target, retreat_dist) {
-	// Calculate unit-vector
-	const target_dist = distance(character, target);
-	const dx = (character.x - target.x) / target_dist;
-	const dy = (character.y - target.y) / target_dist;
-
-	// How far we have to retreat
-	const dist = Math.max(retreat_dist - target_dist, 0);
-
-	// Retreat `retreat_dist` directly away
-	move_towards({
-		x: character.x + dist * dx,
-		y: character.y + dist * dy
-	});
-
-	// Wait for us to finish
-	await sleep(movement_time(character, dist));
 }
 
 /** Calculate time for target to move a certain distance

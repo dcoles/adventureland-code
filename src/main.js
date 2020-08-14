@@ -11,10 +11,8 @@
 
 import * as logging from './logging.js';
 import {
-	move_towards,
 	get_nearest_monster,
 	is_in_town,
-	retreat,
 } from './lib.js';
 import { sleep } from './util.js';
 import { Character } from './Character.js';
@@ -25,7 +23,6 @@ const IDLE_MS = 250;
 const TARGET_MAX_HP_RATIO = 10.00;
 const TARGET_MAX_ATTACK_RATIO = 0.80;
 const TARGET_RETREAT_DISTANCE = 30;
-const MAX_MOVEMENT_DISTANCE = 100;
 
 const STOP = 'Stop';
 const IDLE = 'Idle';
@@ -169,7 +166,7 @@ async function mainloop() {
 				break;
 			}
 
-			await move_towards(target);
+			await Character.move_towards(target);
 			if (Character.is_in_range(target)) {
 				update_state(ATTACK);
 			}
@@ -218,7 +215,8 @@ async function mainloop() {
 				break;
 			}
 
-			await retreat(target, Math.min(character.range, MAX_MOVEMENT_DISTANCE));
+			// Retreat to max range
+			await Character.retreat_from(target, character.range - dist);
 
 			update_state(ATTACK);
 			break;
@@ -230,7 +228,7 @@ async function mainloop() {
 			}
 
 			if (target) {
-				await retreat(target, character.range);
+				await Character.retreat_from(target, 10 * TARGET_RETREAT_DISTANCE);
 			}
 
 			await Skill.use_town.wait_until_ready();

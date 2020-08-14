@@ -52,3 +52,34 @@ Character.distance = function (target, in_check) {
 
 	return distance(character, target, in_check);
 }
+
+/**
+ * Move towards a target.
+ *
+ * @param {object} target Target to move towards.
+ **/
+Character.move_towards = async function (target) {
+	// Walk half the distance (or until in range)
+	const dist = distance(character, target);
+	const dx = (target.x - character.x) / dist;
+	const dy = (target.y - character.y) / dist;
+
+	const movement_dist = Math.min(dist / 2, dist - character.range);
+	await move(character.x + movement_dist * dx, character.y + movement_dist * dy);
+}
+
+/**
+ * Move directly away from target.
+ *
+ * @param {object} target Target to retreat from.
+ * @param {number} retreat_dist Distance to retreat (in pixels).
+ */
+Character.retreat_from = async function (target, retreat_dist) {
+	// Calculate unit-vector
+	const dist = distance(character, target);
+	const dx = (character.x - target.x) / dist;
+	const dy = (character.y - target.y) / dist;
+
+	// Retreat `retreat_dist` directly away
+	await move(character.x + retreat_dist * dx, character.y + retreat_dist * dy);
+}
