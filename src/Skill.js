@@ -8,7 +8,7 @@ const JIFFIE_MS = 250;  // A short period of time
 /**
  * A usable skill.
  */
-export class Skill {
+class SkillWrapper {
 	constructor(skill_id) {
 		this.skill_id = skill_id;
 
@@ -19,24 +19,39 @@ export class Skill {
 
 		this.share_skill_id = this.skill.share || this.skill_id;
 		this.share_skill = G.skills[this.share_skill_id];
-		this.cooldown_id = skill_cooldown_id(this.skill_id);
+		this.cooldown_id = SkillWrapper.cooldown_id(this.skill_id);
 	}
 
-	/** Wait until skill is off cooldown */
-	static async wait_until_ready(cooldown_id) {
+	/**
+	 * Cooldown used by a particular skill.
+	 *
+	 * @param {string} skill_id The Skill ID.
+	 * @returns {string}
+	 */
+	static cooldown_id(skill_id) {
+		const share_skill_id = G.skills[skill_id].share || skill_id;
+
+		switch (share_skill_id) {
+			case 'use_hp':
+			case 'use_mp':
+				// Same cooldown timer
+				return 'use_hp';
+
+			default:
+				return share_skill_id;
+		}
+	}
+
+	/** Wait until skill is off cooldown. */
+	async wait_until_ready() {
 		await sleep(JIFFIE_MS);  // FIXME: next_skill doesn't immediately update
-		const next_skill_at = parent.next_skill[cooldown_id];
+		const next_skill_at = parent.next_skill[this.cooldown_id];
 		if (!next_skill_at) {
-			throw new TypeError(`Unknown cooldown skill: ${cooldown_id}`);
+			throw new TypeError(`Unknown cooldown skill: ${this.cooldown_id}`);
 		}
 
-		logging.debug(`Sleeping until '${cooldown_id}' ready`, next_skill_at);
-		await sleep_until(parent.next_skill[cooldown_id]);
-	}
-
-	/** Wait until this skill is ready to use. */
-	async wait_until_ready() {
-		await Skill.wait_until_ready(this.cooldown_id);
+		logging.debug(`Sleeping until '${this.cooldown_id}' ready`, next_skill_at);
+		await sleep_until(parent.next_skill[this.cooldown_id]);
 	}
 
 	/**
@@ -60,7 +75,7 @@ export class Skill {
 	 * @returns {boolean}
 	 */
 	is_autouse() {
-		const token = Skill.autouses[this.cooldown_id];
+		const token = SkillWrapper.autouse[this.cooldown_id];
 		return token && token.skill.skill_id === this.skill_id && token.active;
 	}
 
@@ -105,16 +120,16 @@ export class Skill {
 }
 
 /** Active autouse skills */
-Skill.autouses = {};
+SkillWrapper.autouse = {};
 
 /** Aquire an active autouse for this skills cooldown slot. */
 function acquire_autouse(skill) {
 	// Release previous autouse (if any)
-	release_autouse(Skill.autouses[skill.cooldown_id]);
+	release_autouse(SkillWrapper.autouse[skill.cooldown_id]);
 
 	// Create a new token
-	const token = {skill: skill, active: true, created: Date.now()};
-	Skill.autouses[skill.cooldown_id] = token;
+	const token = { skill: skill, active: true, created: Date.now() };
+	SkillWrapper.autouse[skill.cooldown_id] = token;
 
 	return token;
 }
@@ -130,26 +145,21 @@ function release_autouse(token) {
 
 	// Remove this autouse if it's the active one
 	if (is_active_autouse(token)) {
-		delete Skill.autouses[token.skill.cooldown_id];
+		delete SkillWrapper.autouse[token.skill.cooldown_id];
 	}
 }
 
 /** Is this the currently active autouse? */
 function is_active_autouse(token) {
-	return Skill.autouses[token.skill.cooldown_id] === token;
+	return SkillWrapper.autouse[token.skill.cooldown_id] === token;
 }
 
-/** The cooldown used by a certain skill. */
-function skill_cooldown_id(skill_id) {
-	const share_skill_id = G.skills[skill_id].share || skill_id;
+// Skill namespace
+export var Skill = {};
 
-	switch (share_skill_id) {
-		case 'use_hp':
-		case 'use_mp':
-			// Same cooldown timer
-			return 'use_hp';
-
-		default:
-			return share_skill_id;
+// Register all valid skills
+for (let [skill_id, skill] of Object.entries(G.skills)) {
+	if (!skill.class || skill.class.includes(character.ctype)) {
+		Skill[skill_id] = new SkillWrapper(skill_id);
 	}
 }

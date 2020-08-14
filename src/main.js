@@ -111,8 +111,6 @@ function is_hp_low() {
 
 /** Main loop */
 async function mainloop() {
-	const char = new Character();
-
 	character.on('hit', (data) => {
 		// Focus on attacker
 		if (data.damage > 0) {
@@ -131,19 +129,19 @@ async function mainloop() {
 
 		if (is_hp_critically_low()) {
 			// Emergency maneuvers
-			char.skills.regen_hp.autouse();
+			Skill.regen_hp.autouse();
 			if (!is_in_town) {
 				update_state(FLEE_TO_TOWN);
 			}
 		} else if (is_mp_critically_low()) {
 			// Need some mana to cast!
-			char.skills.regen_mp.autouse();
+			Skill.regen_mp.autouse();
 		} else if (character.hp < character.max_hp) {
 			// Restore HP
-			char.skills.regen_hp.autouse();
+			Skill.regen_hp.autouse();
 		} else if (character.mp < character.max_mp) {
 			// Restore MP
-			char.skills.regen_mp.autouse();
+			Skill.regen_mp.autouse();
 		}
 
 		const target = pick_target();
@@ -188,8 +186,8 @@ async function mainloop() {
 				update_state(ADVANCE);
 			}
 
-			await char.skills.attack.wait_until_ready();
-			char.skills.attack.use(target).catch((e) => {
+			await Skill.attack.wait_until_ready();
+			Skill.attack.use(target).catch((e) => {
 				// Possible reasons:
 				// not_found - Target not found
 				// to_far - Target too far away
