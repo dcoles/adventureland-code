@@ -34,87 +34,109 @@ export class Skill {
 		await sleep_until(parent.next_skill[cooldown_id]);
 	}
 
-	/** Wait until this skill is ready to cast. */
+	/** Wait until this skill is ready to use. */
 	async wait_until_ready() {
 		await Skill.wait_until_ready(this.cooldown_id);
 	}
 
-	/** Cast this skill. */
-	async cast(target, extra_args) {
-		logging.debug('Casting', this);
-		return await use_skill(this.skill_id, target, extra_args);
+	/**
+	 * Use this skill.
+	 * 
+	 * @param {object} [target] Target of skill (if required).
+	 * @param {object} [extra_args] Extra args for skill.
+	 */
+	async use(target, extra_args) {
+		logging.debug('Using', this);
+		if (this.skill_id == 'attack') {
+			return await attack(target);
+		} else {
+			return await use_skill(this.skill_id, target, extra_args);
+		}
 	}
 
-	/** Is this the active autocast skill? */
-	is_autocast() {
-		const token = Skill.autocasts[this.cooldown_id];
+	/**
+	 * Is this skill currently being auto-used?
+	 * 
+	 * @returns {boolean}
+	 */
+	is_autouse() {
+		const token = Skill.autouses[this.cooldown_id];
 		return token && token.skill.skill_id === this.skill_id && token.active;
 	}
 
-	/** Autocast skill until condition is met. */
-	async autocast(target, extra_args, condition) {
-		if (this.is_autocast()) {
+	/**
+	 * Auto-use this skill.
+	 * 
+	 * This skill will be used every time it is ready and `condition` resolves.
+	 * If `condition` returns `False`, then autouse will deactivate.
+	 * 
+	 * @param {object} [target] Target of skill (if required).
+	 * @param {object} [extra_args] Extra args for skill.
+	 * @param {Function} [condition] Condition for casting the skill.
+	 */
+	async autouse(target, extra_args, condition) {
+		if (this.is_autouse()) {
 			// Already on
 			return;
 		}
 
-		logging.info(`Autocasting ${this.skill.name}`);
-		const token = acquire_autocast(this);
+		logging.info(`Autousing ${this.skill.name}`);
+		const token = acquire_autouse(this);
 
 		do {
 			await this.wait_until_ready();
 
-			// Is the autocast condition broken?
+			// Is the autouse condition broken?
 			if (condition && await condition() == false) {
 				logging.debug(`Condition ${condition} failed`, this);
 				break;
 			}
 
-			// Has this autocast been deactivated?
+			// Has this autouse been deactivated?
 			if (!token.active) {
 				break;
 			}
 
-			await this.cast(target, extra_args);
+			await this.use(target, extra_args);
 		} while (true)
 
-		release_autocast(token);
+		release_autouse(token);
 	}
 }
 
-/** Active autocast skills */
-Skill.autocasts = {};
+/** Active autouse skills */
+Skill.autouses = {};
 
-/** Aquire an active autocast for this skills cooldown slot. */
-function acquire_autocast(skill) {
-	// Release previous autocast (if any)
-	release_autocast(Skill.autocasts[skill.cooldown_id]);
+/** Aquire an active autouse for this skills cooldown slot. */
+function acquire_autouse(skill) {
+	// Release previous autouse (if any)
+	release_autouse(Skill.autouses[skill.cooldown_id]);
 
 	// Create a new token
 	const token = {skill: skill, active: true, created: Date.now()};
-	Skill.autocasts[skill.cooldown_id] = token;
+	Skill.autouses[skill.cooldown_id] = token;
 
 	return token;
 }
 
-/** Deactive and release this autocast. */
-function release_autocast(token) {
+/** Deactive and release this autouse. */
+function release_autouse(token) {
 	if (!token) {
 		return;
 	}
 
-	// Deactivate autocast
+	// Deactivate autouse
 	token.active = false;
 
-	// Remove this autocast if it's the active one
-	if (is_active_autocast(token)) {
-		delete Skill.autocasts[token.skill.cooldown_id];
+	// Remove this autouse if it's the active one
+	if (is_active_autouse(token)) {
+		delete Skill.autouses[token.skill.cooldown_id];
 	}
 }
 
-/** Is this the currently active autocast? */
-function is_active_autocast(token) {
-	return Skill.autocasts[token.skill.cooldown_id] === token;
+/** Is this the currently active autouse? */
+function is_active_autouse(token) {
+	return Skill.autouses[token.skill.cooldown_id] === token;
 }
 
 /** The cooldown used by a certain skill. */

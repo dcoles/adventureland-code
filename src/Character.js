@@ -12,6 +12,7 @@ export class Character {
 		this.character = char || character;
 		this.skills = {};
 
+		this.add_skill(new Skill('attack'));
 		this.add_skill(new Skill('regen_hp'));
 		this.add_skill(new Skill('regen_mp'));
 	}
@@ -24,7 +25,7 @@ export class Character {
 	add_skill(skill) {
 		if (!(skill instanceof Skill)) {
 			throw new TypeError(`Expected Skill got ${typeof skill}`);
-		}
+		}	
 		this.skills[skill.skill_id] = skill;
 	}
 }

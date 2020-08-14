@@ -122,19 +122,19 @@ async function mainloop() {
 
 		if (is_hp_critically_low()) {
 			// Emergency maneuvers
-			char.skills.regen_hp.autocast();
+			char.skills.regen_hp.autouse();
 			if (!is_in_town) {
 				update_state(FLEE_TO_TOWN);
 			}
 		} else if (is_mp_critically_low()) {
 			// Need some mana to cast!
-			char.skills.regen_mp.autocast();
+			char.skills.regen_mp.autouse();
 		} else if (character.hp < character.max_hp) {
 			// Restore HP
-			char.skills.regen_hp.autocast();
+			char.skills.regen_hp.autouse();
 		} else if (character.mp < character.max_mp) {
 			// Restore MP
-			char.skills.regen_mp.autocast();
+			char.skills.regen_mp.autouse();
 		}
 
 		const target = pick_target();
@@ -175,13 +175,22 @@ async function mainloop() {
 				break;
 			}
 
-			await Skill.wait_until_ready('attack');
-
 			if (!is_in_range(target)) {
 				update_state(ADVANCE);
 			}
 
-			attack(target);
+			await char.skills.attack.wait_until_ready();
+			char.skills.attack.use(target).catch((e) => {
+				// Possible reasons:
+				// not_found - Target not found
+				// to_far - Target too far away
+				// cooldown - Attack is still on cooldown
+				// no_mp - No MP
+				// disabled - Character is disabled (e.g. stunned)
+				// friendly - Can't attack friendly targets
+				// failed - Other reasons
+				logging.debug('Attack failed', e.reason);
+			});
 
 			if (distance(character, target) < TARGET_RETREAT_DISTANCE) {
 				update_state(RETREAT);
