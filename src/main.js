@@ -71,7 +71,7 @@ function valid_monster_types() {
 
 /** Pick a target to attack */
 function pick_target() {
-	let target = get_targeted_monster();
+	let target = Character.get_targeted_monster();
 	if (target) {
 		// Already targetting a monster
 		return target;
@@ -116,7 +116,7 @@ async function mainloop() {
 		if (data.damage > 0) {
 			const attacker = get_entity(data.actor);
 			logging.info('Attacked by', attacker.name);
-			change_target(attacker);
+			Character.change_target(attacker);
 		}
 	});
 
@@ -125,12 +125,12 @@ async function mainloop() {
 		logging.debug(`tick ${i++}`, state);
 
 		// Always loot
-		loot();
+		Character.loot();
 
 		if (is_hp_critically_low()) {
 			// Emergency maneuvers
 			Skill.regen_hp.autouse();
-			if (!is_in_town) {
+			if (!is_in_town()) {
 				update_state(FLEE_TO_TOWN);
 			}
 		} else if (is_mp_critically_low()) {
@@ -156,7 +156,7 @@ async function mainloop() {
 
 				// Pick a new target
 				if (target) {
-					change_target(target);
+					Character.change_target(target);
 					update_state(ADVANCE);
 				} else {
 					update_state(IDLE);
@@ -170,7 +170,7 @@ async function mainloop() {
 			}
 
 			await move_towards(target);
-			if (is_in_range(target)) {
+			if (Character.is_in_range(target)) {
 				update_state(ATTACK);
 			}
 
@@ -182,7 +182,7 @@ async function mainloop() {
 				break;
 			}
 
-			if (!is_in_range(target)) {
+			if (!Character.is_in_range(target)) {
 				update_state(ADVANCE);
 			}
 
@@ -199,7 +199,7 @@ async function mainloop() {
 				logging.debug('Attack failed', e.reason);
 			});
 
-			if (distance(character, target) < TARGET_RETREAT_DISTANCE) {
+			if (Character.distance(target) < TARGET_RETREAT_DISTANCE) {
 				update_state(RETREAT);
 				break;
 			}
@@ -212,7 +212,7 @@ async function mainloop() {
 				break;
 			}
 
-			const dist = distance(character, target);
+			const dist = Character.distance(target);
 			if (dist >= character.range) {
 				update_state(IDLE);
 				break;
@@ -233,8 +233,8 @@ async function mainloop() {
 				await retreat(target, character.range);
 			}
 
-			await Skill.wait_until_ready('use_town');
-			use_skill('use_town');
+			await Skill.use_town.wait_until_ready();
+			Skill.use_town.use();
 
 			break;
 
@@ -252,7 +252,7 @@ async function mainloop() {
 function main() {
 	logging.info('== Starting CODE ==')
 	logging.debug('Start time:', new Date());
-	change_target(null);
+	Character.change_target(null);
 
 	BattleLog.monitor();
 
