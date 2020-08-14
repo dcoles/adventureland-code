@@ -30,7 +30,7 @@ export async function move_towards(target) {
 
 	const movement_dist = Math.min(dist / 2, character.range);
 	move(character.x + movement_dist * dx, character.y + movement_dist * dy);
-	await sleep(movement_time(movement_dist));
+	await sleep(movement_time(character, movement_dist));
 }
 
 /**
