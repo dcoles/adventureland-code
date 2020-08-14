@@ -61,7 +61,7 @@ class SkillWrapper {
 	 * @param {object} [extra_args] Extra args for skill.
 	 */
 	async use(target, extra_args) {
-		logging.debug('Using', this);
+		logging.debug('Using skill', this.skill_id);
 		if (this.skill_id == 'attack') {
 			return await attack(target);
 		} else {
