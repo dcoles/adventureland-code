@@ -42,6 +42,26 @@ class SkillWrapper {
 		}
 	}
 
+	/** Skill name. */
+	get name() {
+		return this.skill.name;
+	}
+
+	/** Explanation of skill. */
+	get explanation() {
+		return this.skill.explanation;
+	}
+
+	/** Minimum level requirement to use this skill. */
+	get level() {
+		return this.skill.level || 0;
+	}
+
+	/** MP required to use this skill. */
+	get mp() {
+		return this.skill.mp || 0;
+	}
+
 	/** Wait until skill is off cooldown. */
 	async wait_until_ready() {
 		await sleep(JIFFIE_MS);  // FIXME: next_skill doesn't immediately update
@@ -159,7 +179,8 @@ export var Skill = {};
 
 // Register all valid skills
 for (let [skill_id, skill] of Object.entries(G.skills)) {
-	if (!skill.class || skill.class.includes(character.ctype)) {
+	if ((skill.type == "skill" || skill.type == "ability")
+	&& (!skill.class || skill.class.includes(character.ctype))) {
 		Skill[skill_id] = new SkillWrapper(skill_id);
 	}
 }
