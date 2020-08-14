@@ -106,12 +106,21 @@ function is_mp_critically_low() {
 /** Are we at low HP? */
 function is_hp_low() {
 	// Below 50%
-	return character.hp < character.max_hp / 2;
+	return character.hp < 0.90 * character.max_hp;
 }
 
 /** Main loop */
 async function mainloop() {
 	const char = new Character();
+
+	character.on('hit', (data) => {
+		// Focus on attacker
+		if (data.damage > 0) {
+			const attacker = get_entity(data.actor);
+			logging.info('Attacked by', attacker.name);
+			change_target(attacker);
+		}
+	});
 
 	let i = 0;
 	do {
@@ -245,6 +254,7 @@ async function mainloop() {
 function main() {
 	logging.info('== Starting CODE ==')
 	logging.debug('Start time:', new Date());
+	change_target(null);
 
 	BattleLog.monitor();
 
