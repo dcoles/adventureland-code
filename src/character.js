@@ -1,6 +1,7 @@
 // Character namespace
 // @ts-check
 
+import * as Adventure from './adventure.js';
 import * as Logging from './logging.js';
 import * as Util from './util.js';
 
@@ -16,7 +17,7 @@ export function change_target(target) {
 		target = get_entity(target);
 	}
 
-	window.change_target(target);
+	Adventure.change_target(target);
 }
 
 /**
@@ -97,7 +98,7 @@ export async function move_towards(target, distance) {
 	const dx = (target.x - character.x) / dist;
 	const dy = (target.y - character.y) / dist;
 
-	await window.move(x1 + distance * dx, y1 + distance * dy);
+	await Adventure.move(x1 + distance * dx, y1 + distance * dy);
 }
 
 /**
