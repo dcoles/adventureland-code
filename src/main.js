@@ -1,14 +1,6 @@
 // Main entrypoint.
 // @ts-check
 
-/**
- * Enable strict mode to help catch more bugs.
- *
- * See: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Strict_mode
- */
-
-'use strict';
-
 import * as Logging from './logging.js';
 import * as Lib from './lib.js';
 import * as Util from './util.js';
