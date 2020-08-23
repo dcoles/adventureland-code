@@ -12,7 +12,7 @@ import * as Logging from './logging.js';
 /**
  * Monitor nearby events and write them to the log.
  */
-export class BattleLog {
+class BattleLog {
 	/**
 	 * @param {object} [options] BattleLog options.
 	 * @param {string} [options.entity_id] Entity to monitor (default: `character`).
@@ -23,20 +23,6 @@ export class BattleLog {
 
 		this.all = options.all || false;
 		this.entity_id = options.entity_id || character.name;
-	}
-
-	/**
-	 * Create a BattleLog and start monitoring events.
-	 *
-	 * @param {object} [options] BattleLog options.
-	 * @param {string} [options.entity_id] Entity to monitor (default: `character`).
-	 * @param {boolean} [options.all] Monitor all actors.
-	 */
-	static monitor(options) {
-		const battlelog = new BattleLog(options);
-		game.on('hit', (data) => battlelog.on_hit(data));
-
-		return battlelog;
 	}
 
 	/**
@@ -74,6 +60,20 @@ export class BattleLog {
 
 		safe_log(msg, 'orange');
 	}
+}
+
+/**
+ * Create a BattleLog and start monitoring events.
+ *
+ * @param {object} [options] BattleLog options.
+ * @param {string} [options.entity_id] Entity to monitor (default: `character`).
+ * @param {boolean} [options.all] Monitor all actors.
+ */
+export function monitor(options) {
+	const battlelog = new BattleLog(options);
+	game.on('hit', (data) => battlelog.on_hit(data));
+
+	return battlelog;
 }
 
 /**

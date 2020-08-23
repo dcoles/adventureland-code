@@ -10,14 +10,10 @@
 'use strict';
 
 import * as Logging from './logging.js';
-import {
-	get_nearest_monster,
-	is_in_town,
-} from './lib.js';
+import * as Lib from './lib.js';
 import * as Util from './util.js';
-import { Character } from './Character.js';
-import { Skill } from './Skill.js';
-import { BattleLog } from './BattleLog.js';
+import * as Character from './character.js';
+import * as BattleLog from './battleLog.js';
 
 const IDLE_MS = 250;
 const TARGET_MAX_HP_RATIO = 10.00;
@@ -126,19 +122,19 @@ async function mainloop() {
 
 		if (is_hp_critically_low()) {
 			// Emergency maneuvers
-			Skill.regen_hp.autouse();
-			if (!is_in_town()) {
+			Character.skills.regen_hp.autouse();
+			if (!Lib.is_in_town()) {
 				update_state(FLEE_TO_TOWN);
 			}
 		} else if (is_mp_critically_low()) {
 			// Need some mana to cast!
-			Skill.regen_mp.autouse();
+			Character.skills.regen_mp.autouse();
 		} else if (character.hp < character.max_hp) {
 			// Restore HP
-			Skill.regen_hp.autouse();
+			Character.skills.regen_hp.autouse();
 		} else if (character.mp < character.max_mp) {
 			// Restore MP
-			Skill.regen_mp.autouse();
+			Character.skills.regen_mp.autouse();
 		}
 
 		const target = pick_target();
@@ -183,8 +179,8 @@ async function mainloop() {
 				update_state(ADVANCE);
 			}
 
-			await Skill.attack.wait_until_ready();
-			Skill.attack.use(target).catch((e) => {
+			await Character.skills.attack.wait_until_ready();
+			Character.skills.attack.use(target).catch((e) => {
 				// Possible reasons:
 				// not_found - Target not found
 				// to_far - Target too far away
@@ -196,7 +192,7 @@ async function mainloop() {
 				Logging.debug('Attack failed', e.reason);
 			});
 
-			if (Character.distance(target) < TARGET_RETREAT_DISTANCE) {
+			if (Character.distance_to(target) < TARGET_RETREAT_DISTANCE) {
 				update_state(RETREAT);
 				break;
 			}
@@ -209,7 +205,7 @@ async function mainloop() {
 				break;
 			}
 
-			const dist = Character.distance(target);
+			const dist = Character.distance_to(target);
 			if (dist >= character.range) {
 				update_state(IDLE);
 				break;
@@ -222,7 +218,7 @@ async function mainloop() {
 			break;
 
 		case FLEE_TO_TOWN:
-			if (is_in_town()) {
+			if (Lib.is_in_town()) {
 				update_state(IDLE);
 				break;
 			}
@@ -231,8 +227,8 @@ async function mainloop() {
 				await Character.retreat_from(target, 10 * TARGET_RETREAT_DISTANCE);
 			}
 
-			await Skill.use_town.wait_until_ready();
-			Skill.use_town.use();
+			await Character.skills.use_town.wait_until_ready();
+			Character.skills.use_town.use();
 
 			break;
 

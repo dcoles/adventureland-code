@@ -1,9 +1,103 @@
+// Character namespace
 // @ts-check
 
 import * as Logging from './logging.js';
 import * as Util from './util.js';
 
 const JIFFIE_MS = 250;  // A short period of time
+
+/**
+ * Change character's active target.
+ *
+ * @param {object|string} target New target.
+ */
+export function change_target(target) {
+	if (target instanceof String) {
+		target = get_entity(target);
+	}
+
+	window.change_target(target);
+}
+
+/**
+ * Get the current targeted monster.
+ *
+ * Returns `null` if not a monster or the target is dead.
+ */
+export function get_targeted_monster() {
+	return window.get_targeted_monster();
+}
+
+/**
+ * Loot chests.
+ *
+ * If a string ID is provided, then loot a specific chest.
+ * If `true` is provided, have this character's commander loot instead.
+ *
+ * @param {string|boolean} [id_or_arg] What to loot.
+ */
+export function loot(id_or_arg) {
+	window.loot(id_or_arg);
+}
+
+/**
+ * Is the character in range of target.
+ *
+ * @param {object|string} target Character or Monster.
+ * @param {string} [skill_id="attack"] Specific skill to check.
+ */
+export function is_in_range(target, skill_id) {
+	if (target instanceof String) {
+		target = get_entity(target);
+	}
+
+	return window.is_in_range(target, skill_id);
+}
+
+/**
+ * Get the distance between the character and target.
+ *
+ * @param {object|string} target Target to measure distance to.
+ * @param {boolean} [in_check=false] If `true`, ensure `target` is on the same map.
+ */
+export function distance_to(target, in_check) {
+	if (target instanceof String) {
+		target = get_entity(target);
+	}
+
+	return window.distance(character, target, in_check);
+}
+
+/**
+ * Move towards a target.
+ *
+ * @param {object} target Target to move towards.
+ **/
+export async function move_towards(target) {
+	// Walk half the distance (or until in range)
+	const dist = distance_to(target);
+	const dx = (target.x - character.x) / dist;
+	const dy = (target.y - character.y) / dist;
+
+	const movement_dist = Math.min(dist / 2, dist - character.range);
+	await window.move(character.x + movement_dist * dx, character.y + movement_dist * dy);
+}
+
+/**
+ * Move directly away from target.
+ *
+ * @param {object} target Target to retreat from.
+ * @param {number} retreat_dist Distance to retreat (in pixels).
+ */
+export async function retreat_from(target, retreat_dist) {
+	// Calculate unit-vector
+	const dist = distance_to(target);
+	const dx = (character.x - target.x) / dist;
+	const dy = (character.y - target.y) / dist;
+
+	// Retreat `retreat_dist` directly away
+	await window.move(character.x + retreat_dist * dx, character.y + retreat_dist * dy);
+}
 
 /**
  * A usable skill.
@@ -76,7 +170,7 @@ class SkillWrapper {
 
 	/**
 	 * Use this skill.
-	 * 
+	 *
 	 * @param {object} [target] Target of skill (if required).
 	 * @param {object} [extra_args] Extra args for skill.
 	 */
@@ -91,7 +185,7 @@ class SkillWrapper {
 
 	/**
 	 * Is this skill currently being auto-used?
-	 * 
+	 *
 	 * @returns {boolean}
 	 */
 	is_autouse() {
@@ -101,10 +195,10 @@ class SkillWrapper {
 
 	/**
 	 * Auto-use this skill.
-	 * 
+	 *
 	 * This skill will be used every time it is ready and `condition` resolves.
 	 * If `condition` returns `False`, then autouse will deactivate.
-	 * 
+	 *
 	 * @param {object} [target] Target of skill (if required).
 	 * @param {object} [extra_args] Extra args for skill.
 	 * @param {Function} [condition] Condition for casting the skill.
@@ -174,13 +268,13 @@ function is_active_autouse(token) {
 	return SkillWrapper.autouse[token.skill.cooldown_id] === token;
 }
 
-// Skill namespace
-export var Skill = {};
+/** Character skills. */
+export let skills = {}
 
 // Register all valid skills
 for (let [skill_id, skill] of Object.entries(G.skills)) {
 	if ((skill.type == "skill" || skill.type == "ability")
 	&& (!skill.class || skill.class.includes(character.ctype))) {
-		Skill[skill_id] = new SkillWrapper(skill_id);
+		skills[skill_id] = new SkillWrapper(skill_id);
 	}
 }
