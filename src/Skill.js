@@ -1,7 +1,7 @@
 // @ts-check
 
-import * as logging from './logging.js';
-import { sleep, sleep_until } from './util.js';
+import * as Logging from './logging.js';
+import * as Util from './util.js';
 
 const JIFFIE_MS = 250;  // A short period of time
 
@@ -64,14 +64,14 @@ class SkillWrapper {
 
 	/** Wait until skill is off cooldown. */
 	async wait_until_ready() {
-		await sleep(JIFFIE_MS);  // FIXME: next_skill doesn't immediately update
+		await Util.sleep(JIFFIE_MS);  // FIXME: next_skill doesn't immediately update
 		const next_skill_at = parent.next_skill[this.cooldown_id];
 		if (!next_skill_at) {
 			throw new TypeError(`Unknown cooldown skill: ${this.cooldown_id}`);
 		}
 
-		logging.debug(`Sleeping until '${this.cooldown_id}' ready`, next_skill_at);
-		await sleep_until(parent.next_skill[this.cooldown_id]);
+		Logging.debug(`Sleeping until '${this.cooldown_id}' ready`, next_skill_at);
+		await Util.sleep_until(parent.next_skill[this.cooldown_id]);
 	}
 
 	/**
@@ -81,7 +81,7 @@ class SkillWrapper {
 	 * @param {object} [extra_args] Extra args for skill.
 	 */
 	async use(target, extra_args) {
-		logging.debug('Using skill', this.skill_id);
+		Logging.debug('Using skill', this.skill_id);
 		if (this.skill_id == 'attack') {
 			return await attack(target);
 		} else {
@@ -115,7 +115,7 @@ class SkillWrapper {
 			return;
 		}
 
-		logging.info(`Autousing ${this.skill.name}`);
+		Logging.info(`Autousing ${this.skill.name}`);
 		const token = acquire_autouse(this);
 
 		do {
@@ -123,7 +123,7 @@ class SkillWrapper {
 
 			// Is the autouse condition broken?
 			if (condition && await condition() == false) {
-				logging.debug(`Condition ${condition} failed`, this);
+				Logging.debug(`Condition ${condition} failed`, this);
 				break;
 			}
 

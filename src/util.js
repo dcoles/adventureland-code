@@ -4,8 +4,8 @@
 /**
  * Sleep for a period of time.
  * 
- * @param {number} ms Time in milliseconds.
- * @returns {Promise} A promise that resolves after time period has elapsed.
+ * @param {number} ms Timeout in milliseconds.
+ * @returns {Promise} A promise that resolves after the timeout expires.
 */
 export function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));

@@ -1,8 +1,6 @@
 // Common functions
 // @ts-check
 
-import { sleep } from "./util.js";
-
 const ORIGIN = { x: 0, y: 0 };
 const TOWN_RADIUS = 600;  // px
 

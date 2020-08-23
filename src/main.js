@@ -9,12 +9,12 @@
 
 'use strict';
 
-import * as logging from './logging.js';
+import * as Logging from './logging.js';
 import {
 	get_nearest_monster,
 	is_in_town,
 } from './lib.js';
-import { sleep } from './util.js';
+import * as Util from './util.js';
 import { Character } from './Character.js';
 import { Skill } from './Skill.js';
 import { BattleLog } from './BattleLog.js';
@@ -41,7 +41,7 @@ function update_state(new_state) {
 	}
 
 	set_message(new_state);
-	logging.info('New state', new_state);
+	Logging.info('New state', new_state);
 	state = new_state;
 }
 
@@ -49,7 +49,7 @@ function update_state(new_state) {
 export function critical(text, obj) {
 	set_message('ERROR', 'red');
 	state = STOP;
-	logging.error(text, obj);
+	Logging.error(text, obj);
 }
 
 /** What are valid monster types to attack? */
@@ -112,14 +112,14 @@ async function mainloop() {
 		// Focus on attacker
 		if (data.damage > 0) {
 			const attacker = get_entity(data.actor);
-			logging.info('Attacked by', attacker.name);
+			Logging.info('Attacked by', attacker.name);
 			Character.change_target(attacker);
 		}
 	});
 
 	let i = 0;
 	do {
-		logging.debug(`tick ${i++}`, state);
+		Logging.debug(`tick ${i++}`, state);
 
 		// Always loot
 		Character.loot();
@@ -145,11 +145,11 @@ async function mainloop() {
 		switch (state) {
 			case STOP:
 				// Do nothing
-				await sleep(IDLE_MS);
+				await Util.sleep(IDLE_MS);
 				break;
 
 			case IDLE:
-				await sleep(IDLE_MS);
+				await Util.sleep(IDLE_MS);
 
 				// Pick a new target
 				if (target) {
@@ -193,7 +193,7 @@ async function mainloop() {
 				// disabled - Character is disabled (e.g. stunned)
 				// friendly - Can't attack friendly targets
 				// failed - Other reasons
-				logging.debug('Attack failed', e.reason);
+				Logging.debug('Attack failed', e.reason);
 			});
 
 			if (Character.distance(target) < TARGET_RETREAT_DISTANCE) {
@@ -242,14 +242,14 @@ async function mainloop() {
 		}
 
 		// Slow down the loop for safety
-		await sleep(100);
+		await Util.sleep(100);
 	} while (true)
 }
 
 /** Main function */
 function main() {
-	logging.info('== Starting CODE ==')
-	logging.debug('Start time:', new Date());
+	Logging.info('== Starting CODE ==')
+	Logging.debug('Start time:', new Date());
 	Character.change_target(null);
 
 	BattleLog.monitor();

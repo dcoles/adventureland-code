@@ -7,7 +7,7 @@
 //
 // @ts-check
 
-import * as logging from './logging.js';
+import * as Logging from './logging.js';
 
 /**
  * Monitor nearby events and write them to the log.
@@ -49,7 +49,7 @@ export class BattleLog {
 			return;
 		}
 
-		logging.debug('hit', data);
+		Logging.debug('hit', data);
 		const actor = get_entity(data.actor);
 		const target = get_entity(data.target);
 
