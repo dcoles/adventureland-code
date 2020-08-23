@@ -55,7 +55,7 @@ function valid_monster_types() {
 /** Pick a target to attack */
 function pick_target() {
 	let target = Character.get_targeted_monster();
-	if (target) {
+	if (target && !target.dead) {
 		// Already targetting a monster
 		return target;
 	}
@@ -96,7 +96,8 @@ function is_hp_low() {
 function in_bad_position(target) {
 	const dist = Character.distance_to(target);
 
-	return dist > character.range || dist < 0.20 * character.range;
+	// Either we can't attack, or they can attack us!
+	return dist > character.range || dist < Math.max(target.range, character.range / 2);
 }
 
 /** Main loop */
@@ -111,6 +112,7 @@ async function mainloop() {
 	});
 
 	let i = 0;
+	let target = null;
 	do {
 		Logging.debug(`tick ${i++}`, state);
 
@@ -134,7 +136,6 @@ async function mainloop() {
 			Character.skills.regen_mp.autouse();
 		}
 
-		const target = pick_target();
 		switch (state) {
 			case STOP:
 				// Do nothing
@@ -145,15 +146,23 @@ async function mainloop() {
 				await Util.sleep(IDLE_MS);
 
 				// Pick a new target
-				if (target) {
-					Character.change_target(target);
+				target = pick_target();
+				Character.change_target(target);
+
+				if (!Character.is_in_range(target)) {
 					update_state(REPOSITION);
 				} else {
-					update_state(IDLE);
+					update_state(ATTACK);
 				}
+
 				break;
 
 		case REPOSITION:
+			if (!target || target.dead) {
+				update_state(IDLE);
+				break;
+			}
+
 			const dist = Character.distance_to(target);
 			if (!dist) {
 				update_state(IDLE);
@@ -174,13 +183,8 @@ async function mainloop() {
 			break;
 
 		case ATTACK:
-			if (!target) {
+			if (!target || target.dead) {
 				update_state(IDLE);
-				break;
-			}
-
-			if (in_bad_position(target)) {
-				update_state(REPOSITION);
 				break;
 			}
 
@@ -196,6 +200,13 @@ async function mainloop() {
 				// failed - Other reasons
 				Logging.debug('Attack failed', e.reason);
 			});
+
+			// Always reposition after attacking
+			// This prevents us trying to reposition when stuck
+			if (in_bad_position(target)) {
+				update_state(REPOSITION);
+				break;
+			}
 
 			break;
 
