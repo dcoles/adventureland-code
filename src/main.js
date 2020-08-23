@@ -18,13 +18,11 @@ import * as BattleLog from './battleLog.js';
 const IDLE_MS = 250;
 const TARGET_MAX_HP_RATIO = 10.00;
 const TARGET_MAX_ATTACK_RATIO = 0.80;
-const TARGET_RETREAT_DISTANCE = 30;
 
 const STOP = 'Stop';
 const IDLE = 'Idle';
-const ADVANCE = 'Advance';
+const REPOSITION = 'Reposition';
 const ATTACK = 'Attack';
-const RETREAT = 'Retreat';
 const FLEE_TO_TOWN = 'Flee to Town';
 
 /** Current behaviour */
@@ -102,6 +100,13 @@ function is_hp_low() {
 	return character.hp < 0.90 * character.max_hp;
 }
 
+/** Are we in a bad position? */
+function in_bad_position(target) {
+	const dist = Character.distance_to(target);
+
+	return dist > character.range || dist < 0.20 * character.range;
+}
+
 /** Main loop */
 async function mainloop() {
 	character.on('hit', (data) => {
@@ -150,19 +155,26 @@ async function mainloop() {
 				// Pick a new target
 				if (target) {
 					Character.change_target(target);
-					update_state(ADVANCE);
+					update_state(REPOSITION);
 				} else {
 					update_state(IDLE);
 				}
 				break;
 
-		case ADVANCE:
-			if (!target) {
+		case REPOSITION:
+			const dist = Character.distance_to(target);
+			if (!dist) {
 				update_state(IDLE);
 				break;
 			}
 
-			await Character.move_towards(target);
+			// Target 80% of range
+			const target_dist = 0.8 * character.range;
+			if (Math.abs(dist - target_dist) > 10) {
+				await Character.move_towards(target, dist - target_dist);
+			}
+
+			// Need to fix distance
 			if (Character.is_in_range(target)) {
 				update_state(ATTACK);
 			}
@@ -175,8 +187,9 @@ async function mainloop() {
 				break;
 			}
 
-			if (!Character.is_in_range(target)) {
-				update_state(ADVANCE);
+			if (in_bad_position(target)) {
+				update_state(REPOSITION);
+				break;
 			}
 
 			await Character.skills.attack.wait_until_ready();
@@ -192,29 +205,6 @@ async function mainloop() {
 				Logging.debug('Attack failed', e.reason);
 			});
 
-			if (Character.distance_to(target) < TARGET_RETREAT_DISTANCE) {
-				update_state(RETREAT);
-				break;
-			}
-
-			break;
-
-		case RETREAT:
-			if (!target) {
-				update_state(IDLE);
-				break;
-			}
-
-			const dist = Character.distance_to(target);
-			if (dist >= character.range) {
-				update_state(IDLE);
-				break;
-			}
-
-			// Retreat to max range
-			await Character.retreat_from(target, character.range - dist);
-
-			update_state(ATTACK);
 			break;
 
 		case FLEE_TO_TOWN:
@@ -224,7 +214,7 @@ async function mainloop() {
 			}
 
 			if (target) {
-				await Character.retreat_from(target, 10 * TARGET_RETREAT_DISTANCE);
+				await Character.move_towards(target, -999);
 			}
 
 			await Character.skills.use_town.wait_until_ready();

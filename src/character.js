@@ -58,45 +58,46 @@ export function is_in_range(target, skill_id) {
  * Get the distance between the character and target.
  *
  * @param {object|string} target Target to measure distance to.
- * @param {boolean} [in_check=false] If `true`, ensure `target` is on the same map.
+ * @returns {number|null} Distance to target or `null` is target isn't on the map.
  */
-export function distance_to(target, in_check) {
+export function distance_to(target) {
 	if (target instanceof String) {
 		target = get_entity(target);
 	}
 
-	return window.distance(character, target, in_check);
+	if (!target || character.in != target.in) {
+		return null;
+	}
+
+	return Util.distance(character.x, character.y, target.x, target.y);
 }
 
 /**
  * Move towards a target.
  *
- * @param {object} target Target to move towards.
+ * @param {object|string} target Target to move towards.
+ * @param {number} distance Distance to move in pixels.
+ * @returns {Promise} Resolves when finished moving.
  **/
-export async function move_towards(target) {
-	// Walk half the distance (or until in range)
-	const dist = distance_to(target);
+export async function move_towards(target, distance) {
+	if (target instanceof String) {
+		target = get_entity(target);
+	}
+
+	if (!target) {
+		return null;
+	}
+
+	// Grab coordinates, lest they change
+	const [x1, y1] = [character.x, character.y];
+	const [x2, y2] = [target.x, target.y];
+
+	// Calculate the unit vector
+	const dist = Util.distance(x1, y1, x2, y2);
 	const dx = (target.x - character.x) / dist;
 	const dy = (target.y - character.y) / dist;
 
-	const movement_dist = Math.min(dist / 2, dist - character.range);
-	await window.move(character.x + movement_dist * dx, character.y + movement_dist * dy);
-}
-
-/**
- * Move directly away from target.
- *
- * @param {object} target Target to retreat from.
- * @param {number} retreat_dist Distance to retreat (in pixels).
- */
-export async function retreat_from(target, retreat_dist) {
-	// Calculate unit-vector
-	const dist = distance_to(target);
-	const dx = (character.x - target.x) / dist;
-	const dy = (character.y - target.y) / dist;
-
-	// Retreat `retreat_dist` directly away
-	await window.move(character.x + retreat_dist * dx, character.y + retreat_dist * dy);
+	await window.move(x1 + distance * dx, y1 + distance * dy);
 }
 
 /**

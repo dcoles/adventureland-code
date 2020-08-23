@@ -1,7 +1,8 @@
 // Common functions
 // @ts-check
 
-const ORIGIN = { x: 0, y: 0 };
+import * as Util from './util.js';
+
 const TOWN_RADIUS = 600;  // px
 
 /**
@@ -16,7 +17,7 @@ export function is_in_town(target) {
 		// Wrong map
 		return false;
 	}
-	return distance(target, ORIGIN) < TOWN_RADIUS;
+	return Util.distance(target.x, target.y, 0, 0) < TOWN_RADIUS;
 }
 
 /**
