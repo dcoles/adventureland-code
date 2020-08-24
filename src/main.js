@@ -148,6 +148,9 @@ async function mainloop() {
 				// Pick a new target
 				target = pick_target();
 				Character.change_target(target);
+				if (!target) {
+					break;
+				}
 
 				if (!Character.is_in_range(target)) {
 					update_state(REPOSITION);
