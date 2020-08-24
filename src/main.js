@@ -10,6 +10,8 @@ import * as BattleLog from './battleLog.js';
 const IDLE_MS = 250;
 const TARGET_MAX_HP_RATIO = 10.00;
 const TARGET_MAX_ATTACK_RATIO = 0.80;
+const TARGET_MIN_RANGE_FACTOR = 0.60;
+const TARGET_MAX_RANGE_FACTOR = 0.90;
 
 const STOP = 'Stop';
 const IDLE = 'Idle';
@@ -97,7 +99,7 @@ function in_bad_position(target) {
 	const dist = Character.distance_to(target);
 
 	// Either we can't attack, or they can attack us!
-	return dist > character.range || dist < Math.max(target.range, character.range / 2);
+	return dist > character.range || dist < Math.max(target.range, TARGET_MIN_RANGE_FACTOR * character.range);
 }
 
 /** Main loop */
@@ -173,7 +175,7 @@ async function mainloop() {
 			}
 
 			// Target 80% of range
-			const target_dist = 0.8 * character.range;
+			const target_dist = TARGET_MAX_RANGE_FACTOR * character.range;
 			if (Math.abs(dist - target_dist) > 10) {
 				await Character.move_towards(target, dist - target_dist);
 			}
