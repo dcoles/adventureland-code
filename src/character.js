@@ -92,13 +92,33 @@ export async function move_towards(target, distance) {
 	// Grab coordinates, lest they change
 	const [x1, y1] = [character.x, character.y];
 	const [x2, y2] = [target.x, target.y];
+	const theta = Math.atan2(y2 - y1, x2 - x1);
+	const target_x = x1 + distance * Math.cos(theta);
+	const target_y = y1 + distance * Math.sin(theta);
 
-	// Calculate the unit vector
-	const dist = Util.distance(x1, y1, x2, y2);
-	const dx = (target.x - character.x) / dist;
-	const dy = (target.y - character.y) / dist;
+	if (window.can_move_to(target_x, target_y)) {
+		return await Adventure.move(target_x, target_y);
+	}
 
-	await Adventure.move(x1 + distance * dx, y1 + distance * dy);
+	// Try to find a spot we can move to
+	for (let r = 50; r < 2 * Math.abs(distance); r *= 1.5) {
+		//window.draw_circle(target_x, target_y, r);
+		for (let n = 0; n < 8; n++) {
+			// Pick a random angle
+			const theta2 = Math.random() * 2 * Math.PI;
+			const new_x = target_x + r * Math.cos(theta2);
+			const new_y = target_y + r * Math.sin(theta2);
+
+			//window.draw_line(target_x, target_y, new_x, new_y, null, 0x0000ff);
+			if (window.can_move_to(new_x, new_y)
+			&& Util.distance(character.x, character.y, new_x, new_y) > Math.abs(distance) / 2) {
+				return await Adventure.move(new_x, new_y);
+			}
+		}
+	}
+
+	// Just try to move as much as possible
+	return await Adventure.move(target_x, target_y);
 }
 
 /**
