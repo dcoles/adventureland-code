@@ -52,7 +52,6 @@ function pick_target() {
 	}
 
 	target = Lib.get_nearest_monster({
-		min_difficulty: 2,
 		max_difficulty: 6,
 		path_check: true,
 	});
@@ -88,6 +87,11 @@ function in_bad_position(target) {
 
 /** Main loop */
 async function mainloop() {
+	// Remember where we started
+	const home = {x: character.x, y: character.y, in: character.in, range: 100};
+	Logging.info(`Home: ${Lib.position_to_string(home)} (range: ${home.range})`);
+	window.draw_circle(home.x, home.y, home.range, null, 0xffff00);
+
 	character.on('hit', (data) => {
 		// Focus on attacker
 		if (data.damage > 0) {
@@ -135,6 +139,10 @@ async function mainloop() {
 				target = pick_target();
 				Character.change_target(target);
 				if (!target) {
+					if (Util.distance(character.x, character.y, home.x, home.y) > home.range) {
+						Logging.info('Returning home');
+						await smart_move(home);
+					}
 					break;
 				}
 

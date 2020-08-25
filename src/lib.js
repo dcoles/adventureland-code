@@ -88,3 +88,20 @@ export function target_difficulty(target) {
 
 	return 5 * (character_damage / character.hp) + 5 * (1 - (target_damage / target.hp));
 }
+
+/**
+ * Print the location of an entity.
+ *
+ * @param {object} entity An entity with a position.
+ * @param {number} entity.x x-coordinate (pixels).
+ * @param {number} entity.y y-coordinate (pixels).
+ * @param {string} [entity.in] Optional map.
+ */
+export function position_to_string(entity) {
+	let s = `${entity.x.toFixed(1)}, ${entity.y.toFixed(1)}`;
+	if (entity.in) {
+		s += ` in ${entity.in}`;
+	}
+
+	return s;
+}
