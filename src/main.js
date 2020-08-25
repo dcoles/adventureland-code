@@ -99,16 +99,29 @@ function in_bad_position(target) {
 	return dist > character.range || dist < Math.max(target.range, TARGET_MIN_RANGE_FACTOR * character.range);
 }
 
-/** Set home location */
-function set_home() {
-	const home = {x: character.x, y: character.y, in: character.in, range: HOME_RANGE};
+/**
+ * Set character's home location.
+ *
+ * @param {object} [location] Location to set as home (default: current location).
+ * @param {number} [range=100] The radius of the home location.
+ * @returns {object} Home location set.
+ */
+export function set_home(location, range) {
+	location = location || {x: character.x, y: character.y, map: character.map};
+	range = range || 100;
+
+	const home = Object.assign({range: range}, location);
 	Adventure.set('home', home);
 
 	return home
 }
 
-/** Get home location */
-function get_home() {
+/**
+ * Get character's current home location.
+ *
+ * @returns {object|null} Home location.
+ */
+export function get_home() {
 	return Adventure.get('home');
 }
 
@@ -117,9 +130,9 @@ async function mainloop() {
 	// Remember where we started
 	let home = get_home();
 	if (!home) {
-		home = set_home();
+		home = set_home(null, HOME_RANGE);
 	}
-	Logging.info(`Home: ${Lib.position_to_string(home)} (range: ${home.range})`);
+	Logging.info(`Home: ${Lib.position_to_string(home)} on ${home.map} (range: ${home.range})`);
 	window.draw_circle(home.x, home.y, home.range, null, 0xffff00);
 
 	character.on('hit', (data) => {
@@ -171,7 +184,7 @@ async function mainloop() {
 				if (!target) {
 					if (Util.distance(character.x, character.y, home.x, home.y) > home.range) {
 						Logging.info('Returning home');
-						await Character.xmove(home.x, home.y);
+						await Character.xmove(home.x, home.y, home.map);
 					}
 					break;
 				}

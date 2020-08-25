@@ -126,13 +126,15 @@ export async function move_towards(target, distance) {
  *
  * @param {number} x x-coordinate.
  * @param {number} y y-coordinate.
+ * @param {string} [map] Map (default: current map).
  * @returns {Promise} Resolves when movement is complete.
  */
-export async function xmove(x, y) {
-	if (Adventure.can_move_to(x, y)) {
+export async function xmove(x, y, map) {
+	map = map || character.map;
+	if (character.map === map && Adventure.can_move_to(x, y)) {
 		return Adventure.move(x, y);
 	} else {
-		return Adventure.smart_move({x: x, y: y});
+		return Adventure.smart_move({x: x, y: y, map: map});
 	}
 }
 
