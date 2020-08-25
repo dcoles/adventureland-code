@@ -10,6 +10,7 @@
 const URL = 'http://127.0.0.1:5500/src/main.js';
 
 const script = document.createElement('script');
-script.src = URL;
 script.type = 'module';
+script.textContent = `import * as Code from ${JSON.stringify(URL)}; window.Code = Code;`;
+script.id = 'my_code';
 document.head.appendChild(script);
