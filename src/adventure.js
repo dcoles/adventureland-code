@@ -88,3 +88,26 @@ export function set(name, value) {
 	console.debug(`Set ${name}`, value);
 	window.set(name, value);
 }
+
+/**
+ * Map code snippet to key.
+ *
+ * @param {string} key Key to map to.
+ * @param {string} code Code snippet.
+ */
+export function map_snippet(key, code) {
+	console.debug(`Mapping ${key} to snippet`, code);
+	window.map_key(key, 'snippet', code);
+}
+
+/**
+ * Map a key to a skill.
+ *
+ * @param {string} key Key to map to.
+ * @param {string} skill Skill to set.
+ * @param {string} [code] Optional code for skill.
+ */
+export function map_key(key, skill, code) {
+	console.debug(`Mapping ${key}`, {skill: skill, code: code});
+	window.map_key(key, skill, code);
+}

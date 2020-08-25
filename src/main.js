@@ -22,18 +22,29 @@ const FLEE_TO_TOWN = 'Flee to Town';
 /** Current behaviour */
 let state = STOP;
 
-/** Update current state */
-function update_state(new_state) {
+/**
+ * Set main loop state.
+ *
+ * @param {string} new_state Next state to enter.
+ */
+export function set_state(new_state) {
 	if (new_state === state) {
 		return;
 	}
 
 	set_message(new_state);
-	Logging.info('New state', new_state);
+	console.info('State:', new_state);
 	state = new_state;
 }
 
-/** Critical error */
+/**
+ * Report a critical error.
+ *
+ * Stops the main loop and logs to console.
+ *
+ * @param {string} text Log message.
+ * @param {*} obj Additional context.
+ */
 export function critical(text, obj) {
 	set_message('ERROR', 'red');
 	state = STOP;
@@ -132,7 +143,7 @@ async function mainloop() {
 			// Emergency maneuvers
 			Character.skills.regen_hp.autouse();
 			if (!Lib.is_in_town()) {
-				update_state(FLEE_TO_TOWN);
+				set_state(FLEE_TO_TOWN);
 			}
 		} else if (is_mp_critically_low()) {
 			// Need some mana to cast!
@@ -168,22 +179,22 @@ async function mainloop() {
 				const difficulty = Lib.target_difficulty(target);
 				Logging.info(`Target: ${target.name} (${difficulty.toFixed(1)})`);
 				if (!Character.is_in_range(target)) {
-					update_state(REPOSITION);
+					set_state(REPOSITION);
 				} else {
-					update_state(ATTACK);
+					set_state(ATTACK);
 				}
 
 				break;
 
 		case REPOSITION:
 			if (!target || target.dead) {
-				update_state(IDLE);
+				set_state(IDLE);
 				break;
 			}
 
 			const dist = Character.distance_to(target);
 			if (!dist) {
-				update_state(IDLE);
+				set_state(IDLE);
 				break;
 			}
 
@@ -195,14 +206,14 @@ async function mainloop() {
 
 			// Need to fix distance
 			if (Character.is_in_range(target)) {
-				update_state(ATTACK);
+				set_state(ATTACK);
 			}
 
 			break;
 
 		case ATTACK:
 			if (!target || target.dead) {
-				update_state(IDLE);
+				set_state(IDLE);
 				break;
 			}
 
@@ -222,7 +233,7 @@ async function mainloop() {
 			// Always reposition after attacking
 			// This prevents us trying to reposition when stuck
 			if (in_bad_position(target)) {
-				update_state(REPOSITION);
+				set_state(REPOSITION);
 				break;
 			}
 
@@ -230,7 +241,7 @@ async function mainloop() {
 
 		case FLEE_TO_TOWN:
 			if (Lib.is_in_town()) {
-				update_state(IDLE);
+				set_state(IDLE);
 				break;
 			}
 
@@ -261,12 +272,17 @@ function main() {
 
 	BattleLog.monitor();
 
-	update_state(IDLE);
+	set_state(IDLE);
 
 	// Log all events
 	game.all((name, data) => {
 		//console.log('EVENT:', name, data);
 	});
+
+	// Export functions
+	Adventure.map_snippet('H', 'Code.set_home()');
+	Adventure.map_snippet('J', 'Code.set_state("Idle")');
+	Adventure.map_snippet('K', 'stop();Code.set_state("Stop")');
 
 	// Run event loop
 	mainloop().catch((err) => {
