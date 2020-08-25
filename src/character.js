@@ -211,8 +211,15 @@ class SkillWrapper {
 	 * @returns {boolean}
 	 */
 	is_autouse() {
-		const token = SkillWrapper.autouse[this.cooldown_id];
+		const token = this.get_token();
 		return token && token.skill.skill_id === this.skill_id && token.active;
+	}
+
+	/**
+	 * @returns {object|null} Current autouse token or null.
+	 */
+	get_token() {
+		return SkillWrapper.autouse[this.cooldown_id];
 	}
 
 	/**
@@ -226,13 +233,15 @@ class SkillWrapper {
 	 * @param {Function} [condition] Condition for casting the skill.
 	 */
 	async autouse(target, extra_args, condition) {
-		if (this.is_autouse()) {
+		const old_token = this.get_token()
+		if (this.is_autouse()
+		&& old_token.target == target && old_token.extra_args == extra_args) {
 			// Already on
 			return;
 		}
 
 		Logging.info(`Autousing ${this.skill.name}`);
-		const token = acquire_autouse(this);
+		const token = acquire_autouse(this, target, extra_args);
 
 		do {
 			await this.wait_until_ready();
@@ -259,12 +268,12 @@ class SkillWrapper {
 SkillWrapper.autouse = {};
 
 /** Aquire an active autouse for this skills cooldown slot. */
-function acquire_autouse(skill) {
+function acquire_autouse(skill, target, extra_args) {
 	// Release previous autouse (if any)
 	release_autouse(SkillWrapper.autouse[skill.cooldown_id]);
 
 	// Create a new token
-	const token = { skill: skill, active: true, created: Date.now() };
+	const token = { skill: skill, target: target, extra_args: extra_args, active: true, created: Date.now() };
 	SkillWrapper.autouse[skill.cooldown_id] = token;
 
 	return token;
