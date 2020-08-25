@@ -54,6 +54,7 @@ function pick_target() {
 	target = Lib.get_nearest_monster({
 		max_difficulty: 6,
 		path_check: true,
+		no_target: true,
 	});
 
 	return target;

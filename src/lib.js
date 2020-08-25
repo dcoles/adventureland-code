@@ -26,6 +26,7 @@ export function is_in_town(target) {
  * @param {object} [criteria] Criteria for matching monster.
  * @param {Set} [criteria.valid] Set of valid monster types (default: All monsters)
  * @param {boolean} [criteria.min_xp] Minimum XP of monsters to target (default: `1`)
+ * @param {boolean} [criteria.no_target] Monster must have no target.
  * @param {number} [criteria.min_difficulty] Minimum difficulty of monster.
  * @param {number} [criteria.max_difficulty] Maxium difficulty of monster.
  * @param {boolean} [criteria.path_check] Checks if the character can move to the target (default: `false`)
@@ -40,6 +41,7 @@ export function get_nearest_monster(criteria) {
 		if (entity.type !== 'monster') continue;
 		if (criteria.valid && !criteria.valid.has(entity.mtype)) continue;
 		if (entity.xp < min_xp) continue;
+		if (criteria.no_target && entity.target && entity.target != character.name) continue;
 		if (criteria.path_check && !can_move_to(entity)) continue;
 
 		const difficulty = target_difficulty(entity);
