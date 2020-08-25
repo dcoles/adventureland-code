@@ -15,6 +15,7 @@ const HOME_RANGE = 500;
 
 const STOP = 'Stop';
 const IDLE = 'Idle';
+const RETURN_HOME = 'Return Home';
 const REPOSITION = 'Reposition';
 const ATTACK = 'Attack';
 const FLEE_TO_TOWN = 'Flee to Town';
@@ -117,6 +118,19 @@ export function set_home(location, range) {
 }
 
 /**
+ * @returns {boolean} Is the character in their home range?
+ */
+function is_home() {
+	const home = Adventure.get('home');
+	if (!home) {
+		// No explicit home set
+		return true;
+	}
+
+	return Util.distance(character.x, character.y, home.x, home.y) <= home.range;
+}
+
+/**
  * Get character's current home location.
  *
  * @returns {object|null} Home location.
@@ -182,9 +196,8 @@ async function mainloop() {
 				target = pick_target();
 				Character.change_target(target);
 				if (!target) {
-					if (Util.distance(character.x, character.y, home.x, home.y) > home.range) {
-						Logging.info('Returning home');
-						await Character.xmove(home.x, home.y, home.map);
+					if (!is_home()) {
+						set_state(RETURN_HOME);
 					}
 					break;
 				}
@@ -199,77 +212,94 @@ async function mainloop() {
 
 				break;
 
-		case REPOSITION:
-			if (!target || target.dead) {
+			case RETURN_HOME:
+				const home = get_home();
+				if (!home) {
+					Logging.warn('No home set!');
+					set_state(IDLE);
+					break;
+				}
+
+				Logging.info(`Returning to home range in ${home.map}`);
+				await Character.xmove(home.x, home.y, home.map);
 				set_state(IDLE);
+
 				break;
-			}
 
-			const dist = Character.distance_to(target);
-			if (!dist) {
-				set_state(IDLE);
+			case REPOSITION:
+				if (!target || target.dead) {
+					set_state(IDLE);
+					break;
+				}
+
+				const dist = Character.distance_to(target);
+				if (!dist) {
+					set_state(IDLE);
+					break;
+				}
+
+				// Target 80% of range
+				const target_dist = TARGET_MAX_RANGE_FACTOR * character.range;
+				if (Math.abs(dist - target_dist) > 10) {
+					await Character.move_towards(target, dist - target_dist);
+				}
+
+				// Need to fix distance
+				if (Character.is_in_range(target)) {
+					set_state(ATTACK);
+				}
+
 				break;
-			}
 
-			// Target 80% of range
-			const target_dist = TARGET_MAX_RANGE_FACTOR * character.range;
-			if (Math.abs(dist - target_dist) > 10) {
-				await Character.move_towards(target, dist - target_dist);
-			}
+			case ATTACK:
+				if (!target || target.dead) {
+					set_state(IDLE);
+					break;
+				}
 
-			// Need to fix distance
-			if (Character.is_in_range(target)) {
-				set_state(ATTACK);
-			}
+				Character.skills.attack.autouse(target);
+				/*
+				await Character.skills.attack.wait_until_ready();
+				Character.skills.attack.use(target).catch((e) => {
+					// Possible reasons:
+					// not_found - Target not found
+					// to_far - Target too far away
+					// cooldown - Attack is still on cooldown
+					// no_mp - No MP
+					// disabled - Character is disabled (e.g. stunned)
+					// friendly - Can't attack friendly targets
+					// failed - Other reasons
+					Logging.debug('Attack failed', e.reason);
+				});
+				*/
 
-			break;
+				// Always reposition after attacking
+				// This prevents us trying to reposition when stuck
+				if (in_bad_position(target)) {
+					set_state(REPOSITION);
+					break;
+				}
 
-		case ATTACK:
-			if (!target || target.dead) {
-				set_state(IDLE);
 				break;
-			}
 
-			await Character.skills.attack.wait_until_ready();
-			Character.skills.attack.use(target).catch((e) => {
-				// Possible reasons:
-				// not_found - Target not found
-				// to_far - Target too far away
-				// cooldown - Attack is still on cooldown
-				// no_mp - No MP
-				// disabled - Character is disabled (e.g. stunned)
-				// friendly - Can't attack friendly targets
-				// failed - Other reasons
-				Logging.debug('Attack failed', e.reason);
-			});
+			case FLEE_TO_TOWN:
+				if (Lib.is_in_town()) {
+					set_state(IDLE);
+					break;
+				}
 
-			// Always reposition after attacking
-			// This prevents us trying to reposition when stuck
-			if (in_bad_position(target)) {
-				set_state(REPOSITION);
+				if (target) {
+					await Character.move_towards(target, -999);
+				}
+
+				await Character.skills.use_town.wait_until_ready();
+				Character.skills.use_town.use();
+
 				break;
-			}
 
-			break;
-
-		case FLEE_TO_TOWN:
-			if (Lib.is_in_town()) {
-				set_state(IDLE);
-				break;
-			}
-
-			if (target) {
-				await Character.move_towards(target, -999);
-			}
-
-			await Character.skills.use_town.wait_until_ready();
-			Character.skills.use_town.use();
-
-			break;
-
-		default:
-			critical('Unhandled state', state);
-			return;
+			default:
+				critical('Unhandled state', state);
+				return;
 		}
 
 		// Slow down the loop for safety
@@ -293,6 +323,7 @@ function main() {
 	});
 
 	// Export functions
+	Adventure.map_snippet('G', 'Code.set_state("Return Home")');
 	Adventure.map_snippet('H', 'Code.set_home()');
 	Adventure.map_snippet('J', 'Code.set_state("Idle")');
 	Adventure.map_snippet('K', 'stop();Code.set_state("Stop")');
