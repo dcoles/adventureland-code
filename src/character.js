@@ -274,7 +274,19 @@ class SkillWrapper {
 				break;
 			}
 
-			await this.use(target, extra_args);
+			try {
+				await this.use(target, extra_args);
+			} catch (e) {
+				if (e.reason == 'not_found') {
+					break;
+				}
+				if (e.reason == 'too_far') {
+					// FIXME: Wait until target is in range/gone
+					await Util.sleep(500);
+					continue;
+				}
+				Logging.warn(`Autouse ${this.skill.name} failed`, e.reason);
+			}
 		} while (true)
 
 		release_autouse(token);
