@@ -14,6 +14,7 @@ const TARGET_MAX_RANGE_FACTOR = 0.90;
 const HOME_RANGE = 500;
 
 const STOP = 'Stop';
+const RIP = 'RIP';
 const IDLE = 'Idle';
 const RETURN_HOME = 'Return Home';
 const REPOSITION = 'Reposition';
@@ -166,7 +167,10 @@ async function mainloop() {
 	do {
 		Logging.debug(`tick ${i++}`, state);
 
-		if (is_hp_critically_low()) {
+		if (character.rip) {
+			// He's dead Jim
+			set_state(RIP);
+		} else if (is_hp_critically_low()) {
 			// Emergency maneuvers
 			Character.skills.regen_hp.autouse();
 			if (!Lib.is_in_town()) {
@@ -187,6 +191,18 @@ async function mainloop() {
 			case STOP:
 				// Do nothing
 				await Util.sleep(IDLE_MS);
+				break;
+
+			case RIP:
+				Logging.warn('Died at', new Date());
+				Adventure.stop();
+
+				// Respawn after short delay (respawn has 12-sec cooldown)
+				await Util.sleep(15_000);
+				Adventure.respawn();
+
+				set_state(RETURN_HOME);
+
 				break;
 
 			case IDLE:

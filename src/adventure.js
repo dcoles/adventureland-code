@@ -111,3 +111,21 @@ export function map_key(key, skill, code) {
 	console.debug(`Mapping ${key}`, {skill: skill, code: code});
 	window.map_key(key, skill, code);
 }
+
+/**
+ * Stop your character.
+ *
+ * Cancels all channeling abilities and active skills.
+ */
+export function stop() {
+	console.debug('Stopping character');
+	window.stop();
+}
+
+/**
+ * Respawn character.
+ */
+export function respawn() {
+	console.debug('Respawning...');
+	window.respawn();
+}
