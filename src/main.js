@@ -1,6 +1,7 @@
 // Main entrypoint.
 // @ts-check
 
+import * as Adventure from './adventure.js';
 import * as Logging from './logging.js';
 import * as Lib from './lib.js';
 import * as Util from './util.js';
@@ -10,6 +11,7 @@ import * as BattleLog from './battleLog.js';
 const IDLE_MS = 250;
 const TARGET_MIN_RANGE_FACTOR = 0.60;
 const TARGET_MAX_RANGE_FACTOR = 0.90;
+const HOME_RANGE = 500;
 
 const STOP = 'Stop';
 const IDLE = 'Idle';
@@ -86,10 +88,26 @@ function in_bad_position(target) {
 	return dist > character.range || dist < Math.max(target.range, TARGET_MIN_RANGE_FACTOR * character.range);
 }
 
+/** Set home location */
+function set_home() {
+	const home = {x: character.x, y: character.y, in: character.in, range: HOME_RANGE};
+	Adventure.set('home', home);
+
+	return home
+}
+
+/** Get home location */
+function get_home() {
+	return Adventure.get('home');
+}
+
 /** Main loop */
 async function mainloop() {
 	// Remember where we started
-	const home = {x: character.x, y: character.y, in: character.in, range: 100};
+	let home = get_home();
+	if (!home) {
+		home = set_home();
+	}
 	Logging.info(`Home: ${Lib.position_to_string(home)} (range: ${home.range})`);
 	window.draw_circle(home.x, home.y, home.range, null, 0xffff00);
 
@@ -142,7 +160,7 @@ async function mainloop() {
 				if (!target) {
 					if (Util.distance(character.x, character.y, home.x, home.y) > home.range) {
 						Logging.info('Returning home');
-						await smart_move(home);
+						await Character.xmove(home.x, home.y);
 					}
 					break;
 				}

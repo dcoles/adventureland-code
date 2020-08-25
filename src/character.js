@@ -122,6 +122,21 @@ export async function move_towards(target, distance) {
 }
 
 /**
+ * Try to move directly to position, otherwise use pathfinding.
+ *
+ * @param {number} x x-coordinate.
+ * @param {number} y y-coordinate.
+ * @returns {Promise} Resolves when movement is complete.
+ */
+export async function xmove(x, y) {
+	if (Adventure.can_move_to(x, y)) {
+		return Adventure.move(x, y);
+	} else {
+		return Adventure.smart_move({x: x, y: y});
+	}
+}
+
+/**
  * A usable skill.
  */
 class SkillWrapper {
