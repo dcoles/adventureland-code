@@ -97,13 +97,13 @@ async function mainloop() {
 		}
 	});
 
+	// Always loot
+	window.setInterval(() => Character.loot(), 1000);
+
 	let i = 0;
 	let target = null;
 	do {
 		Logging.debug(`tick ${i++}`, state);
-
-		// Always loot
-		Character.loot();
 
 		if (is_hp_critically_low()) {
 			// Emergency maneuvers
