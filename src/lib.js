@@ -26,6 +26,8 @@ export function is_in_town(target) {
  * @param {object} [criteria] Criteria for matching monster.
  * @param {Set} [criteria.valid] Set of valid monster types (default: All monsters)
  * @param {boolean} [criteria.min_xp] Minimum XP of monsters to target (default: `1`)
+ * @param {number} [criteria.min_difficulty] Minimum difficulty of monster.
+ * @param {number} [criteria.max_difficulty] Maxium difficulty of monster.
  * @param {boolean} [criteria.path_check] Checks if the character can move to the target (default: `false`)
  */
 export function get_nearest_monster(criteria) {
@@ -39,6 +41,10 @@ export function get_nearest_monster(criteria) {
 		if (criteria.valid && !criteria.valid.has(entity.mtype)) continue;
 		if (entity.xp < min_xp) continue;
 		if (criteria.path_check && !can_move_to(entity)) continue;
+
+		const difficulty = target_difficulty(entity);
+		if (criteria.min_difficulty && difficulty < criteria.min_difficulty) continue;
+		if (criteria.max_difficulty && difficulty > criteria.max_difficulty) continue;
 
 		const distance = parent.distance(character, entity);
 		if (distance > target_distance) continue;
@@ -58,4 +64,27 @@ export function get_nearest_monster(criteria) {
 */
 export function movement_time(target, distance) {
 	return distance / target.speed * 1000;
+}
+
+/**
+ * Calculate the difficulty of a target.
+ *
+ * 0 is easy, 10 is impossibly hard.
+ *
+ * @param {object} target Target to calculate difficulty of
+ * @returns {number} Difficulty score out of 10.
+ */
+export function target_difficulty(target) {
+	const target_dps = Math.max(target.attack * target.frequency - 50, 0);
+	const character_dps = character.attack * character.frequency;
+
+	// How many seconds until someone would die?
+	const t_target = target.hp / character_dps;
+	const t_character = character.hp / target_dps;
+	const t_end = Math.min(t_target, t_character);
+
+	const target_damage = Math.min(character_dps * t_end, target.hp);
+	const character_damage = Math.min(target_dps * t_end, character.hp);
+
+	return 5 * (character_damage / character.hp) + 5 * (1 - (target_damage / target.hp));
 }

@@ -8,8 +8,6 @@ import * as Character from './character.js';
 import * as BattleLog from './battleLog.js';
 
 const IDLE_MS = 250;
-const TARGET_MAX_HP_RATIO = 10.00;
-const TARGET_MAX_ATTACK_RATIO = 0.80;
 const TARGET_MIN_RANGE_FACTOR = 0.60;
 const TARGET_MAX_RANGE_FACTOR = 0.90;
 
@@ -40,20 +38,6 @@ export function critical(text, obj) {
 	Logging.error(text, obj);
 }
 
-/** What are valid monster types to attack? */
-function valid_monster_types() {
-	let valid = new Set();
-
-	for (let [mtype, monster] of Object.entries(G.monsters)) {
-		if (monster.hp > TARGET_MAX_HP_RATIO * character.hp) continue;
-		if (monster.attack > TARGET_MAX_ATTACK_RATIO * character.attack) continue;
-
-		valid.add(mtype);
-	}
-
-	return valid;
-}
-
 /** Pick a target to attack */
 function pick_target() {
 	let target = Character.get_targeted_monster();
@@ -67,9 +51,9 @@ function pick_target() {
 		return null;
 	}
 
-	target = get_nearest_monster({
-		valid: valid_monster_types(),
-		//min_xp: TARGET_MIN_XP_RATIO * character.max_xp,
+	target = Lib.get_nearest_monster({
+		min_difficulty: 2,
+		max_difficulty: 6,
 		path_check: true,
 	});
 
@@ -154,6 +138,8 @@ async function mainloop() {
 					break;
 				}
 
+				const difficulty = Lib.target_difficulty(target);
+				Logging.info(`Target: ${target.name} (${difficulty.toFixed(1)})`);
 				if (!Character.is_in_range(target)) {
 					update_state(REPOSITION);
 				} else {
