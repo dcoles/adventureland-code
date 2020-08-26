@@ -16,16 +16,16 @@ const TARGET_MIN_RANGE_FACTOR = 0.60;
 const TARGET_MAX_RANGE_FACTOR = 0.90;
 const HOME_RANGE = 500;
 
-const STOP = 'Stop';
 const RIP = 'RIP';
 const IDLE = 'Idle';
 const RETURN_HOME = 'Return Home';
 const REPOSITION = 'Reposition';
 const ATTACK = 'Attack';
-const FLEE_TO_TOWN = 'Flee to Town';
+const PANIC = 'Panic';
 
 /** Current behaviour */
-let state = STOP;
+let g_state = IDLE;
+let g_stop = false;
 
 /**
  * Set main loop state.
@@ -33,13 +33,12 @@ let state = STOP;
  * @param {string} new_state Next state to enter.
  */
 export function set_state(new_state) {
-	if (new_state === state) {
+	if (new_state === g_state) {
 		return;
 	}
 
-	set_message(new_state);
 	console.info('State:', new_state);
-	state = new_state;
+	g_state = new_state;
 }
 
 /**
@@ -52,8 +51,25 @@ export function set_state(new_state) {
  */
 export function critical(text, obj) {
 	set_message('ERROR', 'red');
-	state = STOP;
+	g_stop = true;
 	Logging.error(text, obj);
+}
+
+/**
+ * Stop the event loop.
+ */
+export function stop() {
+	Logging.warn('Stopping event loop');
+	g_stop = true;
+
+	// Cease all motor functions
+	Character.stop_all();
+}
+
+/** Resume the event loop. */
+export function resume() {
+	Logging.warn('Resuming event loop');
+	g_stop = false;
 }
 
 /** Pick a target to attack */
@@ -157,7 +173,8 @@ async function mainloop() {
 		// Focus on attacker
 		if (data.damage > 0) {
 			const attacker = get_entity(data.actor);
-			Logging.info('Attacked by', attacker.name);
+			Logging.info('Attacked by', attacker ? attacker.name : '???');
+			Character.stop('move');
 			Character.change_target(attacker);
 		}
 	});
@@ -168,16 +185,23 @@ async function mainloop() {
 	let i = 0;
 	let target = null;
 	do {
-		Logging.debug(`tick ${i++}`, state);
+		Logging.debug(`tick ${i++}`, g_state);
+		set_message(g_state + (g_stop ? ' X' : ''));
 
-		if (character.rip) {
+		if (g_stop) {
+			// Wait until the loop is restarted
+			while (g_stop) {
+				await Util.sleep(IDLE_MS);
+			}
+
+		} else if (character.rip) {
 			// He's dead Jim
 			set_state(RIP);
 		} else if (is_hp_critically_low()) {
 			// Emergency maneuvers
 			Character.skills.regen_hp.autouse();
 			if (!Lib.is_in_town()) {
-				set_state(FLEE_TO_TOWN);
+				set_state(PANIC);
 			}
 		} else if (is_mp_critically_low()) {
 			// Need some mana to cast!
@@ -190,17 +214,13 @@ async function mainloop() {
 			Character.skills.regen_mp.autouse();
 		}
 
-		switch (state) {
-			case STOP:
-				// Do nothing
-				await Util.sleep(IDLE_MS);
-				break;
-
+		switch (g_state) {
 			case RIP:
 				Logging.warn('Died at', new Date());
 				Adventure.stop();
 
 				// Respawn after short delay (respawn has 12-sec cooldown)
+				Logging.info('Respawning in 15s...')
 				await Util.sleep(15_000);
 				Adventure.respawn();
 
@@ -240,7 +260,13 @@ async function mainloop() {
 				}
 
 				Logging.info(`Returning to home range in ${home.map}`);
-				await Character.xmove(home.x, home.y, home.map);
+				try {
+					await Character.xmove(home.x, home.y, home.map);
+				} catch (e) {
+					if (e.reason != 'interrupted') {
+						throw e;
+					}
+				}
 				set_state(IDLE);
 
 				break;
@@ -301,23 +327,37 @@ async function mainloop() {
 
 				break;
 
-			case FLEE_TO_TOWN:
-				if (Lib.is_in_town()) {
+			case PANIC:
+				if (Character.distance(0, 0) < 100 && character.hp == character.max_hp) {
 					set_state(IDLE);
 					break;
 				}
 
-				if (target) {
-					await Character.move_towards(target, -999);
+				// Stop whatever we were doing
+				Character.stop_all();
+
+				// Mages can blink to map origin
+				if (Character.skills.blink && Character.skills.blink.is_usable()) {
+					await Character.skills.blink.use([0, 0]);
+					break;
 				}
 
-				await Character.skills.use_town.wait_until_ready();
-				Character.skills.use_town.use();
+				// We're probably under attack
+				if (target) {
+					// Start running
+					Character.move_towards(target, -999);
+
+					// Pop a potion
+					await Character.skills.use_hp.use_when_ready();
+				}
+
+				// Warp to map origin
+				await Character.skills.use_town.use_when_ready();
 
 				break;
 
 			default:
-				critical('Unhandled state', state);
+				critical('Unhandled state', g_state);
 				return;
 		}
 
@@ -334,18 +374,16 @@ function main() {
 
 	BattleLog.monitor();
 
-	set_state(IDLE);
-
 	// Log all events
 	game.all((name, data) => {
 		//console.log('EVENT:', name, data);
 	});
 
-	// Export functions
+	// Map snippets
 	Adventure.map_snippet('G', 'Code.set_state("Return Home")');
 	Adventure.map_snippet('H', 'Code.set_home()');
-	Adventure.map_snippet('J', 'Code.set_state("Idle")');
-	Adventure.map_snippet('K', 'stop();Code.set_state("Stop")');
+	Adventure.map_snippet('J', 'Code.resume()');
+	Adventure.map_snippet('K', 'Code.stop()');
 
 	// Run event loop
 	mainloop().catch((err) => {
