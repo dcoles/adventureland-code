@@ -133,6 +133,29 @@ export async function move_towards(target, distance) {
 }
 
 /**
+ * Cancels channeling abilities or active skills.
+ *
+ * @param {string} [action='move'] Action to cancel.
+ */
+export function stop(action) {
+	Adventure.stop(action);
+}
+
+/**
+ * Stop doing anything!
+ */
+export function stop_all() {
+	Adventure.stop('move');
+	Adventure.stop('town');
+	Adventure.stop('revival');
+
+	// Cancel all autouse/autocasts
+	for (let [_, token] of Object.entries(SkillWrapper.autouse)) {
+		token.active = false;
+	}
+}
+
+/**
  * Try to move directly to position, otherwise use pathfinding.
  *
  * @param {number} x x-coordinate.

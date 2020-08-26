@@ -113,13 +113,14 @@ export function map_key(key, skill, code) {
 }
 
 /**
- * Stop your character.
+ * Cancels channeling abilities or active skills.
  *
- * Cancels all channeling abilities and active skills.
+ * @param {string} [action='move'] Action to cancel.
+ * @param {*} [second] ???
  */
-export function stop() {
-	console.debug('Stopping character');
-	window.stop();
+export function stop(action, second) {
+	console.debug(`Stopping ${action || "move"}`);
+	window.stop(action, second)
 }
 
 /**
