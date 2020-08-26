@@ -4,6 +4,27 @@
 const DEBUG = true;
 
 /**
+ * Is `target` in range of this skill?
+ *
+ * @param {object} target Target of skill.
+ * @param {string} skill_id Code ID of skill.
+ * @returns {boolean}
+ */
+export function is_in_range(target, skill_id) {
+	return window.is_in_range(target, skill_id);
+}
+
+/**
+ * Is this skill on cooldown?
+ *
+ * @param {string} skill_id Code ID of skill.
+ * @returns {boolean}
+ */
+export function is_on_cooldown(skill_id) {
+	return window.is_on_cooldown(skill_id);
+}
+
+/**
  * Is it possible to move directly to a position?
  *
  * @param {object|number} position_or_x position or x-coordinate.

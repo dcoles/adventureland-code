@@ -229,16 +229,69 @@ class SkillWrapper {
 		return this.skill.mp || 0;
 	}
 
-	/** Wait until skill is off cooldown. */
-	async wait_until_ready() {
-		await Util.sleep(JIFFIE_MS);  // FIXME: next_skill doesn't immediately update
-		const next_skill_at = parent.next_skill[this.cooldown_id];
-		if (!next_skill_at) {
-			throw new TypeError(`Unknown cooldown skill: ${this.cooldown_id}`);
+	/** Can we use this skill? */
+	is_usable(target) {
+		if (target && !this.is_in_range(target)) {
+			// Not in range
+			return false;
 		}
 
-		Logging.debug(`Sleeping until '${this.cooldown_id}' ready`, next_skill_at);
-		await Util.sleep_until(parent.next_skill[this.cooldown_id]);
+		if (!this.is_sufficent_mana()) {
+			// Not enough MP
+			return false;
+		}
+
+		return !this.is_on_cooldown();
+	}
+
+	/**
+	 * Is `target` in range of this skill?
+	 *
+	 * @param {object} target Target of skill.
+	 * @returns {boolean}
+	 */
+	is_in_range(target) {
+		return Adventure.is_in_range(target, this.skill_id);
+	}
+
+	/**
+	 * Is there sufficent mana to use this skill?
+	 *
+	 * @returns {boolean}
+	 */
+	is_sufficent_mana() {
+		return character.mp >= this.skill.mp
+	}
+
+	/**
+	 * Is this skill on cooldown?
+	 *
+	 * @returns {boolean}
+	 */
+	is_on_cooldown() {
+		return Adventure.is_on_cooldown(this.skill_id);
+	}
+
+	/**
+	 * Use this skill as soon as it's ready.
+	 *
+	 * @param {object} [target] Target of skill (if required).
+	 * @param {object} [extra_args] Extra args for skill.
+	 */
+	async use_when_ready(target, extra_args) {
+		await this.wait_until_ready();
+		return await this.use(target, extra_args);
+	}
+
+	/**
+	 * Wait until skill is off cooldown.
+	 *
+	 * If this skill is being autoused, then it will be cancelled to prevent
+	 * deadlock from occuring.
+	 */
+	async wait_until_ready() {
+		this.cancel_autouse();
+		await wait_until_ready(this.cooldown_id);
 	}
 
 	/**
@@ -252,7 +305,10 @@ class SkillWrapper {
 		if (this.skill_id == 'attack') {
 			return await attack(target);
 		} else {
-			return await use_skill(this.skill_id, target, extra_args);
+			const result = await use_skill(this.skill_id, target, extra_args);
+			// FIXME: Workaround for use-skill not returning a Promise
+			await Util.sleep(JIFFIE_MS);
+			return result;
 		}
 	}
 
@@ -295,7 +351,8 @@ class SkillWrapper {
 		const token = acquire_autouse(this, target, extra_args);
 
 		do {
-			await this.wait_until_ready();
+			// Don't use `this.wait_until_ready()` as it cancels autouse
+			await wait_until_ready(this.cooldown_id);
 
 			// Is the autouse condition broken?
 			if (condition && await condition() == false) {
@@ -325,6 +382,37 @@ class SkillWrapper {
 
 		release_autouse(token);
 	}
+
+	/**
+	 * Cancel this autouse skill (or shared skills).
+	 */
+	cancel_autouse() {
+		const token = this.get_token();
+		if (!token) {
+			return;
+		}
+
+		Logging.debug(`Canceling autouse of ${token.skill.skill_id}`);
+		release_autouse(this.get_token());
+	}
+}
+
+/**
+ * Wait until off cooldown.
+ *
+ * @param {string} cooldown_id Skill cooldown ID.
+*/
+async function wait_until_ready(cooldown_id) {
+	// FIXME: next_skill doesn't immediately update
+	await Util.sleep(JIFFIE_MS);
+
+	const next_skill_at = parent.next_skill[cooldown_id];
+	if (!next_skill_at) {
+		throw new TypeError(`Unknown cooldown skill: ${cooldown_id}`);
+	}
+
+	Logging.debug(`Sleeping until '${cooldown_id}' ready`, next_skill_at);
+	await Util.sleep_until(parent.next_skill[cooldown_id]);
 }
 
 /** Active autouse skills */
