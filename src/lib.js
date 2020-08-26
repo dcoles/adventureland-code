@@ -1,25 +1,6 @@
 // Common functions
 // @ts-check
 
-import * as Util from './util.js';
-
-const TOWN_RADIUS = 600;  // px
-
-/**
- * Is the target in Town?
- *
- * @param {object} [target=character] Target to check.
- * @returns {boolean} `true` if the target is in town, otherwise `false`.
- **/
-export function is_in_town(target) {
-	target = target || character;
-	if (target.in != 'main') {
-		// Wrong map
-		return false;
-	}
-	return Util.distance(target.x, target.y, 0, 0) < TOWN_RADIUS;
-}
-
 /**
  * Get nearest monster.
  *

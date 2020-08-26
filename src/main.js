@@ -18,6 +18,7 @@ const HOME_RANGE = 500;
 
 const RIP = 'RIP';
 const IDLE = 'Idle';
+const REST = 'Rest';
 const RETURN_HOME = 'Return Home';
 const REPOSITION = 'Reposition';
 const ATTACK = 'Attack';
@@ -112,6 +113,12 @@ function is_hp_low() {
 	return character.hp < 0.90 * character.max_hp;
 }
 
+/** Are we in a safe place? */
+function is_safe() {
+	// Currently this is just the map origin
+	return Character.distance(0, 0) < 100;
+}
+
 /** Are we in a bad position? */
 function in_bad_position(target) {
 	const dist = Character.distance_to(target);
@@ -200,7 +207,7 @@ async function mainloop() {
 		} else if (is_hp_critically_low()) {
 			// Emergency maneuvers
 			Character.skills.regen_hp.autouse();
-			if (!Lib.is_in_town()) {
+			if (is_safe()) {
 				set_state(PANIC);
 			}
 		} else if (is_mp_critically_low()) {
@@ -237,6 +244,8 @@ async function mainloop() {
 				if (!target) {
 					if (!is_home()) {
 						set_state(RETURN_HOME);
+					} else if (is_hp_low()) {
+						set_state(REST);
 					}
 					break;
 				}
@@ -249,6 +258,19 @@ async function mainloop() {
 					set_state(ATTACK);
 				}
 
+				break;
+
+			case REST:
+				let last_hp = character.hp;
+
+				// Heal until we're fully recovered (or losing HP)
+				Character.skills.regen_hp.autouse();
+				while (character.hp < character.max_hp && character.hp >= last_hp) {
+					last_hp = character.hp;
+					await Util.sleep(IDLE_MS);
+				}
+
+				set_state(IDLE);
 				break;
 
 			case RETURN_HOME:
@@ -328,8 +350,8 @@ async function mainloop() {
 				break;
 
 			case PANIC:
-				if (Character.distance(0, 0) < 100 && character.hp == character.max_hp) {
-					set_state(IDLE);
+				if (is_safe()) {
+					set_state(REST);
 					break;
 				}
 
