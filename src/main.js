@@ -6,7 +6,10 @@ import * as Logging from './logging.js';
 import * as Lib from './lib.js';
 import * as Util from './util.js';
 import * as Character from './character.js';
-import * as BattleLog from './battleLog.js';
+import * as BattleLog from './battlelog.js';
+
+// Re-export Character
+export { Character };
 
 const IDLE_MS = 250;
 const TARGET_MIN_RANGE_FACTOR = 0.60;
