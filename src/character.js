@@ -56,7 +56,7 @@ export function is_in_range(target, skill_id) {
 }
 
 /**
- * Get the distance between the character and target.
+ * Distance between the character and target.
  *
  * @param {object|string} target Target to measure distance to.
  * @returns {number|null} Distance to target or `null` is target isn't on the map.
@@ -70,7 +70,18 @@ export function distance_to(target) {
 		return null;
 	}
 
-	return Util.distance(character.x, character.y, target.x, target.y);
+	return distance(target.x, target.y);
+}
+
+/**
+ * Distance position is away from character.
+ *
+ * @param {number} x x-coordinate.
+ * @param {number} y y-coordinate.
+ * @returns {number} Distance in pixels.
+ */
+export function distance(x, y) {
+	return Util.distance(character.x, character.y, x, y);
 }
 
 /**
