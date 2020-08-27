@@ -151,3 +151,32 @@ export function respawn() {
 	console.debug('Respawning...');
 	window.respawn();
 }
+
+/**
+ * Get your character.
+ *
+ * @see https://adventure.land/docs/code/character/reference.
+ *
+ * @returns {object} Your character object.
+ */
+export function get_character() {
+	return window.character;
+}
+
+/**
+ * Get nearby entities.
+ *
+ * @returns {object} Mapping of entity ID to entity object.
+ */
+export function get_entities() {
+	return window.parent.entities;
+}
+
+/**
+ * Accept party invite.
+ *
+ * @param {string} name Name of the character who set the invitation.
+ */
+export function accept_party_invite(name) {
+	window.accept_party_invite(name);
+}

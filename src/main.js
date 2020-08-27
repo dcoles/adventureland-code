@@ -373,6 +373,19 @@ class Brain {
 	}
 }
 
+/**
+ * Called when invited to a party.
+ *
+ * @param {string} name Name of the character who set the invitation.
+ */
+window.on_party_invite = function(name) {
+	if (Lib.get_player(name).owner != character.owner) {
+		return;
+	}
+
+	Adventure.accept_party_invite(name);
+}
+
 /** Main function */
 async function main() {
 	Logging.info('== Starting CODE ==')

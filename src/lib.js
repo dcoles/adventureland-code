@@ -1,6 +1,8 @@
 // Common functions
 // @ts-check
 
+import * as Adventure from './adventure.js';
+
 /**
  * Get nearest monster.
  *
@@ -18,7 +20,7 @@ export function get_nearest_monster(criteria) {
 	let target_distance = Infinity;
 	const min_xp = criteria.min_xp || 1;  // don't kill puppies
 
-	for (let [id, entity] of Object.entries(parent.entities)) {
+	for (let entity of Object.values(Adventure.get_entities())) {
 		if (entity.type !== 'monster') continue;
 		if (criteria.valid && !criteria.valid.has(entity.mtype)) continue;
 		if (entity.xp < min_xp) continue;
@@ -87,4 +89,27 @@ export function position_to_string(entity) {
 	}
 
 	return s;
+}
+
+/**
+ * Get character by name, if character is nearby.
+ *
+ * @see https://adventure.land/docs/code/character/reference
+ *
+ * @param {string} name Character name.
+ * @returns {object|null} Character object or null.
+ */
+export function get_player(name) {
+	const character = Adventure.get_character();
+	if (name === character.name) {
+		return character;
+	}
+
+	for (let entity of Object.values(Adventure.get_entities())) {
+		if (entity.type === 'character' && entity.name === name) {
+			return entity;
+		}
+	}
+
+	return null;
 }

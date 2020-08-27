@@ -42,6 +42,7 @@ class Character {
 	get instance() { return character.instance; }
 	get x() { return character.x; }
 	get y() { return character.y; }
+	get owner() { return character.owner; }
 	get hp() { return character.hp; }
 	get max_hp() { return character.max_hp; }
 	get mp() { return character.mp; }
