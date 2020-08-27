@@ -41,6 +41,21 @@ export function loot(id_or_arg) {
 	window.loot(id_or_arg);
 }
 
+/** Are we dead? */
+export function is_dead() {
+	return character.rip;
+}
+
+/** Are we fully healed? */
+export function is_fully_healed() {
+	return character.hp == character.max_hp;
+}
+
+/** Are we fully charged? */
+export function is_fully_charged() {
+	return character.mp == character.max_mp;
+}
+
 /**
  * Is the character in range of target.
  *
