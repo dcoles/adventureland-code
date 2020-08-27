@@ -20,6 +20,8 @@ const STOP_MS = 1000;
 const TICK_MS = 1000;
 const TARGET_RANGE_RATIO = 0.90;
 const HOME_RANGE_RADIUS = 500;
+const KITING_THRESHOLD = 0.5;
+const MOVEMENT_TOLLERANCE = 10;
 
 // Global variables
 let g_start_time = null;
@@ -312,10 +314,16 @@ class Brain {
 				break;
 			}
 
+			const difficulty = Lib.target_difficulty(this.target);
+
 			// Try to keep target at a good range
 			const target_dist = TARGET_RANGE_RATIO * character.range;
-			if (Math.abs(dist - target_dist) > 10) {
-				await character.move_towards(this.target, dist - target_dist);
+			const move = dist - target_dist;
+
+			if (Math.abs(move) > MOVEMENT_TOLLERANCE) {
+				if (difficulty > KITING_THRESHOLD || move > 0) {
+					await character.move_towards(this.target, move);
+				}
 			}
 
 			await Util.sleep(IDLE_MS);
