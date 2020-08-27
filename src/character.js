@@ -37,6 +37,29 @@ class Character {
 		}
 	}
 
+	// Re-exports of standard attributes
+	get map() { return character.map; }
+	get instance() { return character.instance; }
+	get x() { return character.x; }
+	get y() { return character.y; }
+	get hp() { return character.hp; }
+	get max_hp() { return character.max_hp; }
+	get mp() { return character.mp; }
+	get max_mp() { return character.max_mp; }
+	get range() { return character.range; }
+
+	/**
+	 * Register callback for Character events.
+	 *
+	 * @see https://adventure.land/docs/code/character/events
+	 *
+	 * @param {string} action Action to monitor.
+	 * @param {Function} callback Callback function.
+	 */
+	on(action, callback) {
+		return character.on(action, callback)
+	}
+
 	/**
 	 * Change character's active target.
 	 *

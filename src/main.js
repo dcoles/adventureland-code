@@ -9,11 +9,11 @@ import * as Adventure from './adventure.js';
 import * as Logging from './logging.js';
 import * as Lib from './lib.js';
 import * as Util from './util.js';
-import * as CharacterModule from './character.js';
+import * as Character from './character.js';
 import * as BattleLog from './battlelog.js';
 
 // Your Character
-export const Character = CharacterModule.get_character();
+export const character = Character.get_character();
 
 const IDLE_MS = 250;
 const STOP_MS = 1000;
@@ -100,7 +100,7 @@ class Brain {
 
 	/** Are we interrupted? */
 	is_interrupted() {
-		return this.stopped || Character.is_dead();
+		return this.stopped || character.is_dead();
 	}
 
 	/** Are we safe? */
@@ -108,7 +108,7 @@ class Brain {
 		const hp_ratio = character.hp / character.max_hp;
 
 		// Must either have more than 10% HP or we're within 100px of the map origin
-		return hp_ratio > 0.10 || Character.distance(0, 0) < 100;
+		return hp_ratio > 0.10 || character.distance(0, 0) < 100;
 	}
 
 	/** Is our target alive? */
@@ -119,7 +119,7 @@ class Brain {
 	/** Are we within our home range? */
 	is_home() {
 		return character.map == this._home.map
-		&& Character.distance(this._home.x, this._home.y) < this._home.range;
+		&& character.distance(this._home.x, this._home.y) < this._home.range;
 	}
 
 	/** Called on major state updates. */
@@ -135,7 +135,7 @@ class Brain {
 			return;
 		}
 
-		Character.loot()
+		character.loot()
 		this._update_autocasts();
 	}
 
@@ -147,7 +147,7 @@ class Brain {
 		this.stopped = true;
 
 		// Cease all motor functions
-		Character.stop_all();
+		character.stop_all();
 	}
 
 	/** Resume the event loop. */
@@ -173,7 +173,7 @@ class Brain {
 			if (this.stopped) {
 				this.on_state('Stop');
 				await this._stop();
-			} else if (Character.is_dead()) {
+			} else if (character.is_dead()) {
 				this.on_state('RIP');
 				await this._rip();
 			} else if (!this.is_safe()) {
@@ -207,7 +207,7 @@ class Brain {
 			if (data.damage > 0) {
 				const attacker = get_entity(data.actor);
 				Logging.warn('Attacked by', attacker ? attacker.name : '???');
-				Character.stop('move');
+				character.stop('move');
 				this.set_target(attacker);
 			}
 		});
@@ -231,16 +231,16 @@ class Brain {
 		const mp_ratio = character.mp / character.max_mp;
 
 		if (hp_ratio < 0.10) {  // below 10% HP
-			Character.skills.regen_hp.autouse(null, null, () => !Character.is_fully_healed() && !this.is_interrupted());
+			character.skills.regen_hp.autouse(null, null, () => !character.is_fully_healed() && !this.is_interrupted());
 		} else if (mp_ratio < 0.10) {  // below 10% MP
 			// We need mana to cast!
-			Character.skills.regen_mp.autouse(null, null, () => !Character.is_fully_charged() && !this.is_interrupted());
+			character.skills.regen_mp.autouse(null, null, () => !character.is_fully_charged() && !this.is_interrupted());
 		} else if (hp_ratio < 1.00) {  // below 100% HP
 			// Restore HP
-			Character.skills.regen_hp.autouse(null, null, () => !Character.is_fully_healed() && !this.is_interrupted());
+			character.skills.regen_hp.autouse(null, null, () => !character.is_fully_healed() && !this.is_interrupted());
 		} else if (mp_ratio < 1.00) {  // below 100% MP
 			// Restore MP
-			Character.skills.regen_mp.autouse(null, null, () => !Character.is_fully_charged() && !this.is_interrupted());
+			character.skills.regen_mp.autouse(null, null, () => !character.is_fully_charged() && !this.is_interrupted());
 		}
 	}
 
@@ -266,24 +266,24 @@ class Brain {
 	/** Emergency maneuvers. */
 	async _panic() {
 		// Stop whatever we were doing
-		Character.stop_all();
+		character.stop_all();
 
-		if (Character.skills.blink && Character.skills.blink.is_usable()) {
+		if (character.skills.blink && character.skills.blink.is_usable()) {
 			// Mages can blink away
-			await Character.skills.blink.use([0, 0]);
+			await character.skills.blink.use([0, 0]);
 
 		} else {
 			// We're probably under attack
 			if (this.target && !this.target.dead) {
 				// Start running away
-				Character.move_towards(this.target, -999);
+				character.move_towards(this.target, -999);
 
 				// Pop a potion
-				await Character.skills.use_hp.use_when_ready();
+				await character.skills.use_hp.use_when_ready();
 			}
 
 			// Warp to map origin
-			await Character.skills.use_town.use_when_ready();
+			await character.skills.use_town.use_when_ready();
 		}
 
 		// Heal up
@@ -304,10 +304,10 @@ class Brain {
 	/** Attack current target */
 	async _attack() {
 		// Start auto-attacking
-		Character.skills.attack.autouse(this.target);
+		character.skills.attack.autouse(this.target);
 
 		while (this.is_target_alive() && !this.is_interrupted()) {
-			const dist = Character.distance_to(this.target);
+			const dist = character.distance_to(this.target);
 			if (!dist) {
 				break;
 			}
@@ -315,7 +315,7 @@ class Brain {
 			// Try to keep target at a good range
 			const target_dist = TARGET_RANGE_RATIO * character.range;
 			if (Math.abs(dist - target_dist) > 10) {
-				await Character.move_towards(this.target, dist - target_dist);
+				await character.move_towards(this.target, dist - target_dist);
 			}
 
 			await Util.sleep(IDLE_MS);
@@ -356,7 +356,7 @@ class Brain {
 	async _return_home() {
 		Logging.info(`Returning to home in ${this._home.map}`);
 		try {
-			await Character.xmove(this._home.x, this._home.y, this._home.map);
+			await character.xmove(this._home.x, this._home.y, this._home.map);
 		} catch (e) {
 			if (e.reason != 'interrupted') {
 				throw e;
@@ -372,7 +372,7 @@ async function main() {
 	g_start_time = new Date();
 	Logging.info('Start time:', g_start_time);
 
-	Character.change_target(null);
+	character.change_target(null);
 
 	BattleLog.monitor();
 
