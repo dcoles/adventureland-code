@@ -369,14 +369,12 @@ class SkillWrapper {
 				await this.use(target, extra_args);
 			} catch (e) {
 				if (e.reason == 'not_found') {
+					// Target has gone. Cancel autouse.
 					break;
 				}
-				if (e.reason == 'too_far') {
-					// FIXME: Wait until target is in range/gone
-					await Util.sleep(500);
-					continue;
-				}
 				Logging.warn(`Autouse ${this.skill.name} failed`, e.reason);
+				// FIXME: Determine exactly when we can actually use the skill.
+				await Util.sleep(500);
 			}
 		} while (true)
 
