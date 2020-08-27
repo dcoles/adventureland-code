@@ -9,11 +9,11 @@ import * as Adventure from './adventure.js';
 import * as Logging from './logging.js';
 import * as Lib from './lib.js';
 import * as Util from './util.js';
-import * as Character from './character.js';
+import * as CharacterModule from './character.js';
 import * as BattleLog from './battlelog.js';
 
-// Re-export Character
-export { Character };
+// Your Character
+export const Character = CharacterModule.get_character();
 
 const IDLE_MS = 250;
 const STOP_MS = 1000;
