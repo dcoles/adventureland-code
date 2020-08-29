@@ -180,3 +180,29 @@ export function get_entities() {
 export function accept_party_invite(name) {
 	window.accept_party_invite(name);
 }
+
+/**
+ * Get the width of an entity.
+ *
+ * Note: This function is not in the docs, but used by other
+ * documented functions like `distance`.
+ *
+ * @param {object} entity An entity with dimensions.
+ * @returns {number} Width in pixels.
+ */
+export function get_width(entity) {
+	return window.get_width(entity);
+}
+
+/**
+ * Get the height of an entity.
+ *
+ * Note: This function is not in the docs, but used by other
+ * documented functions like `distance`.
+ *
+ * @param {object} entity An entity with dimensions.
+ * @returns {number} Height in pixels
+ */
+export function get_height(entity) {
+	return window.get_height(entity);
+}
