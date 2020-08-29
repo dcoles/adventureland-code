@@ -323,13 +323,24 @@ class Brain {
 			const move = dist - target_dist;
 
 			if (Math.abs(move) > MOVEMENT_TOLLERANCE) {
-				if (this.target_difficulty > KITING_THRESHOLD || move > 0) {
+				if (this.is_kiting() || move > 0) {
 					await character.move_towards(this.target, move);
 				}
 			}
 
 			await Util.sleep(IDLE_MS);
 		}
+	}
+
+	/**
+	 * Are we kiting enemies?
+	 *
+	 * @returns {boolean} True if kiting, otherwise False.
+	 */
+	is_kiting() {
+		// Always kite difficult enemies or if our HP is below 50%
+		const hp_ratio = character.hp / character.max_hp;
+		return this.target_difficulty > KITING_THRESHOLD || hp_ratio < 0.50;
 	}
 
 	/** Find and move to our next target. */
