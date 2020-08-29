@@ -21,7 +21,7 @@ const TICK_MS = 1000;
 const TARGET_RANGE_RATIO = 0.90;
 const HOME_RANGE_RADIUS = 500;
 const KITING_THRESHOLD = 0.5;
-const MOVEMENT_TOLLERANCE = 10;
+const MOVEMENT_TOLLERANCE = 50;
 
 // Global variables
 let g_start_time = null;
