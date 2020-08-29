@@ -144,7 +144,8 @@ class Brain {
 	/** Regular tick. */
 	on_tick(tick) {
 		Logging.debug('Tick', tick);
-		if (this.stopped) {
+		if (character.is_dead()) {
+			// Nothing to do but go through his clothes and look for loose change.
 			return;
 		}
 
