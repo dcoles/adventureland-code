@@ -2,6 +2,7 @@
 // @ts-check
 
 import * as Adventure from './adventure.js';
+import * as Util from './util.js';
 
 /**
  * Get nearest monster.
@@ -50,6 +51,26 @@ export function get_nearest_monster(criteria) {
 export function movement_time(target, distance) {
 	return distance / target.speed * 1000;
 }
+
+/**
+ * Calculate the distance between two points (`x1`, `y1`) and (`x2`, `y2`).
+ *
+ * This differs from the built-in `distance` function that does something
+ * that is almost, but not quite, entirely unlike returning the distance
+ * between two points (it lacks any documentation).
+ *
+ * @see https://adventure.land/docs/code/functions/distance
+ *
+ * @param {number} x1 x-coordinate of first point.
+ * @param {number} y1 y-coordinate of first point.
+ * @param {number} x2 x-coordinate of second point.
+ * @param {number} y2 y-coordinate of second point.
+ * @returns {number} Distance in pixels.
+ */
+export function distance(x1, y1, x2, y2) {
+	return Util.vector_length([x1 - x2, y1 - y2]);
+}
+
 
 /**
  * Calculate the difficulty of a target.

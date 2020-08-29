@@ -2,7 +2,7 @@
 // @ts-check
 
 import * as Adventure from './adventure.js';
-import * as Util from './util.js';
+import * as Lib from './lib.js';
 import * as Skills from './skills.js';
 
 // Globals
@@ -150,7 +150,7 @@ class Character {
 	 * @returns {number} Distance in pixels.
 	 */
 	distance(x, y) {
-		return Util.distance(character.x, character.y, x, y);
+		return Lib.distance(character.x, character.y, x, y);
 	}
 
 	/**
@@ -192,7 +192,7 @@ class Character {
 
 				//window.draw_line(target_x, target_y, new_x, new_y, null, 0x0000ff);
 				if (window.can_move_to(new_x, new_y)
-				&& Util.distance(character.x, character.y, new_x, new_y) > Math.abs(distance) / 2) {
+				&& Lib.distance(character.x, character.y, new_x, new_y) > Math.abs(distance) / 2) {
 					//window.draw_circle(new_x, new_y, 4, null, 0x00ff00);
 					return await Adventure.move(new_x, new_y);
 				} else {
