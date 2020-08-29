@@ -2,7 +2,10 @@
 // @ts-check
 
 // TODO:
-// - Avoid moving on top of other entities
+// - Reintroduce the minimum distance check
+// - Save brain state (e.g. stopped)
+// - A better smart_move that avoids hostiles
+// - Factor out movement engine
 // - Implement "priority" system for needs
 
 import * as Adventure from './adventure.js';
