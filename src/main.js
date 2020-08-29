@@ -2,7 +2,6 @@
 // @ts-check
 
 // TODO:
-// - Reintroduce the minimum distance check
 // - Save brain state (e.g. stopped)
 // - A better smart_move that avoids hostiles
 // - Factor out movement engine

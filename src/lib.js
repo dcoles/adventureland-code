@@ -71,7 +71,6 @@ export function distance(x1, y1, x2, y2) {
 	return Util.vector_length([x1 - x2, y1 - y2]);
 }
 
-
 /**
  * Calculate the difficulty of a target.
  *
@@ -190,5 +189,5 @@ export function will_collide(a, b, t_max) {
 	// Can only overlap if first overlap time is before the last overlap time
 	const u0_max = Math.max(...u0);
 	const u1_min = Math.min(...u1);
-	return u0_max < u1_min && u0_max <= t_max;
+	return u0_max < u1_min && u0_max <= t_max + 0.250;  // Slight fudge
 }

@@ -3,7 +3,10 @@
 
 import * as Adventure from './adventure.js';
 import * as Lib from './lib.js';
+import * as Util from './util.js';
 import * as Skills from './skills.js';
+
+const DEBUG_COLLISION = true;
 
 // Globals
 let g_character = null;
@@ -48,6 +51,7 @@ class Character {
 	get mp() { return character.mp; }
 	get max_mp() { return character.max_mp; }
 	get range() { return character.range; }
+	get speed() { return character.speed; }
 
 	/**
 	 * Register callback for Character events.
@@ -176,33 +180,78 @@ class Character {
 		const target_x = x1 + distance * Math.cos(theta);
 		const target_y = y1 + distance * Math.sin(theta);
 
-		if (window.can_move_to(target_x, target_y)) {
+		DEBUG_COLLISION && window.clear_drawings();
+		if (window.can_move_to(target_x, target_y)
+		&& !this.will_collide_moving_to(target_x, target_y)) {
 			return await Adventure.move(target_x, target_y);
 		}
 
 		// Try to find a spot we can move to
-		//window.clear_drawings();
-		for (let r = 50; r < 2 * Math.abs(distance); r *= 1.5) {
-			//window.draw_circle(target_x, target_y, r);
-			for (let n = 0; n < 8; n++) {
+		const max_distance = 2 * Math.abs(distance);
+		for (let r = 20; r < max_distance; r = 4 / 3 * r) {
+			DEBUG_COLLISION && window.draw_circle(target_x, target_y, r);
+			for (let m = 0; m < 8; m++) {
 				// Pick a random angle
 				const theta2 = Math.random() * 2 * Math.PI;
 				const new_x = target_x + r * Math.cos(theta2);
 				const new_y = target_y + r * Math.sin(theta2);
+				DEBUG_COLLISION && window.draw_line(target_x, target_y, new_x, new_y, null, 0x0000ff);
 
-				//window.draw_line(target_x, target_y, new_x, new_y, null, 0x0000ff);
-				if (window.can_move_to(new_x, new_y)
-				&& Lib.distance(character.x, character.y, new_x, new_y) > Math.abs(distance) / 2) {
-					//window.draw_circle(new_x, new_y, 4, null, 0x00ff00);
-					return await Adventure.move(new_x, new_y);
-				} else {
-					//window.draw_circle(new_x, new_y, 2, null, 0xff0000);
+				if (!window.can_move_to(new_x, new_y)) {
+					// Unreachable position.
+					window.draw_circle(new_x, new_y, 2, null, 0xff0000);
+					continue;
 				}
+
+				const dist = Lib.distance(character.x, character.y, new_x, new_y);
+				if (dist < distance / 2) {
+					// Must move a minimum of half the desired distance.
+					// This is to avoid us going nowhere.
+					continue;
+				}
+
+				if (dist < max_distance / 2 && this.will_collide_moving_to(new_x, new_y)) {
+					// Avoid colliding with entities, except if we're searching really far.
+					// Better to run past an enemy than to get stuck against a wall.
+					DEBUG_COLLISION && window.draw_circle(new_x, new_y, 2, null, 0xffff00);
+					continue;
+				}
+
+				DEBUG_COLLISION && window.draw_circle(new_x, new_y, 4, null, 0x00ff00);
+				return await Adventure.move(new_x, new_y);
 			}
 		}
 
 		// Just try to move as much as possible
 		return await Adventure.move(target_x, target_y);
+	}
+
+	/**
+	 * Check if character will likely collide with an entity while moving
+	 * towards a point.
+	 *
+	 * @param {number} x target x-coordinate.
+	 * @param {number} y target y-coordinate.
+	 * @returns {boolean} True if it appears we'd collide with an entity, otherwise False.
+	 */
+	will_collide_moving_to(x, y) {
+		// Since we're not yet moving, work out our intended motion
+		const d = [x - this.x, y - this.y];
+		const v = Util.vector_scale(Util.vector_normalize(d), this.speed);
+		const t_max = d[0] / v[0];
+		const char = {x: this.x, y: this.y, vx: v[0], vy: v[1]};
+
+		// Check if this motion collides with any of the entities
+		for (let entity of Object.values(Adventure.get_entities())) {
+			if (Lib.will_collide(entity, char, t_max)) {
+				window.draw_circle(entity.x, entity.y, entity.width / 2, null, 0xff0000);
+				return true;
+			} else {
+				window.draw_circle(entity.x, entity.y, entity.width / 2, null, 0x0000ff);
+			}
+		}
+
+		return false;
 	}
 
 	/**
