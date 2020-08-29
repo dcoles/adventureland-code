@@ -98,6 +98,7 @@ class Brain {
 		this.home = null;
 		this.tick = 0;
 		this.target = null;
+		this.target_difficulty = 0;
 	}
 
 	/** Are we interrupted? */
@@ -160,12 +161,15 @@ class Brain {
 
 	/** Set current target. */
 	set_target(target) {
-		if (target) {
-			const difficulty = Lib.target_difficulty(target);
-			Logging.info(`Target: ${target.name} (${difficulty.toFixed(1)})`);
+		if (!target) {
+			this.target = null;
+			this.target_difficulty = 0;
+			return;
 		}
 
 		this.target = target;
+		this.target_difficulty = Lib.target_difficulty(this.target);
+		Logging.info(`Target: ${target.name} (${this.target_difficulty.toFixed(1)})`);
 	}
 
 	/** Run the main loop. */
@@ -314,14 +318,12 @@ class Brain {
 				break;
 			}
 
-			const difficulty = Lib.target_difficulty(this.target);
-
 			// Try to keep target at a good range
 			const target_dist = TARGET_RANGE_RATIO * character.range;
 			const move = dist - target_dist;
 
 			if (Math.abs(move) > MOVEMENT_TOLLERANCE) {
-				if (difficulty > KITING_THRESHOLD || move > 0) {
+				if (this.target_difficulty > KITING_THRESHOLD || move > 0) {
 					await character.move_towards(this.target, move);
 				}
 			}
