@@ -183,6 +183,7 @@ class Brain {
 		this.target = target;
 		this.target_difficulty = Lib.target_difficulty(this.target);
 		Logging.info(`Target: ${target.name} (${this.target_difficulty.toFixed(1)})`);
+		character.change_target(target);
 	}
 
 	/** Run the main loop. */
