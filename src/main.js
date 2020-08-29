@@ -125,6 +125,12 @@ class Brain {
 		&& character.distance(this._home.x, this._home.y) < this._home.range;
 	}
 
+	/** Is our HP getting low? */
+	is_low_hp() {
+		const hp_ratio = character.hp / character.max_hp;
+		return hp_ratio < 0.30;  // Below 30%
+	}
+
 	/** Called on major state updates. */
 	on_state(state) {
 		Logging.info('State', state);
@@ -188,6 +194,9 @@ class Brain {
 			} else if (this.is_target_alive()) {
 				this.on_state('Attack');
 				await this._attack();
+			} else if (this.is_low_hp()) {
+				this.on_state('Rest');
+				await this._rest();
 			} else {
 				this.on_state('Find');
 				await this._find_next_target();
@@ -250,7 +259,6 @@ class Brain {
 		}
 	}
 
-
 	/** Wait until loop is restarted. */
 	async _stop() {
 		while (this.stopped) {
@@ -293,11 +301,11 @@ class Brain {
 		}
 
 		// Heal up
-		await this._rest();
+		await this._heal_up();
 	}
 
 	/** Heal until we're fully recovered (or start losing HP). */
-	async _rest() {
+	async _heal_up() {
 		let last_hp = character.hp;
 
 		// Let autocasts do their job
@@ -305,6 +313,12 @@ class Brain {
 			last_hp = character.hp;
 			await Util.sleep(IDLE_MS);
 		}
+	}
+
+	/** Return to home and recover some HP. */
+	async _rest() {
+		await this._return_home();
+		await this._heal_up();
 	}
 
 	/** Attack current target */
