@@ -269,7 +269,7 @@ class Brain {
 	/** "He's dead Jim." */
 	async _rip() {
 		Logging.warn('Died at', new Date());
-		Adventure.stop();
+		character.stop_all();
 
 		// Respawn after short delay (respawn has 12-sec cooldown)
 		Logging.info('Respawning in 15s...')
