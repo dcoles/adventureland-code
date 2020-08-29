@@ -27,6 +27,10 @@ const MOVEMENT_TOLLERANCE = 50;
 let g_start_time = null;
 let g_brain = null;
 
+export function get_brain() {
+	return g_brain;
+}
+
 /**
  * Report a critical error.
  *
@@ -418,7 +422,7 @@ async function main() {
 	Logging.info('== Starting CODE ==')
 
 	g_start_time = new Date();
-	Logging.info('Start time:', g_start_time);
+	Logging.info('Start time', g_start_time);
 
 	character.change_target(null);
 
