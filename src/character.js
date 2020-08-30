@@ -186,15 +186,17 @@ class Character {
 	 * @returns {Promise} Resolves when finished moving.
 	 **/
 	async move_towards(target, distance) {
-		distance = distance || this.distance_between(target) - 0.80 * this.range;
-
 		if (target instanceof String) {
 			target = get_entity(target);
 		}
 
-		if (!target) {
-			return null;
+		// Must be on the same map
+		if (!target || target.map != character.map) {
+			throw {'reason': 'not_found'};
 		}
+
+		// Default to 80% of range
+		distance = distance || this.distance_between(target) - 0.80 * this.range;
 
 		// Grab coordinates, lest they change
 		const [x1, y1] = [character.x, character.y];
@@ -211,7 +213,7 @@ class Character {
 
 		// Try to find a spot we can move to
 		const max_distance = 2 * Math.abs(distance);
-		for (let r = 20; r < max_distance; r = 4 / 3 * r) {
+		for (let r = 20; r < max_distance; r = Math.min(4 / 3 * r, max_distance)) {
 			DEBUG_COLLISION && window.draw_circle(target_x, target_y, r);
 			for (let m = 0; m < 8; m++) {
 				// Pick a random angle
@@ -310,10 +312,11 @@ class Character {
 	 */
 	async xmove(x, y, map) {
 		map = map || character.map;
+		const location = {x: x, y: y, map: map};
 		if (character.map === map && Adventure.can_move_to(x, y)) {
-			return Adventure.move(x, y);
+			return await this.move_towards(location);
 		} else {
-			return Adventure.smart_move({x: x, y: y, map: map});
+			return await Adventure.smart_move(location);
 		}
 	}
 

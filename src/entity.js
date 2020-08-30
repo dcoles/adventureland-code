@@ -113,7 +113,7 @@ export function compare_hp(a, b) {
  * @returns {number|null} Distance in pixels or null if not on the same map.
  */
 export function distance_between(a, b) {
-	if (a.in !== b.in) {
+	if (a.map !== b.map) {
 		return null;
 	}
 
