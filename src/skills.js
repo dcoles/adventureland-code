@@ -153,8 +153,10 @@ class Skill {
 	 */
 	async use(target, extra_args) {
 		Logging.debug('Using skill', this.skill_id);
-		if (this.skill_id == 'attack') {
+		if (this.skill_id === 'attack') {
 			return await attack(target);
+		} else if (this.skill_id === 'heal') {
+			return await heal(target);
 		} else {
 			const result = await use_skill(this.skill_id, target, extra_args);
 			// FIXME: Workaround for use-skill not returning a Promise
