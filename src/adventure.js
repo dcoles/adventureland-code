@@ -164,6 +164,15 @@ export function get_character() {
 }
 
 /**
+ * Get your party members.
+ *
+ * @returns {object} Party object.
+ */
+export function get_party() {
+	return window.get_party();
+}
+
+/**
  * Get details about all of our characters.
  *
  * @returns {Array} Array of character details.
