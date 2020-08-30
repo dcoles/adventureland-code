@@ -312,4 +312,8 @@ class Character {
 			return Adventure.smart_move({x: x, y: y, map: map});
 		}
 	}
+
+	toString() {
+		return `[Character ${this.name}]`;
+	}
 }

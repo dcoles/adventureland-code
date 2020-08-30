@@ -244,6 +244,10 @@ class Skill {
 		Logging.debug(`Canceling autouse of ${token.skill.skill_id}`);
 		release_autouse(this.get_token());
 	}
+
+	toString() {
+		return `[Skill ${this.skill_id}]`;
+	}
 }
 
 /**
