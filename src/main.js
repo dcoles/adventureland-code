@@ -423,16 +423,29 @@ class Brain {
 }
 
 /**
- * Called when invited to a party.
+ * Called when invited to join another character's party.
  *
- * @param {string} name Name of the character who set the invitation.
+ * @param {string} name Name of the character who sent the invitation.
  */
 window.on_party_invite = function(name) {
-	if (Adventure.get_player(name).owner != character.owner) {
+	if (Adventure.get_character(name).owner !== character.owner) {
 		return;
 	}
 
 	Adventure.accept_party_invite(name);
+}
+
+/**
+ * Called when another character requests to join our party.
+ *
+ * @param {string} name Name of the character who sent the request.
+*/
+window.on_party_request = function(name) {
+	if (Adventure.get_character(name).owner !== character.owner) {
+		return;
+	}
+
+	Adventure.accept_party_request(name);
 }
 
 /** Main function */

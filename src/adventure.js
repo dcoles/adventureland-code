@@ -182,12 +182,39 @@ export function get_entities() {
 }
 
 /**
+ * Send party invite.
+ *
+ * @param {string} name Name of the character to invite.
+ */
+export function send_party_invite(name) {
+	window.send_party_invite(name);
+}
+
+/**
  * Accept party invite.
  *
- * @param {string} name Name of the character who set the invitation.
+ * @param {string} name Name of the character who sent the invitation.
  */
 export function accept_party_invite(name) {
 	window.accept_party_invite(name);
+}
+
+/**
+ * Send party request.
+ *
+ * @param {string} name Name of the character to request to party with.
+ */
+export function send_party_request(name) {
+	window.send_party_request(name);
+}
+
+/**
+ * Accept party request.
+ *
+ * @param {string} name Name of the character who sent the request.
+ */
+export function accept_party_request(name) {
+	window.accept_party_request(name);
 }
 
 /**
