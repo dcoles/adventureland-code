@@ -76,9 +76,9 @@ export function change_target(target) {
 		return;
 	}
 
-	if (DEBUG) {
+	if (DEBUG && window.graphics) {
 		let circle = window.draw_circle(target.x, target.y, target.range, null, 0xff0000);
-		setTimeout(() => circle.destroy(), 500);
+		setTimeout(function () { circle && circle.destroy() }, 500);
 	}
 
 	window.change_target(target);
