@@ -17,6 +17,9 @@ import * as BattleLog from './battlelog.js';
 // Your Character
 export const character = Character.get_character();
 
+// The #maincode
+const maincode = Adventure.get_maincode();
+
 const IDLE_MS = 250;
 const STOP_MS = 1000;
 const TICK_MS = 1000;

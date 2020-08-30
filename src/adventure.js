@@ -265,3 +265,16 @@ export function get_player(name) {
 
 	return null;
 }
+
+/**
+ * Access the `#maincode` namespace.
+ *
+ * @return {object} The `#maincode` `Window`.
+ */
+export function get_maincode() {
+	if (window.character.bot) {
+		return window.parent.parent.maincode.contentWindow;
+	} else {
+		return window;
+	}
+}
