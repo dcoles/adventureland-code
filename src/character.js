@@ -41,17 +41,33 @@ class Character {
 	}
 
 	// Re-exports of standard attributes
-	get map() { return character.map; }
-	get instance() { return character.instance; }
-	get x() { return character.x; }
-	get y() { return character.y; }
+	get name() { return character.name; }
 	get owner() { return character.owner; }
+	get ctype() { return character.ctype; }
+	get party() { return character.party; }
 	get hp() { return character.hp; }
 	get max_hp() { return character.max_hp; }
 	get mp() { return character.mp; }
 	get max_mp() { return character.max_mp; }
-	get range() { return character.range; }
+	get level() { return character.level; }
+	get str() { return character.str; }
+	get int() { return character.int; }
+	get dex() { return character.dex; }
+	get vit() { return character.vit; }
+	get for() { return character.for; }
+	get attack() { return character.attack; }
+	get frequency() { return character.frequency; }
 	get speed() { return character.speed; }
+	get range() { return character.range; }
+	get targets() { return character.targets; }
+	get target() { return character.target; }
+	get in() { return character.in; }
+	get map() { return character.map; }
+	get x() { return character.x; }
+	get y() { return character.y; }
+	get moving() { return character.moving; }
+	get vx() { return character.vx; }
+	get vy() { return character.vy; }
 
 	/**
 	 * Register callback for Character events.
