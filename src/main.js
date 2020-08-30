@@ -81,18 +81,15 @@ export function set_target(target) {
  * Set character's home location.
  *
  * @param {object} [location] Location to set as home (default: current location).
- * @param {number} [range=100] The radius of the home location.
  * @returns {object} Home location set.
  */
-export function set_home(location, range) {
+export function set_home(location) {
 	location = location || {x: character.x, y: character.y, map: character.map};
-	range = range || 100;
 
-	Logging.info(`Setting home: ${Entity.location_to_string(location)} (range: ${range})`);
-	const home = Object.assign({range: range}, location);
-	Adventure.set('home', home);
+	Logging.info(`Setting home: ${Entity.location_to_string(location)}`);
+	Adventure.set('home', location);
 
-	return home
+	return location;
 }
 
 /**
@@ -133,8 +130,8 @@ class Brain {
 
 	/** Are we within our home range? */
 	is_home() {
-		return character.map == this._home.map
-		&& character.distance(this._home.x, this._home.y) < this._home.range;
+		return character.map === this.home.map
+		&& character.distance(this.home.x, this.home.y) < HOME_RANGE_RADIUS;
 	}
 
 	/** Is our HP getting low? */
@@ -419,9 +416,9 @@ class Brain {
 
 	/** Return to our home location */
 	async _return_home() {
-		Logging.info(`Returning to home in ${this._home.map}`);
+		Logging.info(`Returning to home in ${this.home.map}`);
 		try {
-			await character.xmove(this._home.x, this._home.y, this._home.map);
+			await character.xmove(this.home.x, this.home.y, this.home.map);
 		} catch (e) {
 			if (e.reason != 'interrupted') {
 				throw e;
