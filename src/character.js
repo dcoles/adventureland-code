@@ -178,10 +178,12 @@ class Character {
 	 * Move towards a target.
 	 *
 	 * @param {object|string} target Target to move towards.
-	 * @param {number} distance Distance to move in pixels.
+	 * @param {number} [distance] Distance to move in pixels (default: 80% of range).
 	 * @returns {Promise} Resolves when finished moving.
 	 **/
 	async move_towards(target, distance) {
+		distance = distance || this.distance_between(target) - 0.80 * this.range;
+
 		if (target instanceof String) {
 			target = get_entity(target);
 		}
