@@ -9,7 +9,7 @@
 
 import * as Adventure from './adventure.js';
 import * as Logging from './logging.js';
-import * as Lib from './lib.js';
+import * as Entity from './entity.js';
 import * as Util from './util.js';
 import * as Character from './character.js';
 import * as BattleLog from './battlelog.js';
@@ -22,6 +22,8 @@ const STOP_MS = 1000;
 const TICK_MS = 1000;
 const TARGET_RANGE_RATIO = 0.90;
 const HOME_RANGE_RADIUS = 500;
+const MIN_DIFFICULTY = 0.0;
+const MAX_DIFFICULTY = 9.0;
 const KITING_THRESHOLD = 0.5;
 const MOVEMENT_TOLLERANCE = 50;
 
@@ -181,7 +183,7 @@ class Brain {
 		}
 
 		this.target = target;
-		this.target_difficulty = Lib.target_difficulty(this.target);
+		this.target_difficulty = Entity.difficulty(this.target);
 		Logging.info(`Target: ${target.name} (${this.target_difficulty.toFixed(1)})`);
 		character.change_target(target);
 	}
@@ -222,7 +224,7 @@ class Brain {
 			this._home = set_home(null, HOME_RANGE_RADIUS);
 		}
 
-		Logging.info(`Home: ${Lib.position_to_string(this._home)} on ${this._home.map} (range: ${this._home.range})`);
+		Logging.info(`Home: ${Entity.to_string(this._home)} on ${this._home.map} (range: ${this._home.range})`);
 		window.draw_circle(this._home.x, this._home.y, this._home.range, null, 0xffff00);
 
 		// Focus on attacker when hit
@@ -335,7 +337,7 @@ class Brain {
 		character.skills.attack.autouse(this.target);
 
 		while (this.is_target_alive() && !this.is_interrupted()) {
-			const dist = character.distance_to(this.target);
+			const dist = character.distance_between(this.target);
 			if (!dist) {
 				break;
 			}
@@ -387,12 +389,24 @@ class Brain {
 
 	/** Try to pick a new target. */
 	_pick_target() {
-		this.set_target(Lib.get_nearest_monster({
-			min_difficulty: 0.1,
-			max_difficulty: 9,
-			path_check: true,
-			no_target: true,
-		}));
+		if (character.targets) {
+			// Someone is trying to attack us! Attack them back!
+			const targeted_by = Entity.get_nearest_monsters({target: character})
+			if (targeted_by.length != 0) {
+				this.set_target(targeted_by[0]);
+				return;
+			}
+		}
+
+		for (let monster of Entity.get_nearest_monsters({path_check: true, no_target: true})) {
+			const difficulty = Entity.difficulty(monster);
+			if (difficulty < MIN_DIFFICULTY || difficulty > MAX_DIFFICULTY) {
+				continue;
+			}
+
+			this.set_target(monster);
+			break;
+		}
 	}
 
 	/** Return to our home location */
@@ -414,7 +428,7 @@ class Brain {
  * @param {string} name Name of the character who set the invitation.
  */
 window.on_party_invite = function(name) {
-	if (Lib.get_player(name).owner != character.owner) {
+	if (Adventure.get_player(name).owner != character.owner) {
 		return;
 	}
 

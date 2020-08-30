@@ -2,7 +2,7 @@
 // @ts-check
 
 import * as Adventure from './adventure.js';
-import * as Lib from './lib.js';
+import * as Entity from './entity.js';
 import * as Util from './util.js';
 import * as Skills from './skills.js';
 
@@ -147,19 +147,15 @@ class Character {
 	/**
 	 * Distance between the character and target.
 	 *
-	 * @param {object|string} target Target to measure distance to.
-	 * @returns {number|null} Distance to target or `null` is target isn't on the map.
+	 * @param {object|string} entity Entity to measure distance to.
+	 * @returns {number|null} Distance in pixels or or `null` if entity is not on the same map.
 	 */
-	distance_to(target) {
-		if (target instanceof String) {
-			target = get_entity(target);
+	distance_between(entity) {
+		if (entity instanceof String) {
+			entity = get_entity(entity);
 		}
 
-		if (!target || character.in != target.in) {
-			return null;
-		}
-
-		return this.distance(target.x, target.y);
+		return Entity.distance_between(this, entity);
 	}
 
 	/**
@@ -170,7 +166,7 @@ class Character {
 	 * @returns {number} Distance in pixels.
 	 */
 	distance(x, y) {
-		return Lib.distance(character.x, character.y, x, y);
+		return Util.distance(character.x, character.y, x, y);
 	}
 
 	/**
@@ -219,7 +215,7 @@ class Character {
 					continue;
 				}
 
-				const dist = Lib.distance(character.x, character.y, new_x, new_y);
+				const dist = Util.distance(character.x, character.y, new_x, new_y);
 				if (dist < distance / 2) {
 					// Must move a minimum of half the desired distance.
 					// This is to avoid us going nowhere.
@@ -259,7 +255,7 @@ class Character {
 
 		// Check if this motion collides with any of the entities
 		for (let entity of Object.values(Adventure.get_entities())) {
-			if (Lib.will_collide(entity, char, t_max)) {
+			if (Entity.will_collide(entity, char, t_max)) {
 				window.draw_circle(entity.x, entity.y, entity.width / 2, null, 0xff0000);
 				return true;
 			} else {

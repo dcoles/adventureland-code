@@ -206,3 +206,26 @@ export function get_width(entity) {
 export function get_height(entity) {
 	return window.get_height(entity);
 }
+
+/**
+ * Get character by name, if character is nearby.
+ *
+ * @see https://adventure.land/docs/code/character/reference
+ *
+ * @param {string} name Character name.
+ * @returns {object|null} Character object or null.
+ */
+export function get_player(name) {
+	const character = get_character();
+	if (name === character.name) {
+		return character;
+	}
+
+	for (let entity of Object.values(get_entities())) {
+		if (entity.type === 'character' && entity.name === name) {
+			return entity;
+		}
+	}
+
+	return null;
+}
