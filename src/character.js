@@ -160,6 +160,10 @@ class Character {
 			entity = get_entity(entity);
 		}
 
+		if (!entity) {
+			return null;
+		}
+
 		return Entity.distance_between(this, entity);
 	}
 
