@@ -65,12 +65,13 @@ export function debug(text, obj) {
  */
 export function log(level, text, obj) {
 	const color = LOG_COLORS[level] || '';
-	const prefix = level.toUpperCase();
+	const name = window.character.bot ? window.character.name : 'main';
+	const prefix = `[${level.toUpperCase()}] <${name}>`;
 
 	if (obj) {
-		console[level]('%c[%s] %s: %o', `color: ${color}`, prefix, text, obj);
+		console[level]('%c%s %s: %o', `color: ${color}`, prefix, text, obj);
 	} else {
-		console[level]('%c[%s] %s', `color: ${color}`, prefix, text);
+		console[level]('%c%s %s', `color: ${color}`, prefix, text);
 	}
 
 	if (level === 'debug') {

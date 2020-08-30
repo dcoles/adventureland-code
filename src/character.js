@@ -115,6 +115,11 @@ class Character {
 		window.loot(id_or_arg);
 	}
 
+	/** Are we a bot? */
+	is_bot() {
+		return character.bot ? true : false;
+	}
+
 	/** Are we dead? */
 	is_dead() {
 		return character.rip;
