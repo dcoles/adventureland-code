@@ -3,6 +3,7 @@
 
 // TODO:
 // - Save brain state (e.g. stopped)
+// - Sleep until we think a character will be in range
 // - A better smart_move that avoids hostiles
 // - Factor out movement engine
 // - Implement "priority" system for needs
@@ -25,10 +26,11 @@ const STOP_MS = 1000;
 const TICK_MS = 1000;
 const TARGET_RANGE_RATIO = 0.90;
 const HOME_RANGE_RADIUS = 500;
-const MIN_DIFFICULTY = 0.0;
+const MIN_DIFFICULTY = 0.1;
 const MAX_DIFFICULTY = 9.0;
 const KITING_THRESHOLD = 0.5;
 const MOVEMENT_TOLLERANCE = 50;
+const BOT_SCRIPT = 'loader';
 
 // Global variables
 let g_start_time = null;
@@ -108,6 +110,8 @@ class Brain {
 		this.tick = 0;
 		this.target = null;
 		this.target_difficulty = 0;
+		this.leader_name = null;
+		this.bots = [];
 	}
 
 	/** Are we interrupted? */
@@ -123,6 +127,43 @@ class Brain {
 		return hp_ratio > 0.10 || character.distance(0, 0) < 100;
 	}
 
+	is_party_healable() {
+		// Only priests can heal
+		if (character.ctype !== 'priest') {
+			return false;
+		}
+
+		// Must be able to cast heal
+		if (character.skills.heal.is_usable()) {
+			return false;
+		}
+
+		// Does anyone need healing?
+		for (let char of Entity.get_party_members()) {
+			if (!char.rip && Entity.hp_ratio(char) < 1.00) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/** Are we lost? */
+	is_lost() {
+		// We can only go missing if we have a leader
+		if (!this.leader_name) {
+			return false;
+		}
+
+		const leader = maincode.character;
+		if (!leader) {
+			return false;
+		}
+
+		const distance = character.distance_between(leader);
+		return !distance || distance > 300;
+	}
+
 	/** Is our target alive? */
 	is_target_alive() {
 		return this.target && !this.target.dead;
@@ -130,6 +171,10 @@ class Brain {
 
 	/** Are we within our home range? */
 	is_home() {
+		if (!this.home) {
+			return true;
+		}
+
 		return character.map === this.home.map
 		&& character.distance(this.home.x, this.home.y) < HOME_RANGE_RADIUS;
 	}
@@ -191,6 +236,7 @@ class Brain {
 
 	/** Run the main loop. */
 	async run() {
+		this.on_state('Init')
 		await this._init();
 		do {
 			if (this.stopped) {
@@ -202,12 +248,18 @@ class Brain {
 			} else if (!this.is_safe()) {
 				this.on_state('Panic');
 				await this._panic();
+			} else if (this.is_party_healable()) {
+				this.on_state('Heal');
+				await this._heal_party();
 			} else if (this.is_target_alive()) {
 				this.on_state('Attack');
 				await this._attack();
 			} else if (this.is_low_hp()) {
 				this.on_state('Rest');
 				await this._rest();
+			} else if (this.is_lost()) {
+				this.on_state('Lost');
+				await this._return_to_leader();
 			} else {
 				this.on_state('Find');
 				await this._find_next_target();
@@ -219,14 +271,35 @@ class Brain {
 	}
 
 	async _init() {
-		// Remember where we started
-		this._home = get_home();
-		if (!this._home) {
-			this._home = set_home(null, HOME_RANGE_RADIUS);
-		}
+		// We might be a bot and not even know it!
+		if (character.is_bot()) {
+			this.leader_name = maincode.character.name;
 
-		Logging.info(`Home: ${Entity.location_to_string(this._home)} (range: ${this._home.range})`);
-		window.draw_circle(this._home.x, this._home.y, this._home.range, null, 0xffff00);
+			// Join a party (and keep trying every 30s)
+			this._join_party();
+			window.setInterval(this._join_party, 30_000);
+		} else {
+			// Remember our home
+			this.home = get_home();
+			if (!this.home) {
+				this.home = set_home();
+			}
+
+			Logging.info(`Home: ${Entity.location_to_string(this.home)}`);
+			window.draw_circle(this.home.x, this.home.y, this.home.range, null, 0xffff00);
+
+			// Start our bots
+			const chars = Adventure.get_characters();
+			for (let char of chars) {
+				if (char.name === character.name) {
+					continue;
+				}
+
+				Logging.info('Starting bot', char.name);
+				this.bots.push(char.name);
+				Adventure.start_character(char.name, BOT_SCRIPT);
+			}
+		}
 
 		// Focus on attacker when hit
 		character.on('hit', (data) => {
@@ -240,6 +313,17 @@ class Brain {
 
 		// Reoccuring timer
 		setInterval(() => this._tick(), TICK_MS);
+	}
+
+	/** Try to join the party. */
+	_join_party() {
+		// Check if we're already in a party
+		if (character.party) {
+			return;
+		}
+
+
+		Adventure.send_party_request(this.leader_name);
 	}
 
 	/** Timer tick */
@@ -319,6 +403,42 @@ class Brain {
 		await this._heal_up();
 	}
 
+	/** Heal someone in the party. */
+	async _heal_party() {
+		const party = Entity.get_party_members().filter((c) => !c.rip);
+		const target = party[0];
+
+		// No one to heal?
+		if (!target) {
+			return;
+		}
+
+		Logging.info(`Healing ${target.name}`)
+		await character.move_towards(target);
+		try {
+			await character.skills.heal.use_when_ready(target);
+		} catch (e) {
+			Logging.warn(`Can't heal ${target.name}: ${e.reason}`)
+		}
+	}
+
+	/** Return to our fearless leader! */
+	async _return_to_leader() {
+		Logging.info(`Returning to ${this.leader_name}`);
+		const leader = maincode.character;
+		if (!leader) {
+			// Leader has gone missing!
+			return null;
+		}
+
+		try {
+			await character.xmove(leader.x, leader.y, leader.map);
+		} catch (e) {
+			Logging.warn(`Movement failed: ${e.reason}`);
+			await Util.sleep(1000);
+		}
+	}
+
 	/** Heal until we're fully recovered (or start losing HP). */
 	async _heal_up() {
 		let last_hp = character.hp;
@@ -374,15 +494,15 @@ class Brain {
 
 	/** Find and move to our next target. */
 	async _find_next_target() {
+		// Return to home range
+		if (!this.is_home()) {
+			await this._return_home();
+		}
+
 		// See if we can find a target nearby
 		this._pick_target();
 		if (this.target) {
 			return;
-		}
-
-		// Return to home range
-		if (!this.is_home()) {
-			await this._return_home();
 		}
 
 		// Keep searching for a target
@@ -394,15 +514,42 @@ class Brain {
 
 	/** Try to pick a new target. */
 	_pick_target() {
+		// Someone is trying to attack us! Attack them back!
 		if (character.targets) {
-			// Someone is trying to attack us! Attack them back!
-			const targeted_by = Entity.get_nearest_monsters({target: character})
-			if (targeted_by.length != 0) {
-				this.set_target(targeted_by[0]);
+			const targeted_by = Entity.get_nearest_monsters({target: character});
+			const target = targeted_by[0];
+			if (target) {
+				this.set_target(target);
 				return;
 			}
 		}
 
+		// Help our leader
+		if (this.leader_name) {
+			do {
+				const leader = maincode.character;
+				if (!leader) {
+					// Leader is missing!
+					break;
+				}
+
+				const targeted_by = Entity.get_nearest_monsters({target: leader})
+				const target = targeted_by[0];
+				if (!target) {
+					break;
+				}
+
+				this.set_target(targeted_by[0]);
+				return;
+			} while(false);
+		}
+
+		// Priests shouldn't pick new targets
+		if (character.ctype == 'priest') {
+			return;
+		}
+
+		// Find a new monster
 		for (let monster of Entity.get_nearest_monsters({path_check: true, no_target: true})) {
 			const difficulty = Entity.difficulty(monster);
 			if (difficulty < MIN_DIFFICULTY || difficulty > MAX_DIFFICULTY) {
@@ -416,6 +563,10 @@ class Brain {
 
 	/** Return to our home location */
 	async _return_home() {
+		if (!this.home) {
+			return;
+		}
+
 		Logging.info(`Returning to home in ${this.home.map}`);
 		try {
 			await character.xmove(this.home.x, this.home.y, this.home.map);

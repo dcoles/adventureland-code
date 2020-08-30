@@ -287,3 +287,22 @@ export function get_maincode() {
 		return window;
 	}
 }
+
+/**
+ * Start a character as a bot.
+ *
+ * @param {string} name
+ * @param {number|string} slot_or_name
+ */
+export function start_character(name, slot_or_name) {
+	window.start_character(name, slot_or_name);
+}
+
+/**
+ * Stop running a character as a bot.
+ *
+ * @param {string} name
+ */
+export function stop_character(name) {
+	window.stop_character(name);
+}
