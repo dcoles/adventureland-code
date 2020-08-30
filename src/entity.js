@@ -22,6 +22,16 @@ export function get_nearest_monsters(criteria) {
 }
 
 /**
+ * Return nearby party members ordered by HP ratio.
+ *
+ * @returns {Array} Character objects.
+ */
+export function get_party_members() {
+	const members = filter(Adventure.get_entities(), {type: 'character', party: true});
+	return members.sort(compare_hp);
+}
+
+/**
  * Filter entities.
  *
  * @param {Array} entities Entities to filter.
@@ -29,12 +39,17 @@ export function get_nearest_monsters(criteria) {
  * @param {"character"|"monster"} [criteria.type] Entity must match this type.
  * @param {object} [criteria.target] Entity must be targetting this entity.
  * @param {boolean} [criteria.no_target] Entity must not have a target.
+ * @param {boolean} [criteria.party] If true, entity must be in our party.
  * @param {number} [criteria.min_xp] Entity must give at least this much XP.
  * @param {boolean} [criteria.path_check] Entity must be directly reachable.
  * @param {Function} [criteria.filter] General-purpose filter function.
  * @returns {Array} Filtered entities.
  */
 export function filter(entities, criteria) {
+	if (typeof entities === 'object') {
+		entities = Object.values(entities);
+	}
+
 	return entities.filter((entity) => {
 		if (criteria.type && entity.type !== criteria.type) {
 			return false;
@@ -45,6 +60,10 @@ export function filter(entities, criteria) {
 		}
 
 		if (criteria.no_target && entity.target && entity.target.name !== character.name) {
+			return false;
+		}
+
+		if (criteria.party && !(entity.name in Adventure.get_party())) {
 			return false;
 		}
 
@@ -76,6 +95,17 @@ export function compare_distance(a, b) {
 }
 
 /**
+ * Comparision function for ordering entities by health ratio.
+ *
+ * @param {object} a First entity to compare.
+ * @param {object} b Second entity to compare.
+ * @returns {number}
+ */
+export function compare_hp(a, b) {
+	return hp_ratio(a) - hp_ratio(b);
+}
+
+/**
  * Calculate the distance between two entities.
  *
  * @param {object} a The first entity.
@@ -98,6 +128,16 @@ export function distance_between(a, b) {
 */
 export function movement_time(entity, distance) {
 	return distance / entity.speed * 1000;
+}
+
+/**
+ * Calculate entity's HP ratio.
+ *
+ * @param {object} entity Entity to check.
+ * @returns {number} Between 0.00 and 1.00;
+ */
+export function hp_ratio(entity) {
+	return entity.hp / entity.max_hp;
 }
 
 /**
