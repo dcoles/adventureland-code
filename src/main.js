@@ -372,7 +372,7 @@ class Brain {
 	is_kiting() {
 		// Always kite difficult enemies or if our HP is below 50%
 		const hp_ratio = character.hp / character.max_hp;
-		return this.target_difficulty > KITING_THRESHOLD || hp_ratio < 0.50;
+		return character.targets && (this.target_difficulty > KITING_THRESHOLD || hp_ratio < 0.50);
 	}
 
 	/** Find and move to our next target. */
