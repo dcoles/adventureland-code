@@ -187,12 +187,15 @@ export function will_collide(a, b, t_max) {
  * @param {object} entity An entity with a position.
  * @param {number} entity.x x-coordinate (pixels).
  * @param {number} entity.y y-coordinate (pixels).
- * @param {string} [entity.in] Optional map.
+ * @param {string} [entity.in] Optional instance/map.
+ * @param {string} [entity.map] Optional map.
  */
-export function to_string(entity) {
+export function location_to_string(entity) {
 	let s = `${entity.x.toFixed(1)}, ${entity.y.toFixed(1)}`;
-	if (entity.in) {
+	if (entity.in && entity.in != entity.map) {
 		s += ` in ${entity.in}`;
+	} else if (entity.map) {
+		s += ` on ${entity.map}`;
 	}
 
 	return s;

@@ -88,6 +88,7 @@ export function set_home(location, range) {
 	location = location || {x: character.x, y: character.y, map: character.map};
 	range = range || 100;
 
+	Logging.info(`Setting home: ${Entity.location_to_string(location)} (range: ${range})`);
 	const home = Object.assign({range: range}, location);
 	Adventure.set('home', home);
 
@@ -227,7 +228,7 @@ class Brain {
 			this._home = set_home(null, HOME_RANGE_RADIUS);
 		}
 
-		Logging.info(`Home: ${Entity.to_string(this._home)} on ${this._home.map} (range: ${this._home.range})`);
+		Logging.info(`Home: ${Entity.location_to_string(this._home)} (range: ${this._home.range})`);
 		window.draw_circle(this._home.x, this._home.y, this._home.range, null, 0xffff00);
 
 		// Focus on attacker when hit
