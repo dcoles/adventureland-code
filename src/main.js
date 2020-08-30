@@ -284,10 +284,14 @@ class Brain {
 	async _rip() {
 		Logging.warn('Died at', new Date());
 		character.stop_all();
+		this.set_target(null);
 
 		// Respawn after short delay (respawn has 12-sec cooldown)
 		Logging.info('Respawning in 15s...')
-		await Util.sleep(15_000);
+		for (let n = 15; n > 0; n--) {
+			set_message(`RIP (${n})`);
+			await Util.sleep(1000);
+		}
 		Adventure.respawn();
 	}
 
