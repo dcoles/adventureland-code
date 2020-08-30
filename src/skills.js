@@ -216,6 +216,13 @@ class Skill {
 				break;
 			}
 
+			// Is the target out of range?
+			if (target && !Adventure.is_in_range(target, this.skill_id)) {
+				// FIXME: Come up with a better way to determine this
+				await Util.sleep(500);
+				continue;
+			}
+
 			try {
 				await this.use(target, extra_args);
 			} catch (e) {
