@@ -285,7 +285,7 @@ class Brain {
 
 		// Respawn after short delay (respawn has 12-sec cooldown)
 		Logging.info('Respawning in 15s...')
-		for (let n = 15; n > 0; n--) {
+		for (let n = 15; n > 0 && character.is_dead(); n--) {
 			set_message(`RIP (${n})`);
 			await Util.sleep(1000);
 		}
