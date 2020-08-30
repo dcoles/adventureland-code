@@ -157,7 +157,7 @@ class Brain {
 			return;
 		}
 
-		character.loot()
+		character.loot();
 		this._update_autocasts();
 	}
 
@@ -463,9 +463,12 @@ async function main() {
 	g_start_time = new Date();
 	Logging.info('Start time', g_start_time);
 
-	character.change_target(null);
+	change_target(null);
 
-	BattleLog.monitor();
+	// Log combat events
+	if (!character.is_bot()) {
+		BattleLog.monitor();
+	}
 
 	// Log all events
 	game.all((name, data) => {
