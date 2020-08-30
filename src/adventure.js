@@ -157,10 +157,19 @@ export function respawn() {
  *
  * @see https://adventure.land/docs/code/character/reference.
  *
- * @returns {object} Your character object.
+ * @returns {object} Character object.
  */
 export function get_character() {
 	return window.character;
+}
+
+/**
+ * Get details about all of our characters.
+ *
+ * @returns {Array} Array of character details.
+ */
+export function get_characters() {
+	return window.get_characters();
 }
 
 /**
