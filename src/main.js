@@ -433,11 +433,11 @@ class Brain {
  * @param {string} name Name of the character who sent the invitation.
  */
 window.on_party_invite = function(name) {
-	if (Adventure.get_character(name).owner !== character.owner) {
-		return;
+	for (let char of Adventure.get_characters()) {
+		if (char.name === name) {
+			Adventure.accept_party_request(name);
+		}
 	}
-
-	Adventure.accept_party_invite(name);
 }
 
 /**
@@ -446,11 +446,12 @@ window.on_party_invite = function(name) {
  * @param {string} name Name of the character who sent the request.
 */
 window.on_party_request = function(name) {
-	if (Adventure.get_character(name).owner !== character.owner) {
-		return;
+	// Accept our characters
+	for (let char of Adventure.get_characters()) {
+		if (char.name === name) {
+			Adventure.accept_party_request(name);
+		}
 	}
-
-	Adventure.accept_party_request(name);
 }
 
 /** Main function */
