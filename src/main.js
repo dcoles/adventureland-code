@@ -414,6 +414,7 @@ class Brain {
 			await character.skills.heal.use_when_ready(target);
 		} catch (e) {
 			Logging.warn(`Can't heal ${target.name}: ${e.reason}`)
+			await Util.sleep(IDLE_MS);
 		}
 	}
 
@@ -453,26 +454,26 @@ class Brain {
 
 	/** Attack current target */
 	async _attack() {
-		// Start auto-attacking
-		character.skills.attack.autouse(this.target);
+		const dist = character.distance_between(this.target);
+		if (!dist) {
+			return;
+		}
 
-		while (this.is_target_alive() && !this.is_interrupted()) {
-			const dist = character.distance_between(this.target);
-			if (!dist) {
-				break;
+		// Try to keep target at a good range
+		const target_dist = character.is_ranged() ? TARGET_RANGE_RATIO * character.range : 0;
+		const move = dist - target_dist;
+
+		if (Math.abs(move) > MOVEMENT_TOLLERANCE) {
+			if (this.is_kiting() || move > 0) {
+				await character.move_towards(this.target, move, {avoid: character.is_ranged()});
+				return;
 			}
+		}
 
-			// Try to keep target at a good range
-			const target_dist = character.is_ranged() ? TARGET_RANGE_RATIO * character.range : 0;
-			const move = dist - target_dist;
-
-			if (Math.abs(move) > MOVEMENT_TOLLERANCE) {
-				if (this.is_kiting() || move > 0) {
-					await character.move_towards(this.target, move, {avoid: character.is_ranged()});
-					continue;
-				}
-			}
-
+		try {
+			await character.skills.attack.use_when_ready(this.target);
+		} catch (e) {
+			Logging.warn(`Can't attack ${this.target.name}: ${e.reason}`)
 			await Util.sleep(IDLE_MS);
 		}
 	}
