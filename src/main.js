@@ -133,11 +133,6 @@ class Brain {
 			return false;
 		}
 
-		// Must be able to cast heal
-		if (character.skills.heal.is_usable()) {
-			return false;
-		}
-
 		// Does anyone need healing?
 		for (let char of Entity.get_party_members()) {
 			if (!char.rip && Entity.hp_ratio(char) < 1.00) {
