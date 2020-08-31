@@ -29,7 +29,7 @@ const HOME_RANGE_RADIUS = 500;
 const MIN_DIFFICULTY = 0.1;
 const MAX_DIFFICULTY = 9.0;
 const KITING_THRESHOLD = 0.5;
-const MOVEMENT_TOLLERANCE = 50;
+const MOVEMENT_TOLLERANCE = 20;
 const BOT_SCRIPT = 'loader';
 
 // Global variables
@@ -468,12 +468,13 @@ class Brain {
 			}
 
 			// Try to keep target at a good range
-			const target_dist = TARGET_RANGE_RATIO * character.range;
+			const target_dist = character.is_ranged() ? TARGET_RANGE_RATIO * character.range : 0;
 			const move = dist - target_dist;
 
 			if (Math.abs(move) > MOVEMENT_TOLLERANCE) {
 				if (this.is_kiting() || move > 0) {
-					await character.move_towards(this.target, move);
+					await character.move_towards(this.target, move, {avoid: character.is_ranged()});
+					continue;
 				}
 			}
 

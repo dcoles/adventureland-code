@@ -68,6 +68,8 @@ class Character {
 	get moving() { return character.moving; }
 	get vx() { return character.vx; }
 	get vy() { return character.vy; }
+	get width() { return Adventure.get_width(character); };
+	get height() { return Adventure.get_height(character); };
 
 	/**
 	 * Register callback for Character events.
@@ -149,6 +151,12 @@ class Character {
 		return window.is_in_range(target, skill_id);
 	}
 
+	/** Is this a ranged character? */
+	is_ranged() {
+		// Not sure if this is exactly true, but probably close enough
+		return this.range > this.width;
+	}
+
 	/**
 	 * Distance between the character and target.
 	 *
@@ -183,9 +191,14 @@ class Character {
 	 *
 	 * @param {object|string} target Target to move towards.
 	 * @param {number} [distance] Distance to move in pixels (default: 80% of range).
+	 * @param {object} [args] Additional arguments.
+	 * @param {boolean} [args.avoid=true] Avoid entities when moving.
 	 * @returns {Promise} Resolves when finished moving.
 	 **/
-	async move_towards(target, distance) {
+	async move_towards(target, distance, args) {
+		args = args || {};
+		const avoid = args.avoid || true;
+
 		if (target instanceof String) {
 			target = get_entity(target);
 		}
@@ -207,7 +220,7 @@ class Character {
 
 		DEBUG_COLLISION && window.clear_drawings();
 		if (window.can_move_to(target_x, target_y)
-		&& !this.will_collide_moving_to(target_x, target_y)) {
+		&& (!avoid || !this.will_collide_moving_to(target_x, target_y))) {
 			return await Adventure.move(target_x, target_y);
 		}
 
@@ -235,7 +248,7 @@ class Character {
 					continue;
 				}
 
-				if (dist < max_distance / 2 && this.will_collide_moving_to(new_x, new_y)) {
+				if (avoid && dist < max_distance / 2 && this.will_collide_moving_to(new_x, new_y)) {
 					// Avoid colliding with entities, except if we're searching really far.
 					// Better to run past an enemy than to get stuck against a wall.
 					DEBUG_COLLISION && window.draw_circle(new_x, new_y, 2, null, 0xffff00);
