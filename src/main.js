@@ -182,7 +182,7 @@ class Brain {
 
 	/** Called on major state updates. */
 	on_state(state) {
-		Logging.info('State', state);
+		Logging.debug('State', state);
 		set_message(state);
 	}
 
