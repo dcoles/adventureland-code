@@ -602,6 +602,37 @@ window.on_party_request = function(name) {
 	}
 }
 
+/**
+ * Monitor a character stat and display the rate.
+ *
+ * Calculates an exponentially weighted moving average (EWMA).
+ *
+ * @param {string} stat_name Stat name (e.g. 'xp')
+ * @param {number} [t=10] Time interval (seconds)
+ * @param {number} [alpha=0.2] EWMA factor
+ */
+function stat_monitor(stat_name, t, alpha) {
+	if (character.is_bot()) {
+		return;
+	}
+
+	t = t || 10;
+	alpha = alpha || 0.2;
+	let last = character[stat_name];
+	let avg_per_second = 0;
+	window.setInterval(() => {
+		const current = character[stat_name];
+		const per_second = (current - last) / t;
+
+		// Exponentially weighted moving average
+		avg_per_second = per_second * alpha + (1 - alpha) * avg_per_second;
+
+		// Show at bottom of the UI
+		add_bottom_button(stat_name + '_rate', `${stat_name.toUpperCase()}/s: ${Math.round(avg_per_second)}`);
+		last = current;
+	}, t * 1000);
+}
+
 /** Main function */
 async function main() {
 	Logging.info('== Starting CODE ==')
@@ -620,6 +651,10 @@ async function main() {
 	game.all((name, data) => {
 		//console.log('EVENT:', name, data);
 	});
+
+	// Show XP/s and GOLD/s
+	stat_monitor('xp');
+	stat_monitor('gold')
 
 	// Map snippets
 	Adventure.map_snippet('G', 'Code.set_state("Return Home")');

@@ -49,6 +49,9 @@ class Character {
 	get max_hp() { return character.max_hp; }
 	get mp() { return character.mp; }
 	get max_mp() { return character.max_mp; }
+	get gold() { return character.gold; }
+	get xp() { return character.xp; }
+	get max_xp() { return character.max_xp; }
 	get level() { return character.level; }
 	get str() { return character.str; }
 	get int() { return character.int; }
