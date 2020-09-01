@@ -605,30 +605,34 @@ window.on_party_request = function(name) {
 /**
  * Monitor a character stat and display the rate.
  *
- * Calculates an exponentially weighted moving average (EWMA).
+ * Calculates an weighted moving average over `n` samples.
  *
- * @param {string} stat_name Stat name (e.g. 'xp')
- * @param {number} [t=10] Time interval (seconds)
- * @param {number} [alpha=0.2] EWMA factor
+ * @param {string} stat_name Stat name (e.g. 'xp').
+ * @param {number} [t=1] Time interval (seconds).
+ * @param {number} [window_duration=600] Sample window in seconds (default: 10m).
  */
-function stat_monitor(stat_name, t, alpha) {
+function stat_monitor(stat_name, t, window_duration) {
 	if (character.bot) {
 		return;
 	}
 
-	t = t || 10;
-	alpha = alpha || 0.2;
+	t = t || 1;
+	window_duration = window_duration || 600;
+	const n = Math.floor(window_duration / t);  // Number of samples in window
 	let last = character[stat_name];
-	let avg_per_second = 0;
+	let values = [];
 	window.setInterval(() => {
 		const current = character[stat_name];
 		const per_second = (current - last) / t;
 
-		// Exponentially weighted moving average
-		avg_per_second = per_second * alpha + (1 - alpha) * avg_per_second;
+		// Weighted moving average over `n` samples
+		if (values.push(per_second) > n) {
+			values.shift();
+		}
+		const avg_per_hour = 3600 * values.reduce((a, b) => a + b) / n;
 
 		// Show at bottom of the UI
-		add_bottom_button(stat_name + '_rate', `${stat_name.toUpperCase()}/s: ${Math.round(avg_per_second)}`);
+		add_bottom_button(stat_name + '_rate', `${stat_name.toUpperCase()}/h: ${Math.round(avg_per_hour)}`);
 		last = current;
 	}, t * 1000);
 }
