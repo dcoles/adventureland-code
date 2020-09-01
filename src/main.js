@@ -473,7 +473,7 @@ class Brain {
 		try {
 			await character.skills.attack.use_when_ready(this.target);
 		} catch (e) {
-			Logging.warn(`Can't attack ${this.target.name}: ${e.reason}`)
+			Logging.warn(`Can't attack ${this.target ? this.target.name : '???'}: ${e.reason}`)
 			await Util.sleep(IDLE_MS);
 		}
 	}
