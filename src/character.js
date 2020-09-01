@@ -43,6 +43,7 @@ class Character {
 	// Re-exports of standard attributes
 	get name() { return character.name; }
 	get owner() { return character.owner; }
+	get bot() { return character.bot; }
 	get ctype() { return character.ctype; }
 	get party() { return character.party; }
 	get hp() { return character.hp; }
@@ -53,6 +54,7 @@ class Character {
 	get xp() { return character.xp; }
 	get max_xp() { return character.max_xp; }
 	get level() { return character.level; }
+	get rip() { return character.rip; }
 	get str() { return character.str; }
 	get int() { return character.int; }
 	get dex() { return character.dex; }
@@ -71,8 +73,8 @@ class Character {
 	get moving() { return character.moving; }
 	get vx() { return character.vx; }
 	get vy() { return character.vy; }
-	get width() { return Adventure.get_width(character); };
-	get height() { return Adventure.get_height(character); };
+	get width() { return Adventure.get_width(character); }
+	get height() { return Adventure.get_height(character); }
 
 	/**
 	 * Register callback for Character events.
@@ -118,16 +120,6 @@ class Character {
 	 */
 	loot(id_or_arg) {
 		window.loot(id_or_arg);
-	}
-
-	/** Are we a bot? */
-	is_bot() {
-		return character.bot ? true : false;
-	}
-
-	/** Are we dead? */
-	is_dead() {
-		return character.rip;
 	}
 
 	/** Are we fully healed? */

@@ -116,7 +116,7 @@ class Brain {
 
 	/** Are we interrupted? */
 	is_interrupted() {
-		return this.stopped || character.is_dead();
+		return this.stopped || character.rip;
 	}
 
 	/** Are we safe? */
@@ -189,7 +189,7 @@ class Brain {
 	/** Regular tick. */
 	on_tick(tick) {
 		Logging.debug('Tick', tick);
-		if (character.is_dead()) {
+		if (character.rip) {
 			// Nothing to do but go through his clothes and look for loose change.
 			return;
 		}
@@ -237,7 +237,7 @@ class Brain {
 			if (this.stopped) {
 				this.on_state('Stop');
 				await this._stop();
-			} else if (character.is_dead()) {
+			} else if (character.rip) {
 				this.on_state('RIP');
 				await this._rip();
 			} else if (!this.is_safe()) {
@@ -267,7 +267,7 @@ class Brain {
 
 	async _init() {
 		// We might be a bot and not even know it!
-		if (character.is_bot()) {
+		if (character.bot) {
 			this.leader_name = maincode.character.name;
 
 			// Join a party (and keep trying every 30s)
@@ -364,7 +364,7 @@ class Brain {
 
 		// Respawn after short delay (respawn has 12-sec cooldown)
 		Logging.info('Respawning in 15s...')
-		for (let n = 15; n > 0 && character.is_dead(); n--) {
+		for (let n = 15; n > 0 && character.rip; n--) {
 			set_message(`RIP (${n})`);
 			await Util.sleep(1000);
 		}
@@ -612,7 +612,7 @@ window.on_party_request = function(name) {
  * @param {number} [alpha=0.2] EWMA factor
  */
 function stat_monitor(stat_name, t, alpha) {
-	if (character.is_bot()) {
+	if (character.bot) {
 		return;
 	}
 
@@ -643,7 +643,7 @@ async function main() {
 	change_target(null);
 
 	// Log combat events
-	if (!character.is_bot()) {
+	if (!character.bot) {
 		BattleLog.monitor();
 	}
 
