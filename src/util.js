@@ -77,3 +77,12 @@ export function vector_length(v) {
 	// length = √(a² + b² + ...)
 	return Math.sqrt(v.reduce((a, x) => a + Math.pow(x, 2), 0));
 }
+
+/**
+ * Generate a 48-bit random identifier.
+ *
+ * @returns {string} 48-bit random hex-string (12 characters).
+ */
+export function random_id() {
+	return Math.floor(Math.random() * Math.pow(2, 48)).toString(16)
+}
