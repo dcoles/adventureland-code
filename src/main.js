@@ -2,7 +2,6 @@
 // @ts-check
 
 // TODO:
-// - Save brain state (e.g. stopped)
 // - Sleep until we think a character will be in range
 // - A better smart_move that avoids hostiles
 // - Factor out movement engine
@@ -130,7 +129,7 @@ export function get_home() {
 
 class Brain {
 	constructor() {
-		this.stopped = false;
+		this.stopped = Adventure.get('stopped') || false;
 		this.home = null;
 		this.tick = 0;
 		this.target = null;
@@ -228,6 +227,7 @@ class Brain {
 	 */
 	stop() {
 		Logging.warn('Stopping event loop');
+		Adventure.set('stopped', true);
 		this.stopped = true;
 
 		// Cease all motor functions
@@ -237,6 +237,7 @@ class Brain {
 	/** Resume the event loop. */
 	resume() {
 		Logging.warn('Resuming event loop');
+		Adventure.set('stopped', false);
 		this.stopped = false;
 	}
 
