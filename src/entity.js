@@ -1,8 +1,8 @@
 // Functions for working with entities.
 // @ts-check
 
-import * as Adventure from './adventure.js';
-import * as Util from './util.js';
+import * as Adventure from '/adventure.js';
+import * as Util from '/util.js';
 
 const character = Adventure.get_character();
 

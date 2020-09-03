@@ -7,14 +7,14 @@
 // - Factor out movement engine
 // - Implement "priority" system for needs
 
-import * as Adventure from './adventure.js';
-import * as Logging from './logging.js';
-import * as AutoBrain from './brain/auto.js';
-import * as Character from './character.js';
-import * as BattleLog from './battlelog.js';
-import * as Command from './command.js';
-import * as Widgets from './widgets.js';
-import * as Item from './item.js';
+import * as Adventure from '/adventure.js';
+import * as Logging from '/logging.js';
+import * as AutoBrain from '/brain/auto.js';
+import * as Character from '/character.js';
+import * as BattleLog from '/battlelog.js';
+import * as Command from '/command.js';
+import * as Widgets from '/widgets.js';
+import * as Item from '/item.js';
 
 // Your Character
 export const character = Character.get_character();

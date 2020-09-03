@@ -2,9 +2,13 @@
 	"compilerOptions": {
 		"module": "none",
 		"target": "es2017",
+		"baseUrl": ".",
+		"paths": {
+			"/*": ["./src/*"],
+		},
 	},
 	"include": [
 		"adventureland/*",
 		"src/**/*"
-	]
+	],
 }

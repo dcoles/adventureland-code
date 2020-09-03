@@ -2,12 +2,12 @@
 // This monitors nearby events and adds them to the log window.
 //
 // Usage:
-//   import { BattleLog } from './battlelog.js';
+//   import { BattleLog } from '/battlelog.js';
 //   BattleLog.monitor();
 //
 // @ts-check
 
-import * as Logging from './logging.js';
+import * as Logging from '/logging.js';
 
 /**
  * Monitor nearby events and write them to the log.

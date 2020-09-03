@@ -7,7 +7,7 @@
  */
 
 // URL to fetch code from
-const URL = 'http://127.0.0.1:5500/src/main.js';
+const URL = 'http://127.0.0.1:5500/main.js';
 
 const script = document.createElement('script');
 script.type = 'module';

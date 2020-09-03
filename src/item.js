@@ -1,7 +1,7 @@
 // Item upgrades and compounding
 // @ts-check
-import * as Adventure from './adventure.js';
-import * as Logging from './logging.js';
+import * as Adventure from '/adventure.js';
+import * as Logging from '/logging.js';
 
 /**
  * Compound all of a certain type of item.

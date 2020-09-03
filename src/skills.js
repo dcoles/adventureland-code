@@ -1,8 +1,8 @@
 // @ts-check
 
-import * as Adventure from './adventure.js';
-import * as Logging from './logging.js';
-import * as Util from './util.js';
+import * as Adventure from '/adventure.js';
+import * as Logging from '/logging.js';
+import * as Util from '/util.js';
 
 const JIFFIE_MS = 250;  // A short period of time
 

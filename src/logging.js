@@ -1,6 +1,6 @@
 // General logging functions
 // Usage:
-//   import * as log from './log.js';
+//   import * as log from '/log.js';
 //
 // @ts-check
 

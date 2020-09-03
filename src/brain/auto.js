@@ -1,10 +1,10 @@
 // Fully-automated brain
 // @ts-check
-import * as Adventure from '../adventure.js';
-import * as Character from '../character.js';
-import * as Logging from '../logging.js';
-import * as Entity from '../entity.js';
-import * as Util from '../util.js';
+import * as Adventure from '/adventure.js';
+import * as Character from '/character.js';
+import * as Logging from '/logging.js';
+import * as Entity from '/entity.js';
+import * as Util from '/util.js';
 
 // The #maincode
 const maincode = Adventure.get_maincode();

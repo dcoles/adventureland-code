@@ -1,7 +1,7 @@
 // Command handler
 // @ts-check
-import * as Logging from './logging.js';
-import * as Util from './util.js';
+import * as Logging from '/logging.js';
+import * as Util from '/util.js';
 
 const COMMANDS = {};
 

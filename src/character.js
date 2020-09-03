@@ -1,10 +1,10 @@
 // Character namespace
 // @ts-check
 
-import * as Adventure from './adventure.js';
-import * as Entity from './entity.js';
-import * as Util from './util.js';
-import * as Skills from './skills.js';
+import * as Adventure from '/adventure.js';
+import * as Entity from '/entity.js';
+import * as Util from '/util.js';
+import * as Skills from '/skills.js';
 
 const DEBUG_COLLISION = true;
 
