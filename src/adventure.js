@@ -289,6 +289,30 @@ export function get_maincode() {
 }
 
 /**
+ * Access character CODE namespace.
+ *
+ * @param {string} name Character name.
+ */
+export function get_character_code(name) {
+	name = (name || window.character.name).toLowerCase();
+	const top = window.character.bot ? window.parent.parent : window.parent;
+	if (name === window.character.name.toLowerCase()) {
+		// Us
+		return window;
+	} else if (name === top.maincode.contentWindow.character.name.toLowerCase()) {
+		// Leader
+		return top.maincode.contentWindow;
+	} else {
+		// Other bots
+		const id = 'ichar' + name;
+		if (!(id in top)) {
+			throw new Error(`No such character: ${name}`);
+		}
+		return top[id].contentWindow.maincode.contentWindow;
+	}
+}
+
+/**
  * Start a character as a bot.
  *
  * @param {string} name

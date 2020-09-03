@@ -73,6 +73,28 @@ export function resume() {
 	}
 }
 
+/**
+ * Call /command on another character.
+ *
+ * @param {string} character Character name.
+ * @param {string} command Command name.
+ * @param  {...any} args Command arguments.
+ */
+export function call_character_command(character, command, ...args) {
+	const namespace = Adventure.get_character_code(character);
+	return namespace.Code.call_command(command, ...args);
+}
+
+/**
+ * Call /command on this character.
+ *
+ * @param {string} command Command name.
+ * @param  {...any} args Command arguments.
+ */
+export function call_command(command, ...args) {
+	return Command.call(command, ...args);
+}
+
 /** Explicitly set a target. */
 export function set_target(target) {
 	target = target || window.get_targeted_monster()
@@ -682,7 +704,10 @@ async function main() {
 	// Map /commands
 	Command.register('compound', compound_items, ['item'], ['max_level:int', 'scroll']);
 	Command.register('upgrade', upgrade_items, ['item'], ['max_level:int', 'scroll']);
+	Command.register('stopbrain', stop, null, ['character']);
+	Command.register('resumebrain', resume, null, ['character']);
 	Command.register('go', Adventure.smart_move, ['location']);
+	Command.register('c', call_character_command, ['character', 'command'], ['arg1', 'arg2', 'arg3', 'arg4'])
 
 	// Start running!
 	g_brain = new Brain();
