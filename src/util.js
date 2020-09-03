@@ -86,3 +86,13 @@ export function vector_length(v) {
 export function random_id() {
 	return Math.floor(Math.random() * Math.pow(2, 48)).toString(16)
 }
+
+/**
+ * Split a string on whitespace.
+ *
+ * @param {string} str String.
+ * @returns {string[]} Array of strings.
+ */
+export function split_whitespace(str) {
+	return str.trim().split(/\s+/);
+}

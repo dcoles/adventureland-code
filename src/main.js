@@ -14,6 +14,7 @@ import * as Entity from './entity.js';
 import * as Util from './util.js';
 import * as Character from './character.js';
 import * as BattleLog from './battlelog.js';
+import * as Command from './command.js';
 
 // Your Character
 export const character = Character.get_character();
@@ -666,6 +667,9 @@ async function main() {
 	Adventure.map_snippet('J', 'Code.resume()');
 	Adventure.map_snippet('K', 'Code.stop()');
 	Adventure.map_snippet('M', 'Code.set_target()');
+
+	// Map /commands
+	Command.register('go', Adventure.smart_move, ['location']);
 
 	// Start running!
 	g_brain = new Brain();
