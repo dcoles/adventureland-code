@@ -89,7 +89,9 @@ function pathfind(location) {
 	// Find a path using A*
 	let found = null;
 	while (edge.length > 0) {
-		const [dist, current] = edge.shift();
+		const [_, current] = edge.shift();
+		const key = position_to_string(current);
+		const dist = dist_so_far[key];
 
 		if (heuristic(current, target) < RANGE) {
 			// Path found!
@@ -158,15 +160,16 @@ function heuristic(here, there) {
  * @returns {Array<[number, number, number]>} Neighbouring positions.
  */
 function neighbours(position, step) {
+	const pq_x = Util.quantize(position[0], step);
+	const pq_y = Util.quantize(position[1], step);
 	const points = [];
-	for (let i=-1; i < 2; i++) {
-		for (let j=-1; j < 2; j++) {
+	for (let i=-step; i <= step; i += step) {
+		for (let j=-step; j <= step; j += step) {
 			if (i === 0 && j === 0) {
 				continue;
 			}
 
-			const new_position = quantize_position(
-				[position[0] + step * i, position[1] + step * j, position[2]], STEP);
+			const new_position = [pq_x + i, pq_y + j, position[2]];
 			if (can_move(position, new_position)) {
 				points.push(new_position);
 			}
@@ -195,21 +198,6 @@ function can_move(here, there) {
 		going_x: there[0], going_y: there[1],
 		base: character.base,
 	});
-}
-
-/**
- * Quantize a postion to a multiple of `q`.
- *
- * @param {[number, number, number]} position (`x1`, `y1`).
- * @param {number} q Quantizing factor.
- * @returns {[number, number, number]} Quantized postion.
- */
-function quantize_position(position, q) {
-	return [
-		Math.floor(position[0] / q) * q + q / 2,
-		Math.floor(position[1] / q) * q + q / 2,
-		position[2]
-	]
 }
 
 /**

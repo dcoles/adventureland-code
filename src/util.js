@@ -96,3 +96,14 @@ export function random_id() {
 export function split_whitespace(str) {
 	return str.trim().split(/\s+/);
 }
+
+/**
+ * Quantize a number to a multiple of `q`.
+ *
+ * @param {number} number The number.
+ * @param {number} q Quantizing factor.
+ * @returns {number} Quantized number.
+ */
+export function quantize(number, q) {
+	return Math.floor(number / q) * q;
+}
