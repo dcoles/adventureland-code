@@ -27,12 +27,29 @@ class MovementError extends Error {
 }
 
 /**
+ * Get location by name.
+ *
+ * @param {string} name Location name.
+ */
+export function get_location_by_name(name) {
+	if (name in LOCATIONS) {
+		return LOCATIONS[name];
+	}
+
+	throw new MovementError(`Could not find location: ${name}`);
+}
+
+/**
  * Find a path to location, then follow it.
  *
  * @param {object|string} location Location to move to.
  * @returns {Promise} Resolves when location is reached.
  */
 export async function pathfind_move(location) {
+	if (typeof location === 'string') {
+		location = get_location_by_name(location);
+	}
+
 	await follow_path(simplify_path(pathfind(location)));
 }
 
@@ -44,13 +61,6 @@ export async function pathfind_move(location) {
  * @throws {MovementError} If path could not be found.
  */
 function pathfind(location) {
-	if (typeof location === 'string') {
-		if (!(location in LOCATIONS)) {
-			throw new MovementError(`Could not find location: ${location}`);
-		}
-		location = LOCATIONS[location];
-	}
-
 	const map = location.map || character.map;
 	if (map !== character.map) {
 		throw new MovementError('Moving between maps is not implemented!');
