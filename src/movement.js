@@ -64,7 +64,7 @@ export async function pathfind_move(location, options) {
  * @returns {Array<[number, number]>} Path found.
  * @throws {MovementError} If path could not be found.
  */
-function pathfind(location, options) {
+async function pathfind(location, options) {
 	options = options || {};
 	const map = location.map || character.map;
 	if (map !== character.map) {
@@ -92,6 +92,7 @@ function pathfind(location, options) {
 
 	// Find a path using A*
 	let found = null;
+	let t_snooze = Date.now();
 	while (edge.length > 0) {
 		const [_, current] = edge.shift();
 		const key = position_to_string(current);
@@ -126,6 +127,14 @@ function pathfind(location, options) {
 
 		// Order by distance
 		edge.sort(([c1, _p1], [c2, _p2]) => c1 - c2);
+
+		// Don't completely hog the main thread
+		// FIXME: This would be much better on a webworker
+		const now = Date.now();
+		if (Date.now() - t_snooze > 10) {
+			await Util.sleep(0);
+			t_snooze = now;
+		}
 	}
 
 	if (!found) {
