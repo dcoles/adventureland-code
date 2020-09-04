@@ -44,24 +44,28 @@ export function get_location_by_name(name) {
  * Find a path to location, then follow it.
  *
  * @param {object|string} location Location to move to.
+ * @param {object} [options] Options for controlling pathfinding behaviour.
  * @returns {Promise} Resolves when location is reached.
  */
-export async function pathfind_move(location) {
+export async function pathfind_move(location, options) {
 	if (typeof location === 'string') {
 		location = get_location_by_name(location);
 	}
 
-	await follow_path(simplify_path(pathfind(location)));
+	await follow_path(simplify_path(await pathfind(location, options)));
 }
 
 /**
  * Find path to location.
  *
  * @param {object|string} location Location to move to.
+ * @param {object} [options] Options for controlling pathfinding behaviour.
+ * @param {number} [options.max_distance] Maximum distance to search (default: infinite).
  * @returns {Array<[number, number]>} Path found.
  * @throws {MovementError} If path could not be found.
  */
-function pathfind(location) {
+function pathfind(location, options) {
+	options = options || {};
 	const map = location.map || character.map;
 	if (map !== character.map) {
 		throw new MovementError('Moving between maps is not implemented!');
@@ -71,7 +75,7 @@ function pathfind(location) {
 	const origin_key = position_to_string(origin);
 	const target = [location.x, location.y, map];
 	DEBUG_PATHFIND && clear_drawings();
-	DEBUG_PATHFIND && draw_circle(target[0], target[1], 3, null, 0x0000ff);  // Target
+	DEBUG_PATHFIND && draw_circle(target[0], target[1], 4, null, 0x0000ff);  // Target
 
 	// Unsearched edge
 	const edge = [];
@@ -105,11 +109,19 @@ function pathfind(location) {
 		for (let next of neighbours(current, step)) {
 			const next_key = position_to_string(next);
 			let next_dist = dist + Util.distance(current[0], current[1], next[0], next[1]);
-			if (!(next_key in dist_so_far) || next_dist < dist_so_far[next_key]) {
-				edge.push([next_dist + heuristic(next, target), next]);
-				came_from[next_key] = current;
-				dist_so_far[next_key] = next_dist;
+			if (options.max_distance && next_dist > options.max_distance) {
+				// Too far!
+				continue;
 			}
+
+			if (next_key in dist_so_far && next_dist >= dist_so_far[next_key]) {
+				// We already have a better route
+				continue;
+			}
+
+			edge.push([next_dist + heuristic(next, target), next]);
+			came_from[next_key] = current;
+			dist_so_far[next_key] = next_dist;
 		}
 
 		// Order by distance
