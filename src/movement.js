@@ -18,6 +18,7 @@ const SMALL_STEP_RANGE = 64;  // Start with small steps for this much distance
 const STEP = 16;  // Size of a tile
 const RANGE = 32;  // When are we "close enough" to the target
 const MAX_SEGMENT = 128;  // Maximum length of a simplified path segment
+const OFFMAP_ESTIMATE = 10000;  // Estimate of distance outside this map
 
 /** Error thrown when movement actions fail. */
 class MovementError extends Error {
@@ -74,7 +75,7 @@ function pathfind(location) {
 
 	// Unsearched edge
 	const edge = [];
-	edge.push([0, origin]);  // Start at origin
+	edge.push([heuristic(origin, target), origin]);  // Start at origin
 
 	// How did we reach this position?
 	// We use a string key, since JavaScript doesn't hash arrays
@@ -90,7 +91,7 @@ function pathfind(location) {
 	while (edge.length > 0) {
 		const [dist, current] = edge.shift();
 
-		if (Util.distance(current[0], current[1], target[0], target[1]) < RANGE) {
+		if (heuristic(current, target) < RANGE) {
 			// Path found!
 			found = current;
 			break;
@@ -103,8 +104,7 @@ function pathfind(location) {
 			const next_key = position_to_string(next);
 			let next_dist = dist + Util.distance(current[0], current[1], next[0], next[1]);
 			if (!(next_key in dist_so_far) || next_dist < dist_so_far[next_key]) {
-				const heuristic = Util.distance(next[0], next[1], target[0], target[1]);
-				edge.push([next_dist + heuristic, next]);
+				edge.push([next_dist + heuristic(next, target), next]);
 				came_from[next_key] = current;
 				dist_so_far[next_key] = next_dist;
 			}
@@ -137,6 +137,17 @@ function pathfind(location) {
  */
 function position_to_string(position) {
 	return `${position[0].toFixed(0)},${position[1].toFixed(0)}@${position[2]}`;
+}
+
+/**
+ * Heuristic estimating distance from here to there.
+ *
+ * @param {[number, number, number]} here Starting position (`x1`, `y1`, `map`).
+ * @param {[number, number, number]} there Ending position (`x2`, `y2`, `map`).
+ * @returns {number}
+ */
+function heuristic(here, there) {
+	return Util.distance(here[0], here[1], there[0], there[1]) + (here[2] !== there[2] ? OFFMAP_ESTIMATE : 0);
 }
 
 /**
