@@ -15,6 +15,7 @@ import * as BattleLog from '/battlelog.js';
 import * as Command from '/command.js';
 import * as Widgets from '/widgets.js';
 import * as Item from '/item.js';
+import * as Movement from './movement.js';
 
 // Your Character
 export const character = Character.get_character();
@@ -178,9 +179,21 @@ window.on_party_request = function(name) {
 	}
 }
 
+/**
+ * Called when the map is clicked.
+ *
+ * @param {number} x x map-coordinate.
+ * @param {number} y y map-coordinate.
+ */
+window.on_map_click = function(x, y) {
+	// This is almost always better than the default
+	Movement.pathfind_move({x: x, y: y}, {max_distance: 1000, exact: true}).catch((e) => Logging.error('Move failed', e));
+	return true;
+}
+
 /** Main function */
 async function main() {
-	Logging.info('== Starting CODE ==')
+	Logging.info('== Starting CODE ==');
 
 	g_start_time = new Date();
 	Logging.info('Start time', g_start_time);
