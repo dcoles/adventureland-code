@@ -12,8 +12,7 @@ const LOCATIONS = {
 	'halloween_potions': {map: 'halloween', x: 149, y: -182},
 }
 
-const DEBUG_PATHFIND = 1;  // 0: Off, 1: Path, 2: All searched points
-const DEBUG_MOVEMENT = 1;  // 0: Off, 1: Movement
+const DEBUG_MOVEMENT = 1;  // 0: Off, 1: Movement, 2: Pathfinding
 const SMALL_STEP_RANGE = 64;  // Start with small steps for this much distance
 const STEP = 16;  // Size of a tile
 const RANGE = 32;  // When are we "close enough" to the target
@@ -48,11 +47,16 @@ export function get_location_by_name(name) {
  * @returns {Promise} Resolves when location is reached.
  */
 export async function pathfind_move(location, options) {
+	DEBUG_MOVEMENT && clear_drawings();
 	if (typeof location === 'string') {
 		location = get_location_by_name(location);
 	}
 
-	await follow_path(simplify_path(await pathfind(location, options)));
+	const path = await pathfind(location, options);
+	DEBUG_MOVEMENT && draw_circle(location.x, location.y, 4, null, 0x0000ff);
+	DEBUG_MOVEMENT && path.forEach(([x, y]) => draw_circle(x, y, 2, null, 0xff0000));
+
+	await follow_path(path);
 }
 
 /**
@@ -61,12 +65,14 @@ export async function pathfind_move(location, options) {
  * @param {object|string} location Location to move to.
  * @param {object} [options] Options for controlling pathfinding behaviour.
  * @param {number} [options.max_distance] Maximum distance to search (default: infinite).
- * @param {boolean} [options.exact] If true, must exactly reach target.
+ * @param {boolean} [options.exact=false] If true, must exactly reach target.
+ * @param {boolean} [options.simplify=true] If true, attempt to simplify the path.
  * @returns {Array<[number, number]>} Path found.
  * @throws {MovementError} If path could not be found.
  */
 async function pathfind(location, options) {
 	options = options || {};
+	const simplify = 'simplify' in options ? options.simplify : true;
 	const map = location.map || character.map;
 	if (map !== character.map) {
 		throw new MovementError('Moving between maps is not implemented!');
@@ -75,8 +81,6 @@ async function pathfind(location, options) {
 	const origin = [character.real_x, character.real_y, character.map];
 	const origin_key = position_to_string(origin);
 	const target = [location.x, location.y, map];
-	DEBUG_PATHFIND && clear_drawings();
-	DEBUG_PATHFIND && draw_circle(target[0], target[1], 4, null, 0x0000ff);  // Target
 	const target_key = position_to_string(target);
 
 	// Unsearched edge
@@ -118,7 +122,7 @@ async function pathfind(location, options) {
 			}
 		}
 
-		DEBUG_PATHFIND > 1 && draw_circle(current[0], current[1], 2, null, 0x00ff00);  // Searched
+		DEBUG_MOVEMENT > 1 && draw_circle(current[0], current[1], 2, null, 0x00ff00);  // Searched
 
 		const step = dist < SMALL_STEP_RANGE ? STEP / 2 : STEP;
 		for (let next of neighbours(current, step)) {
@@ -159,11 +163,11 @@ async function pathfind(location, options) {
 	const path = [];
 	do {
 		path.unshift(found);
-		DEBUG_PATHFIND && draw_circle(found[0], found[1], 2, null, 0xff0000);  // Path
 		found = came_from[position_to_string(found)];
 	} while (found);
 
-	return path;
+	DEBUG_MOVEMENT > 1 && path.forEach(([x, y]) => draw_circle(x, y, 2, null, 0xffff00));  // Path
+	return simplify ? simplify_path(path) : path;
 }
 
 /**
