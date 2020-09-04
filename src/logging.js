@@ -82,7 +82,7 @@ export function log(level, text, obj) {
 	if (!obj) {
 		safe_log(text, color);
 	} else if (obj instanceof Error) {
-		safe_log(`${text}: ${obj.stack}`, color);
+		safe_log(`${text}: ${obj}`, color);
 	} else {
 		switch (obj.type) {
 			case 'character':
