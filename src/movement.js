@@ -66,9 +66,9 @@ function pathfind(location) {
 		throw new MovementError('Moving between maps is not implemented!');
 	}
 
-	const origin = [character.real_x, character.real_y];
+	const origin = [character.real_x, character.real_y, character.map];
 	const origin_key = position_to_string(origin);
-	const target = [location.x, location.y];
+	const target = [location.x, location.y, map];
 	DEBUG_PATHFIND && clear_drawings();
 	DEBUG_PATHFIND && draw_circle(target[0], target[1], 3, null, 0x0000ff);  // Target
 
@@ -110,7 +110,7 @@ function pathfind(location) {
 			}
 		}
 
-		// Order by cost
+		// Order by distance
 		edge.sort(([c1, _p1], [c2, _p2]) => c1 - c2);
 	}
 
@@ -132,19 +132,19 @@ function pathfind(location) {
 /**
  * Format position.
  *
- * @param {[number, number]} position 2D position (`x`, `y`).
- * @returns {string} Coordinates as `"x,y"`.
+ * @param {[number, number, number]} position (`x`, `y`, `map`).
+ * @returns {string} Coordinates as `"x,y@map"`.
  */
 function position_to_string(position) {
-	return `${position[0].toFixed(0)},${position[1].toFixed(0)}`;
+	return `${position[0].toFixed(0)},${position[1].toFixed(0)}@${position[2]}`;
 }
 
 /**
  * Find reachable neighbouring positions.
  *
- * @param {[number, number]} position (`x`, `y`) position.
+ * @param {[number, number, number]} position (`x`, `y`, `map`) position.
  * @param {number} step Step size.
- * @returns {Array<[number, number]>} Neighbouring positions.
+ * @returns {Array<[number, number, number]>} Neighbouring positions.
  */
 function neighbours(position, step) {
 	const points = [];
@@ -155,7 +155,7 @@ function neighbours(position, step) {
 			}
 
 			const new_position = quantize_position(
-				[position[0] + step * i, position[1] + step * j], STEP);
+				[position[0] + step * i, position[1] + step * j, position[2]], STEP);
 			if (can_move(position, new_position)) {
 				points.push(new_position);
 			}
@@ -168,11 +168,16 @@ function neighbours(position, step) {
 /**
  * Can our character move from `here` to `there`?
  *
- * @param {[number, number]} here Starting position (`x1`, `y1`).
- * @param {[number, number]} there Ending position (`x2`, `y2`).
+ * @param {[number, number, number]} here Starting position (`x1`, `y1`, `map`).
+ * @param {[number, number, number]} there Ending position (`x2`, `y2`, `map`).
  * @returns {boolean} True if can move unobstructed, otherwise false.
  */
 function can_move(here, there) {
+	if (here[2] !== there[2]) {
+		// Can't move between maps
+		return false;
+	}
+
 	return window.can_move({
 		map: character.map,
 		x: here[0], y: here[1],
@@ -184,14 +189,15 @@ function can_move(here, there) {
 /**
  * Quantize a postion to a multiple of `q`.
  *
- * @param {[number, number]} position (`x1`, `y1`).
+ * @param {[number, number, number]} position (`x1`, `y1`).
  * @param {number} q Quantizing factor.
- * @returns {[number, number]} Quantized postion.
+ * @returns {[number, number, number]} Quantized postion.
  */
 function quantize_position(position, q) {
 	return [
 		Math.floor(position[0] / q) * q + q / 2,
-		Math.floor(position[1] / q) * q + q / 2
+		Math.floor(position[1] / q) * q + q / 2,
+		position[2]
 	]
 }
 
