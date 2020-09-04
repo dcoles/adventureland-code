@@ -61,6 +61,7 @@ export async function pathfind_move(location, options) {
  * @param {object|string} location Location to move to.
  * @param {object} [options] Options for controlling pathfinding behaviour.
  * @param {number} [options.max_distance] Maximum distance to search (default: infinite).
+ * @param {boolean} [options.exact] If true, must exactly reach target.
  * @returns {Array<[number, number]>} Path found.
  * @throws {MovementError} If path could not be found.
  */
@@ -76,6 +77,7 @@ async function pathfind(location, options) {
 	const target = [location.x, location.y, map];
 	DEBUG_PATHFIND && clear_drawings();
 	DEBUG_PATHFIND && draw_circle(target[0], target[1], 4, null, 0x0000ff);  // Target
+	const target_key = position_to_string(target);
 
 	// Unsearched edge
 	const edge = [];
@@ -98,10 +100,22 @@ async function pathfind(location, options) {
 		const key = position_to_string(current);
 		const dist = dist_so_far[key];
 
-		if (heuristic(current, target) < RANGE) {
-			// Path found!
-			found = current;
-			break;
+		if (options.exact) {
+			// Try to get to the exact position
+			if (can_move(current, target)) {
+				// Exact path found!
+				came_from[target_key] = current;
+				dist_so_far[target_key] = dist + Util.distance(current[0], current[1], target[0], target[1]);
+				found = target;
+				break;
+			}
+		} else {
+			// Try to get "close enough"
+			if (heuristic(current, target) < RANGE) {
+				// Path found!
+				found = current;
+				break;
+			}
 		}
 
 		DEBUG_PATHFIND > 1 && draw_circle(current[0], current[1], 2, null, 0x00ff00);  // Searched
