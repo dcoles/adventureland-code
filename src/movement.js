@@ -1,5 +1,7 @@
 // Movement functions
 // @ts-check
+import * as Logging from '/logging.js';
+import * as Task from '/task.js';
 import * as Util from '/util.js';
 
 const LOCATIONS = {
@@ -19,11 +21,97 @@ const RANGE = 32;  // When are we "close enough" to the target
 const MAX_SEGMENT = 128;  // Maximum length of a simplified path segment
 const OFFMAP_ESTIMATE = 10000;  // Estimate of distance outside this map
 
+// Globals
+let g_movement = null;
+
 /** Error thrown when movement actions fail. */
 export class MovementError extends Error {
 	constructor(message) {
 		super(message);
 	}
+}
+
+class Movement {
+	constructor() {
+		this.task = null;
+	}
+
+	/**
+	 * Stop movement.
+	 */
+	stop() {
+		Logging.debug('Stopping movement');
+		if (this.task) {
+			this.task.cancel();
+			this.task = null;
+		}
+		move(character.real_x, character.real_y);
+	}
+
+	/**
+	 * Find a path to location, then follow it.
+	 *
+	 * @param {object|string} location Location to move to.
+	 * @param {object} [options] Options for controlling pathfinding behaviour.
+	 * @returns {Promise} Resolves when location is reached.
+	 */
+	async pathfind_move(location, options) {
+		DEBUG_MOVEMENT && clear_drawings();
+		if (typeof location === 'string') {
+			location = get_location_by_name(location);
+		}
+
+		const path = await pathfind(location, options);
+		DEBUG_MOVEMENT && draw_circle(location.x, location.y, 4, null, 0x0000ff);
+		DEBUG_MOVEMENT && path.forEach(([x, y]) => draw_circle(x, y, 2, null, 0xff0000));
+
+		await this.follow_path(path);
+	}
+
+	/**
+	 * Follow a path of positions.
+	 *
+	 * @param {Array<[number, number]>} path Path to follow.
+	 * @returns {Promise} Resolves when this movement completes.
+	 */
+	follow_path(path) {
+		this._create_task(async (task) => {
+			Logging.debug(`Following path: ${path.map(position_to_string).join('; ')}`);
+			for (let p of path) {
+				if (task.is_cancelled()) {
+					Logging.debug('Follow path interrupted');
+					break;
+				}
+
+				DEBUG_MOVEMENT && draw_line(character.real_x, character.real_y, p[0], p[1]);
+				await window.move(p[0], p[1]);
+			}
+		});
+
+		return this.task.result();
+	}
+
+	/**
+	 * Create a movement task.
+	 *
+	 * @param {Async} task Async function that implements this task.
+	 */
+	_create_task(async) {
+		this.stop();
+		this.task = Task.create(async);
+	}
+}
+
+/**
+ * Get Movement singleton.
+ *
+ * @returns {Movement}
+ */
+export function get_movement() {
+	if (!g_movement) {
+		g_movement = new Movement();
+	}
+	return g_movement;
 }
 
 /**
@@ -37,26 +125,6 @@ export function get_location_by_name(name) {
 	}
 
 	throw new MovementError(`Could not find location: ${name}`);
-}
-
-/**
- * Find a path to location, then follow it.
- *
- * @param {object|string} location Location to move to.
- * @param {object} [options] Options for controlling pathfinding behaviour.
- * @returns {Promise} Resolves when location is reached.
- */
-export async function pathfind_move(location, options) {
-	DEBUG_MOVEMENT && clear_drawings();
-	if (typeof location === 'string') {
-		location = get_location_by_name(location);
-	}
-
-	const path = await pathfind(location, options);
-	DEBUG_MOVEMENT && draw_circle(location.x, location.y, 4, null, 0x0000ff);
-	DEBUG_MOVEMENT && path.forEach(([x, y]) => draw_circle(x, y, 2, null, 0xff0000));
-
-	await follow_path(path);
 }
 
 /**
@@ -260,19 +328,6 @@ function simplify_path(path) {
 	}
 
 	return new_path;
-}
-
-/**
- * Follow a path of positions.
- *
- * @param {Array<[number, number]>} path Path to follow.
- * @returns {Promise} Resolves when destination is reached.
- */
-export async function follow_path(path) {
-	for (let p of path) {
-		DEBUG_MOVEMENT && draw_line(character.real_x, character.real_y, p[0], p[1]);
-		await window.move(p[0], p[1]);
-	}
 }
 
 /** Draw all boundary lines on this map. */

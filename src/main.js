@@ -20,6 +20,9 @@ import * as Movement from './movement.js';
 // Your Character
 export const character = Character.get_character();
 
+// Movement controller
+export const movement = Movement.get_movement();
+
 // Global variables
 let g_start_time = null;
 let g_brain = null;
@@ -187,7 +190,7 @@ window.on_party_request = function(name) {
  */
 window.on_map_click = function(x, y) {
 	// This is almost always better than the default
-	Movement.pathfind_move({x: x, y: y}, {max_distance: 1000, exact: true}).catch((e) => Logging.error('Move failed', e));
+	movement.pathfind_move({x: x, y: y}, {max_distance: 1000, exact: true}).catch((e) => Logging.error('Move failed', e));
 	return true;
 }
 

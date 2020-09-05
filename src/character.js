@@ -12,6 +12,9 @@ const DEBUG_COLLISION = true;
 // Globals
 let g_character = null;
 
+// Movement controller
+const movement = Movement.get_movement();
+
 /**
  * Get the singleton `Character` object.
  *
@@ -326,7 +329,7 @@ class Character {
 			// FIXME: pathfind_move does not yet support moving between maps
 			return await Adventure.smart_move(location);
 		} else {
-			return await Movement.pathfind_move(location);
+			return await movement.pathfind_move(location);
 		}
 	}
 
