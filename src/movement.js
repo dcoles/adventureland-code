@@ -20,7 +20,7 @@ const MAX_SEGMENT = 128;  // Maximum length of a simplified path segment
 const OFFMAP_ESTIMATE = 10000;  // Estimate of distance outside this map
 
 /** Error thrown when movement actions fail. */
-class MovementError extends Error {
+export class MovementError extends Error {
 	constructor(message) {
 		super(message);
 	}

@@ -3,6 +3,7 @@
 
 import * as Adventure from '/adventure.js';
 import * as Entity from '/entity.js';
+import * as Movement from '/movement.js';
 import * as Util from '/util.js';
 import * as Skills from '/skills.js';
 
@@ -321,10 +322,11 @@ class Character {
 	async xmove(x, y, map) {
 		map = map || character.map;
 		const location = {x: x, y: y, map: map};
-		if (character.map === map && Adventure.can_move_to(x, y)) {
-			return await this.move_towards(location);
-		} else {
+		if (character.map !== map) {
+			// FIXME: pathfind_move does not yet support moving between maps
 			return await Adventure.smart_move(location);
+		} else {
+			return await Movement.pathfind_move(location);
 		}
 	}
 
