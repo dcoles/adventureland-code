@@ -1,5 +1,6 @@
 // Movement functions
 // @ts-check
+import * as Entity from '/entity.js';
 import * as Logging from '/logging.js';
 import * as Task from '/task.js';
 import * as Util from '/util.js';
@@ -89,6 +90,32 @@ class Movement {
 	}
 
 	/**
+	 * Move towards a target.
+	 *
+	 * @param {object} target Target to move towards.
+	 * @param {number} max_distance Maximum distance to move.
+	 */
+	async move_to(target, max_distance) {
+		let dest = [target.real_x, target.real_y];
+		const current_pos = this.current_position();
+		const dist = Util.distance(current_pos[0], current_pos[1], dest[0], dest[1]);
+
+		if (target.moving) {
+			// First order approximation
+			const t = Entity.movement_time(window.character, dist);
+			dest = Util.vector_add(dest, movement_compensation(target, t));
+		}
+
+		if (max_distance && dist > max_distance) {
+			// Respect `max_distance`
+			const v = Util.vector_resize(Util.vector_difference(current_pos, dest), max_distance);
+			dest = Util.vector_add(current_pos, v);
+		}
+
+		await window.move(dest[0], dest[1]);
+	}
+
+	/**
 	 * Follow a path of positions.
 	 *
 	 * @param {Array<[number, number]>} path Path to follow.
@@ -173,6 +200,16 @@ export function get_location_by_name(name) {
 	}
 
 	throw new MovementError(`Could not find location: ${name}`);
+}
+
+/**
+ * Estimate target's movement over time `t`.
+ *
+ * @param {object} target Target entity.
+ * @param {number} t Time in seconds.
+ */
+function movement_compensation(target, t) {
+	return [(target.vx || 0) * t, (target.vy || 0) * t];
 }
 
 /**

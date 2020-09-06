@@ -66,6 +66,17 @@ export function vector_difference(v1, v2) {
 }
 
 /**
+ * Resize a vector to fixed length.
+ *
+ * @param {number[]} v A vector.
+ * @param {number} length New length
+ * @returns {number[]} Normalized vector
+ */
+export function vector_resize(v, length) {
+	return vector_scale(vector_normalize(v), length);
+}
+
+/**
  * Normalize a vector to length 1.
  *
  * @param {number[]} v A vector.

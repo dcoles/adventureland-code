@@ -153,10 +153,10 @@ export function distance_between(a, b) {
  *
  * @param {object} entity Target to measure.
  * @param {number} distance Distance target will move.
- * @returns {number} Duration in milliseconds.
+ * @returns {number} Duration in seconds.
 */
 export function movement_time(entity, distance) {
-	return distance / entity.speed * 1000;
+	return distance / entity.speed;
 }
 
 /**
