@@ -7,7 +7,7 @@ import * as Movement from '/movement.js';
 import * as Util from '/util.js';
 import * as Skills from '/skills.js';
 
-const DEBUG_COLLISION = true;
+const DEBUG_COLLISION = false;
 
 // Globals
 let g_character = null;
@@ -236,7 +236,7 @@ class Character {
 
 				if (!window.can_move_to(new_x, new_y)) {
 					// Unreachable position.
-					window.draw_circle(new_x, new_y, 2, null, 0xff0000);
+					DEBUG_COLLISION && window.draw_circle(new_x, new_y, 2, null, 0xff0000);
 					continue;
 				}
 
@@ -281,10 +281,11 @@ class Character {
 		// Check if this motion collides with any of the entities
 		for (let entity of Object.values(Adventure.get_entities())) {
 			if (Entity.will_collide(entity, char, t_max)) {
-				window.draw_circle(entity.x, entity.y, entity.width / 2, null, 0xff0000);
+				DEBUG_COLLISION && window.draw_circle(entity.x, entity.y, entity.width / 2, null, 0xff0000);
 				return true;
 			} else {
-				window.draw_circle(entity.x, entity.y, entity.width / 2, null, 0x0000ff);
+				DEBUG_COLLISION && window.draw_circle(entity.x, entity.y, entity.width / 2, null, 0x0000ff);
+				DEBUG_COLLISION && window.draw_circle(entity.x, entity.y, entity.width / 2, null, 0x0000ff);
 			}
 		}
 

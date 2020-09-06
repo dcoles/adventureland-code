@@ -14,7 +14,7 @@ const LOCATIONS = {
 	'halloween_potions': {map: 'halloween', x: 149, y: -182},
 }
 
-const DEBUG_MOVEMENT = 1;  // 0: Off, 1: Movement, 2: Pathfinding
+const DEBUG_MOVEMENT = 0;  // 0: Off, 1: Movement, 2: Pathfinding
 const SMALL_STEP_RANGE = 64;  // Start with small steps for this much distance
 const STEP = 16;  // Size of a tile
 const RANGE = 32;  // When are we "close enough" to the target
