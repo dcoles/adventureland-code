@@ -449,7 +449,7 @@ class AutoBrain {
 	_pick_target() {
 		// Someone is trying to attack us! Attack them back!
 		if (character.targets) {
-			const targeted_by = Entity.get_nearest_monsters({target: character});
+			const targeted_by = Entity.get_nearby_monsters({target: character});
 			const target = targeted_by[0];
 			if (target) {
 				this.set_target(target);
@@ -460,7 +460,7 @@ class AutoBrain {
 		// Help party
 		const party = Entity.get_party_members({alive: true, exclude_self: true});
 		for (let member of party) {
-			const targeted_by = Entity.get_nearest_monsters({target: member, exclude_self: true});
+			const targeted_by = Entity.get_nearby_monsters({target: member, exclude_self: true});
 			if (targeted_by.length < 1) {
 				continue;
 			}
@@ -476,7 +476,7 @@ class AutoBrain {
 		}
 
 		// Find a new monster
-		for (let monster of Entity.get_nearest_monsters({path_check: true, no_target: true})) {
+		for (let monster of Entity.get_nearby_monsters({path_check: true, no_target: true})) {
 			const difficulty = Entity.difficulty(monster);
 			if (difficulty < MIN_DIFFICULTY || difficulty > MAX_DIFFICULTY) {
 				continue;

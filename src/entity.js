@@ -12,7 +12,7 @@ const character = Adventure.get_character();
  * @param {object} [criteria] Criteria for matching monster.
  * @returns {Array} Monsters ordered from nearest to furthest away.
  */
-export function get_nearest_monsters(criteria) {
+export function get_nearby_monsters(criteria) {
 	criteria = criteria || {};
 	criteria.type = 'monster';
 	criteria.min_xp = criteria.min_xp || 1;  // don't kill puppies
