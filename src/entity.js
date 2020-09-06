@@ -37,6 +37,7 @@ export function get_party_members() {
  * @param {Array} entities Entities to filter.
  * @param {object} criteria Criteria to filter entities by.
  * @param {"character"|"monster"} [criteria.type] Entity must match this type.
+ * @param {boolean} [criteria.exclude_self] Exclude ourselves.
  * @param {object|string} [criteria.target] Entity must be targetting this entity.
  * @param {boolean} [criteria.no_target] Entity must not have a target.
  * @param {boolean} [criteria.party] If true, entity must be in our party.
@@ -52,6 +53,10 @@ export function filter(entities, criteria) {
 
 	return entities.filter((entity) => {
 		if (criteria.type && entity.type !== criteria.type) {
+			return false;
+		}
+
+		if (criteria.exclude_self && entity.name === character.name) {
 			return false;
 		}
 
