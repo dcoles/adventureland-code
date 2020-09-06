@@ -37,7 +37,7 @@ export function get_party_members() {
  * @param {Array} entities Entities to filter.
  * @param {object} criteria Criteria to filter entities by.
  * @param {"character"|"monster"} [criteria.type] Entity must match this type.
- * @param {object} [criteria.target] Entity must be targetting this entity.
+ * @param {object|string} [criteria.target] Entity must be targetting this entity.
  * @param {boolean} [criteria.no_target] Entity must not have a target.
  * @param {boolean} [criteria.party] If true, entity must be in our party.
  * @param {number} [criteria.min_xp] Entity must give at least this much XP.
@@ -55,7 +55,7 @@ export function filter(entities, criteria) {
 			return false;
 		}
 
-		if (criteria.target && entity.target !== criteria.target.name) {
+		if (criteria.target && entity.target !== name(criteria.target)) {
 			return false;
 		}
 
@@ -81,6 +81,15 @@ export function filter(entities, criteria) {
 
 		return true;
 	});
+}
+
+/**
+ * Get the name of an entity.
+ *
+ * @param {object|string} entity Entity object or entity name.
+ */
+export function name(entity) {
+	return typeof entity === "object" ? entity.name : entity;
 }
 
 /**
