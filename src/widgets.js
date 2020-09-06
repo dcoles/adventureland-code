@@ -31,7 +31,7 @@ export function stat_monitor(stat_name, t, window_duration) {
 		const avg_per_hour = 3600 * values.reduce((a, b) => a + b) / n;
 
 		// Show at bottom of the UI
-		window.add_bottom_button(stat_name + '_rate', `${stat_name.toUpperCase()}/h: ${Math.round(avg_per_hour)}`);
+		window.add_bottom_button(stat_name + '_rate', `${stat_name.toUpperCase()}/h: ${Math.round(avg_per_hour).toLocaleString()}`);
 		last = current;
 	}, t * 1000);
 }
