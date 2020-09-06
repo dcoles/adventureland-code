@@ -37,6 +37,24 @@ class Movement {
 	}
 
 	/**
+	 * Get our current position.
+	 *
+	 * @returns {[number, number]} Position as (x, y) vector.
+	 */
+	current_position() {
+		return [window.character.real_x, window.character.real_y];
+	}
+
+	/**
+	 * Get the map we're currently on.
+	 *
+	 * @returns {string} Map name.
+	 */
+	current_map() {
+		return window.character.map;
+	}
+
+	/**
 	 * Stop movement.
 	 */
 	stop() {
@@ -45,7 +63,8 @@ class Movement {
 			this.task.cancel();
 			this.task = null;
 		}
-		move(character.real_x, character.real_y);
+
+		move(window.character.real_x, window.character.real_y);
 	}
 
 	/**
@@ -94,7 +113,7 @@ class Movement {
 				}
 
 				// Calculate movement vector
-				const current_pos = [character.real_x, character.real_y];
+				const current_pos = this.current_position();
 				const v = Util.vector_difference(current_pos, p);
 				const segment_distance = Util.vector_length(v);
 
@@ -112,7 +131,8 @@ class Movement {
 				await window.move(target[0], target[1]);
 
 				// Actual distance traveled
-				distance_traveled += Util.distance(current_pos[0], current_pos[1], character.real_x, character.real_y);
+				const new_position = this.current_position();
+				distance_traveled += Util.distance(current_pos[0], current_pos[1], new_position[0], new_position[1]);
 			}
 		});
 
@@ -122,7 +142,7 @@ class Movement {
 	/**
 	 * Create a movement task.
 	 *
-	 * @param {Async} task Async function that implements this task.
+	 * @param {Task.Async} async Async function that implements this task.
 	 */
 	_create_task(async) {
 		this.stop();
@@ -163,7 +183,7 @@ export function get_location_by_name(name) {
  * @param {number} [options.max_distance] Maximum distance to search (default: infinite).
  * @param {boolean} [options.exact=false] If true, must exactly reach target.
  * @param {boolean} [options.simplify=true] If true, attempt to simplify the path.
- * @returns {Array<[number, number]>} Path found.
+ * @returns {Promise<Array<[number, number]>>} Path found.
  * @throws {MovementError} If path could not be found.
  */
 async function pathfind(location, options) {
