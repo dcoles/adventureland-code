@@ -24,7 +24,7 @@ const MOVEMENT_TOLLERANCE = 20;
 
 class AutoBrain {
 	constructor() {
-		this.stopped = Adventure.get('stopped') || false;
+		this.stopped = !character.bot && Adventure.get('stopped') || false;
 		this.home = null;
 		this.tick = 0;
 		this.target = null;
