@@ -457,24 +457,17 @@ class AutoBrain {
 			}
 		}
 
-		// Help our leader
-		if (this.leader_name) {
-			do {
-				const leader = maincode.character;
-				if (!leader) {
-					// Leader is missing!
-					break;
-				}
+		// Help party
+		const party = Entity.get_party_members({alive: true, exclude_self: true});
+		for (let member of party) {
+			const targeted_by = Entity.get_nearest_monsters({target: member, exclude_self: true});
+			if (targeted_by.length < 1) {
+				continue;
+			}
 
-				const targeted_by = Entity.get_nearest_monsters({target: leader})
-				const target = targeted_by[0];
-				if (!target) {
-					break;
-				}
-
-				this.set_target(targeted_by[0]);
-				return;
-			} while(false);
+			Logging.info(`Helping out ${member.name} against ${targeted_by[0].name}`)
+			this.set_target(targeted_by[0]);
+			return;
 		}
 
 		// Priests shouldn't pick new targets

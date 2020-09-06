@@ -24,10 +24,25 @@ export function get_nearest_monsters(criteria) {
 /**
  * Return nearby party members ordered by HP ratio.
  *
+ * @param {object} [criteria] Criteria to filter entities by.
+ * @param {boolean} [criteria.exclude_self] Exclude ourselves.
+ * @param {boolean} [criteria.alive] Party member must be alive.
  * @returns {Array} Character objects.
  */
-export function get_party_members() {
-	const members = filter(Adventure.get_entities(), {type: 'character', party: true});
+export function get_party_members(criteria) {
+	criteria = criteria || {};
+
+	const members = filter(
+		Adventure.get_entities(),
+		{type: 'character', party: true, exclude_self: criteria.exclude_self})
+	.filter((c) => {
+		if (criteria.alive && c.rip) {
+			return false;
+		}
+
+		return true;
+	});
+
 	return members.sort(compare_hp);
 }
 
