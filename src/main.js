@@ -52,6 +52,7 @@ function critical(text, obj) {
 
 /** Stop the main loop. */
 export function stop() {
+	movement.stop();
 	if (g_brain) {
 		g_brain.stop();
 	}

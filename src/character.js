@@ -297,6 +297,7 @@ class Character {
 	 * @param {string} [action='move'] Action to cancel.
 	 */
 	stop(action) {
+		movement.stop();
 		Adventure.stop(action);
 	}
 
