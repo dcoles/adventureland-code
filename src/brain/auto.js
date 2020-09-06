@@ -271,17 +271,29 @@ class AutoBrain {
 		const hp_ratio = character.hp / character.max_hp;
 		const mp_ratio = character.mp / character.max_mp;
 
+		let skill_id = null;
+		let conditon = null;
 		if (hp_ratio < 0.10) {  // below 10% HP
-			character.skills.regen_hp.autouse(null, null, () => !character.is_fully_healed() && !this.is_interrupted());
+			// Critically low health
+			skill_id = 'regen_hp';
+			conditon = () => !character.is_fully_healed() && !this.is_interrupted();
 		} else if (mp_ratio < 0.10) {  // below 10% MP
 			// We need mana to cast!
-			character.skills.regen_mp.autouse(null, null, () => !character.is_fully_charged() && !this.is_interrupted());
+			skill_id = 'regen_mp';
+			conditon = () => !character.is_fully_charged() && !this.is_interrupted();
 		} else if (hp_ratio < 1.00) {  // below 100% HP
 			// Restore HP
-			character.skills.regen_hp.autouse(null, null, () => !character.is_fully_healed() && !this.is_interrupted());
+			skill_id = 'regen_hp';
+			conditon = () => !character.is_fully_healed() && !this.is_interrupted();
 		} else if (mp_ratio < 1.00) {  // below 100% MP
 			// Restore MP
-			character.skills.regen_mp.autouse(null, null, () => !character.is_fully_charged() && !this.is_interrupted());
+			skill_id = 'regen_mp';
+			conditon = () => !character.is_fully_charged() && !this.is_interrupted();
+		}
+
+		// Cast autocast
+		if (skill_id && !character.skills[skill_id].is_autouse()) {
+			character.skills[skill_id].autouse(null, null, conditon);
 		}
 	}
 
@@ -346,12 +358,12 @@ class AutoBrain {
 
 		Logging.info(`Healing ${target.name}`)
 		await character.move_towards(target);
-		try {
-			await character.skills.heal.use_when_ready(target);
-		} catch (e) {
-			Logging.warn(`Can't heal ${target.name}: ${e.reason}`)
-			await Util.sleep(IDLE_MS);
+
+		if (!character.skills.heal.is_autouse()) {
+			character.skills.heal.autouse(target, null, (t) => t.hp < t.max_hp);
 		}
+
+		await Util.sleep(IDLE_MS);
 	}
 
 	/** Return to our fearless leader! */
@@ -406,12 +418,11 @@ class AutoBrain {
 			}
 		}
 
-		try {
-			await character.skills.attack.use_when_ready(this.target);
-		} catch (e) {
-			Logging.warn(`Can't attack ${this.target ? this.target.name : '???'}: ${e.reason}`)
-			await Util.sleep(IDLE_MS);
+		if (!character.skills.attack.is_autouse()) {
+			character.skills.attack.autouse(this.target, null, (t) => !t.rip);
 		}
+
+		await Util.sleep(IDLE_MS);
 	}
 
 	/**

@@ -62,6 +62,11 @@ class Task {
 		});
 	}
 
+	/** Is the task running? */
+	is_running() {
+		return this._state === Task.RUNNING;
+	}
+
 	/** Has the task completed. */
 	is_done() {
 		return this._state === Task.FAILED || this._state === Task.SUCCEEDED || this._state === Task.CANCELLED;

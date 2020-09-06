@@ -2,6 +2,7 @@
 
 import * as Adventure from '/adventure.js';
 import * as Logging from '/logging.js';
+import * as Task from '/task.js';
 import * as Util from '/util.js';
 
 const JIFFIE_MS = 250;  // A short period of time
@@ -171,15 +172,15 @@ class Skill {
 	 * @returns {boolean}
 	 */
 	is_autouse() {
-		const token = this.get_token();
-		return token && token.skill.skill_id === this.skill_id && token.active;
-	}
+		if (!(this.cooldown_id in Skill.autouse)) {
+			return false;
+		}
 
-	/**
-	 * @returns {object|null} Current autouse token or null.
-	 */
-	get_token() {
-		return Skill.autouse[this.cooldown_id];
+		if (Skill.autouse[this.cooldown_id][0] !== this.skill_id) {
+			return false;
+		}
+
+		return Skill.autouse[this.cooldown_id][1].is_running();
 	}
 
 	/**
@@ -193,65 +194,63 @@ class Skill {
 	 * @param {Function} [condition] Condition for casting the skill.
 	 */
 	async autouse(target, extra_args, condition) {
-		const old_token = this.get_token()
-		if (this.is_autouse()
-		&& old_token.target == target && old_token.extra_args == extra_args) {
-			// Already on
-			return;
-		}
+		await this._create_autouse_task(async (task) => {
+			Logging.info(`Autousing ${this.skill.name}`);
 
-		Logging.info(`Autousing ${this.skill.name}`);
-		const token = acquire_autouse(this, target, extra_args);
+			while (!task.is_cancelled()) {
+				// Don't use `this.wait_until_ready()` as it cancels autouse
+				await wait_until_ready(this.cooldown_id);
 
-		do {
-			// Don't use `this.wait_until_ready()` as it cancels autouse
-			await wait_until_ready(this.cooldown_id);
-
-			// Is the autouse condition broken?
-			if (condition && await condition() == false) {
-				Logging.debug(`Condition ${condition} failed`, this);
-				break;
-			}
-
-			// Has this autouse been deactivated?
-			if (!token.active) {
-				break;
-			}
-
-			// Is the target out of range?
-			if (target && !Adventure.is_in_range(target, this.skill_id)) {
-				// FIXME: Come up with a better way to determine this
-				await Util.sleep(500);
-				continue;
-			}
-
-			try {
-				await this.use(target, extra_args);
-			} catch (e) {
-				if (e.reason == 'not_found') {
-					// Target has gone. Cancel autouse.
+				// Is the autouse condition broken?
+				if (condition && await condition(target) == false) {
+					Logging.debug(`Condition ${condition} failed`, this);
 					break;
 				}
-				Logging.warn(`Autouse ${this.skill.name} failed`, e.reason);
-				// FIXME: Determine exactly when we can actually use the skill.
-				await Util.sleep(500);
-			}
-		} while (true)
 
-		release_autouse(token);
+				// Has this autouse been deactivated?
+				if (task.is_cancelled()) {
+					break;
+				}
+
+				try {
+					await this.use(target, extra_args);
+				} catch (e) {
+					if (e.reason === 'not_found') {
+						// Target has gone. Cancel autouse.
+						break;
+					}
+					Logging.warn(`Autouse ${this.skill.name} failed`, e.reason);
+					// FIXME: Determine exactly when we can actually use the skill.
+					await Util.sleep(500);
+				}
+			}
+		});
+	}
+
+	/**
+	 * Create autouse task.
+	 *
+	 * @param {Task.Async} async Async function that implements this task.
+	 * @returns {Promise} Resolves when this task is complete.
+	 */
+	_create_autouse_task(async) {
+		this.cancel_autouse();
+
+		const task = Task.create(async);
+		Skill.autouse[this.cooldown_id] = [this.skill_id, task];
+		return task.result();
 	}
 
 	/**
 	 * Cancel this autouse skill (or shared skills).
 	 */
 	cancel_autouse() {
-		const token = this.get_token();
-		if (!token) {
+		if (!(this.cooldown_id in Skill.autouse)) {
 			return;
 		}
 
-		Logging.debug(`Canceling autouse of ${token.skill.skill_id}`);
-		release_autouse(this.get_token());
+		Skill.autouse[this.cooldown_id][1].cancel();
+		delete Skill.autouse[this.cooldown_id];
 	}
 
 	toString() {
@@ -279,35 +278,3 @@ async function wait_until_ready(cooldown_id) {
 
 /** Active autouse skills */
 Skill.autouse = {};
-
-/** Aquire an active autouse for this skills cooldown slot. */
-function acquire_autouse(skill, target, extra_args) {
-	// Release previous autouse (if any)
-	release_autouse(Skill.autouse[skill.cooldown_id]);
-
-	// Create a new token
-	const token = { skill: skill, target: target, extra_args: extra_args, active: true, created: Date.now() };
-	Skill.autouse[skill.cooldown_id] = token;
-
-	return token;
-}
-
-/** Deactive and release this autouse. */
-function release_autouse(token) {
-	if (!token) {
-		return;
-	}
-
-	// Deactivate autouse
-	token.active = false;
-
-	// Remove this autouse if it's the active one
-	if (is_active_autouse(token)) {
-		delete Skill.autouse[token.skill.cooldown_id];
-	}
-}
-
-/** Is this the currently active autouse? */
-function is_active_autouse(token) {
-	return Skill.autouse[token.skill.cooldown_id] === token;
-}
