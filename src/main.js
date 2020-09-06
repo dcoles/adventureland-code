@@ -242,8 +242,6 @@ async function main() {
 	g_start_time = new Date();
 	Logging.info('Start time', g_start_time);
 
-	change_target(null);
-
 	// Log combat events
 	if (!character.bot) {
 		BattleLog.monitor();

@@ -216,6 +216,9 @@ class AutoBrain {
 
 		// Reoccuring timer
 		setInterval(() => this._tick(), TICK_MS);
+
+		// Initially we have no target
+		change_target(null);
 	}
 
 	/**
