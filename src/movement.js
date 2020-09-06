@@ -52,39 +52,67 @@ class Movement {
 	 * Find a path to location, then follow it.
 	 *
 	 * @param {object|string} location Location to move to.
-	 * @param {object} [options] Options for controlling pathfinding behaviour.
+	 * @param {object} [pathfinding_options] Options for pathfinding behaviour.
+	 * @param {object} [movement_options] Options for movement behaviour.
 	 * @returns {Promise} Resolves when location is reached.
 	 */
-	async pathfind_move(location, options) {
+	async pathfind_move(location, pathfinding_options, movement_options) {
 		DEBUG_MOVEMENT && clear_drawings();
 		if (typeof location === 'string') {
 			location = get_location_by_name(location);
 		}
 
-		const path = await pathfind(location, options);
+		const path = await pathfind(location, pathfinding_options);
 		DEBUG_MOVEMENT && draw_circle(location.x, location.y, 4, null, 0x0000ff);
 		DEBUG_MOVEMENT && path.forEach(([x, y]) => draw_circle(x, y, 2, null, 0xff0000));
 
-		await this.follow_path(path);
+		await this.follow_path(path, movement_options);
 	}
 
 	/**
 	 * Follow a path of positions.
 	 *
 	 * @param {Array<[number, number]>} path Path to follow.
+	 * @param {object} [options] Movement options.
+	 * @param {number} [options.max_distance] Maximum distance to move.
 	 * @returns {Promise} Resolves when this movement completes.
 	 */
-	follow_path(path) {
+	follow_path(path, options) {
+		options = options || {};
 		this._create_task(async (task) => {
 			Logging.debug(`Following path: ${path.map(position_to_string).join('; ')}`);
+			let distance_traveled = 0;
 			for (let p of path) {
 				if (task.is_cancelled()) {
 					Logging.debug('Follow path interrupted');
-					break;
+					return;
 				}
 
-				DEBUG_MOVEMENT && draw_line(character.real_x, character.real_y, p[0], p[1]);
-				await window.move(p[0], p[1]);
+				if (options.max_distance && distance_traveled > options.max_distance) {
+					console.log('Max distance exceeded');
+					return;
+				}
+
+				// Calculate movement vector
+				const current_pos = [character.real_x, character.real_y];
+				const v = Util.vector_difference(current_pos, p);
+				const segment_distance = Util.vector_length(v);
+
+				// Must move at least 1 pixel length
+				if (segment_distance < 1) {
+					await window.move(current_pos[0], current_pos[1]);
+					continue;
+				}
+
+				// Respect max_distance
+				const dist = options.max_distance ? Math.min(segment_distance, options.max_distance - distance_traveled) : segment_distance;
+				const target = Util.vector_add(current_pos, Util.vector_scale(v, dist / segment_distance));
+
+				DEBUG_MOVEMENT && draw_line(current_pos[0], current_pos[1], target[0], target[1]);
+				await window.move(target[0], target[1]);
+
+				// Actual distance traveled
+				distance_traveled += Util.distance(current_pos[0], current_pos[1], character.real_x, character.real_y);
 			}
 		});
 

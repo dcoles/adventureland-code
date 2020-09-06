@@ -46,6 +46,26 @@ export function distance(x1, y1, x2, y2) {
 }
 
 /**
+ * Calculate the addition of two vectors.
+ *
+ * @param {number[]} v1 First vector.
+ * @param {number[]} v2 Second vector.
+ */
+export function vector_add(v1, v2) {
+	return v1.map((x, i) => x + v2[i]);
+}
+
+/**
+ * Calculate the difference between two vectors.
+ *
+ * @param {number[]} v1 First vector.
+ * @param {number[]} v2 Second vector.
+ */
+export function vector_difference(v1, v2) {
+	return v1.map((x, i) => v2[i] - x);
+}
+
+/**
  * Normalize a vector to length 1.
  *
  * @param {number[]} v A vector.
