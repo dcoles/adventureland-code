@@ -10,7 +10,7 @@ const COMMANDS = {};
  *
  * @param {string} name Command name (e.g. "hello").
  * @param {Function} handler Command handler.
- * @param {string[]} required Required arguments.
+ * @param {string[]} [required] Required arguments.
  * @param {string[]} [optional] Optional arguments.
  */
 export function register(name, handler, required, optional) {

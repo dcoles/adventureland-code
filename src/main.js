@@ -17,6 +17,9 @@ import * as Widgets from '/widgets.js';
 import * as Item from '/item.js';
 import * as Movement from './movement.js';
 
+const START_BOTS = false;
+const BOT_SCRIPT = 'loader';
+
 // Your Character
 export const character = Character.get_character();
 
@@ -55,9 +58,35 @@ export function stop() {
 }
 
 /** Resume the main loop. */
-export function resume() {
+export function start() {
 	if (g_brain) {
 		g_brain.resume();
+	}
+}
+
+/** Start bots. */
+export function start_bots() {
+	const chars = Adventure.get_characters();
+	for (let char of chars) {
+		if (char.name === character.name) {
+			continue;
+		}
+
+		Logging.info('Starting bot', char.name);
+		Adventure.start_character(char.name, BOT_SCRIPT);
+	}
+}
+
+/** Stop bots. */
+export function stop_bots() {
+	const chars = Adventure.get_characters();
+	for (let char of chars) {
+		if (char.name === character.name) {
+			continue;
+		}
+
+		Logging.info('Stopping bot', char.name);
+		Adventure.stop_character(char.name);
 	}
 }
 
@@ -194,6 +223,18 @@ window.on_map_click = function(x, y) {
 	return true;
 }
 
+/**
+ * Called just before CODE is destroyed.
+ */
+window.on_destroy = function() {
+	// Default behaviour
+	window.clear_drawings();
+	window.clear_buttons();
+
+	// Stop bots
+	stop_bots();
+}
+
 /** Main function */
 async function main() {
 	Logging.info('== Starting CODE ==');
@@ -220,7 +261,7 @@ async function main() {
 	// Map snippets
 	Adventure.map_snippet('G', 'Code.set_state("Return Home")');
 	Adventure.map_snippet('H', 'Code.set_home()');
-	Adventure.map_snippet('J', 'Code.resume()');
+	Adventure.map_snippet('J', 'Code.start()');
 	Adventure.map_snippet('K', 'Code.stop()');
 	Adventure.map_snippet('M', 'Code.set_target()');
 
@@ -228,9 +269,16 @@ async function main() {
 	Command.register('compound', compound_items, ['item'], ['max_level:int', 'scroll']);
 	Command.register('upgrade', upgrade_items, ['item'], ['max_level:int', 'scroll']);
 	Command.register('stopbrain', stop, null, ['character']);
-	Command.register('resumebrain', resume, null, ['character']);
+	Command.register('startbrain', start, null, ['character']);
+	Command.register('startbots', start_bots);
+	Command.register('stopbots', stop_bots);
 	Command.register('go', Adventure.smart_move, ['location']);
 	Command.register('c', call_character_command, ['character', 'command'], ['arg1', 'arg2', 'arg3', 'arg4'])
+
+	// Start our bots
+	if (START_BOTS) {
+		start_bots();
+	}
 
 	// Start running!
 	g_brain = AutoBrain.get_brain();

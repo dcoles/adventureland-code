@@ -21,7 +21,6 @@ const MIN_DIFFICULTY = 0.1;
 const MAX_DIFFICULTY = 9.0;
 const KITING_THRESHOLD = 0.5;
 const MOVEMENT_TOLLERANCE = 20;
-const BOT_SCRIPT = 'loader';
 
 class AutoBrain {
 	constructor() {
@@ -31,7 +30,6 @@ class AutoBrain {
 		this.target = null;
 		this.target_difficulty = 0;
 		this.leader_name = null;
-		this.bots = [];
 	}
 
 	/** Are we interrupted? */
@@ -204,18 +202,6 @@ class AutoBrain {
 
 			Logging.info(`Home: ${Entity.location_to_string(this.home)}`);
 			window.draw_circle(this.home.x, this.home.y, this.home.range, null, 0xffff00);
-
-			// Start our bots
-			const chars = Adventure.get_characters();
-			for (let char of chars) {
-				if (char.name === character.name) {
-					continue;
-				}
-
-				Logging.info('Starting bot', char.name);
-				this.bots.push(char.name);
-				Adventure.start_character(char.name, BOT_SCRIPT);
-			}
 		}
 
 		// Focus on attacker when hit
