@@ -57,10 +57,12 @@ export function get_entities(criteria) {
  * @param {Array} entities Entities to filter.
  * @param {object} criteria Criteria to filter entities by.
  * @param {"character"|"monster"} [criteria.type] Entity must match this type.
+ * @param {string} [criteria.ctype] Entity must be of this class type.
  * @param {boolean} [criteria.exclude_self] Exclude ourselves.
  * @param {object|string} [criteria.target] Entity must be targetting this entity.
  * @param {boolean} [criteria.no_target] Entity must not have a target.
  * @param {boolean} [criteria.alive] If true, entity must be alive.
+ * @param {boolean} [criteria.owner] If true, entity must be owned by us.
  * @param {boolean} [criteria.party] If true, entity must be in our party.
  * @param {number} [criteria.min_xp] Entity must give at least this much XP.
  * @param {boolean} [criteria.path_check] Entity must be directly reachable.
@@ -77,6 +79,10 @@ export function filter(entities, criteria) {
 			return false;
 		}
 
+		if (criteria.ctype && entity.ctype !== criteria.ctype) {
+			return false;
+		}
+
 		if (criteria.exclude_self && entity.name === character.name) {
 			return false;
 		}
@@ -90,6 +96,10 @@ export function filter(entities, criteria) {
 		}
 
 		if (criteria.alive && (character.rip || character.dead)) {
+			return false;
+		}
+
+		if (criteria.owner && entity.owner !== character.owner) {
 			return false;
 		}
 
