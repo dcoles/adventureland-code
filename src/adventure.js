@@ -1,5 +1,8 @@
 // Wrapper for AdventureLand functions.
 // @ts-check
+import * as Util from '/util.js';
+
+const IDLE_MS = 250;
 
 /**
  * Is `target` in range of this skill?
@@ -51,6 +54,16 @@ export async function move(x, y) {
  */
 export async function smart_move(location) {
 	return await window.smart_move(location);
+}
+
+export async function transport(map, spawn) {
+	window.transport(map, spawn);
+
+	// Wait for transport to complete
+	// FIXME: Allow waiting on transport
+	do {
+		await Util.sleep(IDLE_MS);
+	} while (character.map !== map);
 }
 
 /**
