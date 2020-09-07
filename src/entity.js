@@ -7,9 +7,26 @@ import * as Util from '/util.js';
 const character = Adventure.get_character();
 
 /**
+ * Filter criteria.
+ *
+ * @typedef {object} Criteria
+ * @property {string} [name] Entity must have this name.
+ * @property {"character"|"monster"} [type] Entity must match this type.
+ * @property {string} [ctype] Entity must be of this class type.
+ * @property {object|string} [target] Entity must be targetting this entity.
+ * @property {boolean} [no_target] Entity must not have a target.
+ * @property {boolean} [alive] If true, entity must be alive.
+ * @property {boolean} [owner] If true, entity must be owned by us.
+ * @property {boolean} [party] If true, entity must be in our party.
+ * @property {number} [min_xp] Entity must give at least this much XP.
+ * @property {boolean} [path_check] Entity must be directly reachable.
+ * @property {Function} [filter] General-purpose filter function.
+ */
+
+/**
  * Return nearest monsters.
  *
- * @param {object} [criteria] Criteria for matching monster.
+ * @param {Criteria} [criteria] Criteria for matching monster.
  * @returns {Array} Monsters ordered from nearest to furthest away.
  */
 export function get_nearby_monsters(criteria) {
@@ -20,7 +37,7 @@ export function get_nearby_monsters(criteria) {
 /**
  * Return nearby party members ordered by HP ratio.
  *
- * @param {object} [criteria] Criteria for matching party member.
+ * @param {Criteria} criteria Criteria to filter entities by.
  * @returns {Array} Character objects.
  */
 export function get_party_members(criteria) {
@@ -32,7 +49,7 @@ export function get_party_members(criteria) {
 /**
  * Return nearby entities.
  *
- * @param {object} [criteria] Criteria to filter entities by.
+ * @param {Criteria} criteria Criteria to filter entities by.
  * @returns {Array} Character objects.
  */
 export function get_entities(criteria) {
@@ -43,7 +60,11 @@ export function get_entities(criteria) {
  * Filter entities.
  *
  * @param {Array} entities Entities to filter.
+ * @param {Criteria} criteria Criteria to filter entities by.
+ */
+/*
  * @param {object} criteria Criteria to filter entities by.
+ * @param {string} [criteria.name] Entity must have this name.
  * @param {"character"|"monster"} [criteria.type] Entity must match this type.
  * @param {string} [criteria.ctype] Entity must be of this class type.
  * @param {object|string} [criteria.target] Entity must be targetting this entity.
@@ -62,6 +83,10 @@ export function filter(entities, criteria) {
 	}
 
 	return entities.filter((entity) => {
+		if (criteria.name && entity.name !== criteria.name) {
+			return false;
+		}
+
 		if (criteria.type && entity.type !== criteria.type) {
 			return false;
 		}
