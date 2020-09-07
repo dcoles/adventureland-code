@@ -66,6 +66,16 @@ export function vector_difference(v1, v2) {
 }
 
 /**
+ * Calculate the distance between two vectors.
+ *
+ * @param {number[]} v1 First vector.
+ * @param {number[]} v2 Second vector.
+ */
+export function vector_distance(v1, v2) {
+	return vector_length(vector_difference(v1, v2));
+}
+
+/**
  * Resize a vector to fixed length.
  *
  * @param {number[]} v A vector.

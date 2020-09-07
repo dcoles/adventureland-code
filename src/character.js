@@ -74,6 +74,8 @@ class Character {
 	get map() { return character.map; }
 	get x() { return character.x; }
 	get y() { return character.y; }
+	get real_x() { return character.real_x; }
+	get real_y() { return character.real_y; }
 	get moving() { return character.moving; }
 	get vx() { return character.vx; }
 	get vy() { return character.vy; }
@@ -209,87 +211,15 @@ class Character {
 
 		// Default to 80% of range
 		distance = distance || this.distance_between(target) - 0.80 * this.range;
-
-		// Grab coordinates, lest they change
-		const [x1, y1] = [character.x, character.y];
-		const [x2, y2] = [target.x, target.y];
-		const theta = Math.atan2(y2 - y1, x2 - x1);
-		const target_x = x1 + distance * Math.cos(theta);
-		const target_y = y1 + distance * Math.sin(theta);
-
-		DEBUG_COLLISION && window.clear_drawings();
-		if (window.can_move_to(target_x, target_y)
-		&& (!avoid || !this.will_collide_moving_to(target_x, target_y))) {
-			return await Adventure.move(target_x, target_y);
+		if (distance < 0) {
+			// Retreat
+			const current_pos = [this.real_x, this.real_y];
+			const v = Util.vector_scale(Util.vector_difference(current_pos, [target.x, target.y]), -1);
+			const pos = Util.vector_add(current_pos, v);
+			await movement.move(pos[0], pos[1], {max_distance: Math.abs(distance), avoid: true});
+		} else {
+			await movement.move_to(target, {max_distance: distance, avoid: true});
 		}
-
-		// Try to find a spot we can move to
-		const max_distance = 2 * Math.abs(distance);
-		for (let r = 20; r < max_distance; r = Math.min(4 / 3 * r, max_distance)) {
-			DEBUG_COLLISION && window.draw_circle(target_x, target_y, r);
-			for (let m = 0; m < 8; m++) {
-				// Pick a random angle
-				const theta2 = Math.random() * 2 * Math.PI;
-				const new_x = target_x + r * Math.cos(theta2);
-				const new_y = target_y + r * Math.sin(theta2);
-				DEBUG_COLLISION && window.draw_line(target_x, target_y, new_x, new_y, null, 0x0000ff);
-
-				if (!window.can_move_to(new_x, new_y)) {
-					// Unreachable position.
-					DEBUG_COLLISION && window.draw_circle(new_x, new_y, 2, null, 0xff0000);
-					continue;
-				}
-
-				const dist = Util.distance(character.x, character.y, new_x, new_y);
-				if (dist < distance / 2) {
-					// Must move a minimum of half the desired distance.
-					// This is to avoid us going nowhere.
-					continue;
-				}
-
-				if (avoid && dist < max_distance / 2 && this.will_collide_moving_to(new_x, new_y)) {
-					// Avoid colliding with entities, except if we're searching really far.
-					// Better to run past an enemy than to get stuck against a wall.
-					DEBUG_COLLISION && window.draw_circle(new_x, new_y, 2, null, 0xffff00);
-					continue;
-				}
-
-				DEBUG_COLLISION && window.draw_circle(new_x, new_y, 4, null, 0x00ff00);
-				return await Adventure.move(new_x, new_y);
-			}
-		}
-
-		// Just try to move as much as possible
-		return await Adventure.move(target_x, target_y);
-	}
-
-	/**
-	 * Check if character will likely collide with an entity while moving
-	 * towards a point.
-	 *
-	 * @param {number} x target x-coordinate.
-	 * @param {number} y target y-coordinate.
-	 * @returns {boolean} True if it appears we'd collide with an entity, otherwise False.
-	 */
-	will_collide_moving_to(x, y) {
-		// Since we're not yet moving, work out our intended motion
-		const d = [x - this.x, y - this.y];
-		const v = Util.vector_scale(Util.vector_normalize(d), this.speed);
-		const t_max = d[0] / v[0];
-		const char = {x: this.x, y: this.y, vx: v[0], vy: v[1]};
-
-		// Check if this motion collides with any of the entities
-		for (let entity of Object.values(Adventure.get_entities())) {
-			if (Entity.will_collide(entity, char, t_max)) {
-				DEBUG_COLLISION && window.draw_circle(entity.x, entity.y, entity.width / 2, null, 0xff0000);
-				return true;
-			} else {
-				DEBUG_COLLISION && window.draw_circle(entity.x, entity.y, entity.width / 2, null, 0x0000ff);
-				DEBUG_COLLISION && window.draw_circle(entity.x, entity.y, entity.width / 2, null, 0x0000ff);
-			}
-		}
-
-		return false;
 	}
 
 	/**
@@ -331,7 +261,7 @@ class Character {
 			// FIXME: pathfind_move does not yet support moving between maps
 			return await Adventure.smart_move(location);
 		} else {
-			return await movement.pathfind_move(location);
+			return await movement.pathfind_move(location, null, {avoid: true});
 		}
 	}
 

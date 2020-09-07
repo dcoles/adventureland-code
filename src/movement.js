@@ -1,5 +1,7 @@
 // Movement functions
 // @ts-check
+import * as Adventure from '/adventure.js';
+import * as Draw from '/draw.js';
 import * as Entity from '/entity.js';
 import * as Logging from '/logging.js';
 import * as Task from '/task.js';
@@ -16,11 +18,13 @@ const LOCATIONS = {
 }
 
 const DEBUG_MOVEMENT = 0;  // 0: Off, 1: Movement, 2: Pathfinding
+const DEBUG_COLLISION = 0;  // 0: Off, 1: On
 const SMALL_STEP_RANGE = 64;  // Start with small steps for this much distance
 const STEP = 16;  // Size of a tile
 const RANGE = 32;  // When are we "close enough" to the target
 const MAX_SEGMENT = 128;  // Maximum length of a simplified path segment
 const OFFMAP_ESTIMATE = 10000;  // Estimate of distance outside this map
+const MAX_AVOIDANCE = 100;  // Maximum amount of avoidance to attempt
 
 // Globals
 let g_movement = null;
@@ -42,7 +46,7 @@ class Movement {
 	 *
 	 * @returns {[number, number]} Position as (x, y) vector.
 	 */
-	current_position() {
+	static current_position() {
 		return [window.character.real_x, window.character.real_y];
 	}
 
@@ -51,7 +55,7 @@ class Movement {
 	 *
 	 * @returns {string} Map name.
 	 */
-	current_map() {
+	static current_map() {
 		return window.character.map;
 	}
 
@@ -65,7 +69,7 @@ class Movement {
 			this.task = null;
 		}
 
-		move(window.character.real_x, window.character.real_y);
+		window.move(window.character.real_x, window.character.real_y);
 	}
 
 	/**
@@ -73,32 +77,49 @@ class Movement {
 	 *
 	 * @param {object|string} location Location to move to.
 	 * @param {object} [pathfinding_options] Options for pathfinding behaviour.
-	 * @param {object} [movement_options] Options for movement behaviour.
+	 * @param {object} [movement_options] Options for path movement behaviour.
 	 * @returns {Promise} Resolves when location is reached.
 	 */
 	async pathfind_move(location, pathfinding_options, movement_options) {
-		DEBUG_MOVEMENT && clear_drawings();
 		if (typeof location === 'string') {
 			location = get_location_by_name(location);
 		}
 
+		DEBUG_MOVEMENT && Draw.clear_list('debug_pathfind');
 		const path = await pathfind(location, pathfinding_options);
-		DEBUG_MOVEMENT && draw_circle(location.x, location.y, 4, null, 0x0000ff);
-		DEBUG_MOVEMENT && path.forEach(([x, y]) => draw_circle(x, y, 2, null, 0xff0000));
+		DEBUG_MOVEMENT && Draw.add_list('debug_pathfind', draw_circle(location.x, location.y, 4, null, 0x0000ff));
+		DEBUG_MOVEMENT && path.forEach(([x, y]) => Draw.add_list('debug_pathfind', draw_circle(x, y, 2, null, 0xff0000)));
 
 		await this.follow_path(path, movement_options);
+		DEBUG_MOVEMENT && Draw.clear_list('debug_pathfind');
+	}
+
+	/**
+	 * Move to position.
+	 *
+	 * @param {number} x x-coordinate.
+	 * @param {number} y y-coordinate.
+	 * @param {object} options Movement options.
+	 */
+	async move(x, y, options) {
+		return this.move_to({x: x, y: y}, options)
 	}
 
 	/**
 	 * Move towards a target.
 	 *
 	 * @param {object} target Target to move towards.
-	 * @param {number} max_distance Maximum distance to move.
+	 * @param {object} [options] Movement options.
+	 * @param {number} [options.max_distance] Maximum distance to move.
+	 * @param {boolean} [options.avoid] If true, try and avoid other entities.
 	 */
-	async move_to(target, max_distance) {
-		let dest = [target.real_x, target.real_y];
-		const current_pos = this.current_position();
+	async move_to(target, options) {
+		let dest = [target.x, target.y];
+		const current_pos = Movement.current_position();
 		const dist = Util.distance(current_pos[0], current_pos[1], dest[0], dest[1]);
+
+		DEBUG_MOVEMENT && Draw.clear_list('debug_move');
+		DEBUG_MOVEMENT && Draw.add_list('debug_move', draw_circle(dest[0], dest[1], 3, null, 0x0000ff));
 
 		if (target.moving) {
 			// First order approximation
@@ -106,12 +127,18 @@ class Movement {
 			dest = Util.vector_add(dest, movement_compensation(target, t));
 		}
 
-		if (max_distance && dist > max_distance) {
+		if (options.max_distance && dist > options.max_distance) {
 			// Respect `max_distance`
-			const v = Util.vector_resize(Util.vector_difference(current_pos, dest), max_distance);
+			const v = Util.vector_resize(Util.vector_difference(current_pos, dest), options.max_distance);
 			dest = Util.vector_add(current_pos, v);
 		}
 
+		if (options.avoid) {
+			// Avoid collision with other entities
+			dest = collision_avoidance(dest);
+		}
+
+		DEBUG_MOVEMENT && Draw.add_list('debug_move', draw_line(current_pos[0], current_pos[1], dest[0], dest[1]));
 		await window.move(dest[0], dest[1]);
 	}
 
@@ -119,8 +146,9 @@ class Movement {
 	 * Follow a path of positions.
 	 *
 	 * @param {Array<[number, number]>} path Path to follow.
-	 * @param {object} [options] Movement options.
+	 * @param {object} [options] Path movement options.
 	 * @param {number} [options.max_distance] Maximum distance to move.
+	 * @param {boolean} [options.avoid] If true, try and avoid other entities.
 	 * @returns {Promise} Resolves when this movement completes.
 	 */
 	follow_path(path, options) {
@@ -135,30 +163,25 @@ class Movement {
 				}
 
 				if (options.max_distance && distance_traveled > options.max_distance) {
-					console.log('Max distance exceeded');
 					return;
 				}
 
 				// Calculate movement vector
-				const current_pos = this.current_position();
-				const v = Util.vector_difference(current_pos, p);
-				const segment_distance = Util.vector_length(v);
+				const current_pos = Movement.current_position();
+				const segment_distance = Util.vector_distance(current_pos, p);
 
 				// Must move at least 1 pixel length
 				if (segment_distance < 1) {
+					// Stop any current motion
 					await window.move(current_pos[0], current_pos[1]);
 					continue;
 				}
 
-				// Respect max_distance
 				const dist = options.max_distance ? Math.min(segment_distance, options.max_distance - distance_traveled) : segment_distance;
-				const target = Util.vector_add(current_pos, Util.vector_scale(v, dist / segment_distance));
-
-				DEBUG_MOVEMENT && draw_line(current_pos[0], current_pos[1], target[0], target[1]);
-				await window.move(target[0], target[1]);
+				await this.move(p[0], p[1], {max_distance: dist, avoid: options.avoid});
 
 				// Actual distance traveled
-				const new_position = this.current_position();
+				const new_position = Movement.current_position();
 				distance_traveled += Util.distance(current_pos[0], current_pos[1], new_position[0], new_position[1]);
 			}
 		});
@@ -210,6 +233,86 @@ export function get_location_by_name(name) {
  */
 function movement_compensation(target, t) {
 	return [(target.vx || 0) * t, (target.vy || 0) * t];
+}
+
+/**
+ * Adjust final position to avoid collissions.
+ *
+ * @param {[number, number]} dest Desired destination.
+ */
+function collision_avoidance(dest) {
+	if (Adventure.can_move_to(dest[0], dest[1]) && !will_collide_moving_to(dest)) {
+		return dest;
+	}
+
+	DEBUG_COLLISION && Draw.clear_list('debug_collision');
+
+	// Try to find a spot we can move to
+	const current_pos = Movement.current_position();
+	const distance = Util.vector_distance(current_pos, dest);
+
+	for (let r = 20; r < MAX_AVOIDANCE; r = Math.min(4 / 3 * r, MAX_AVOIDANCE)) {
+		DEBUG_COLLISION && Draw.add_list('debug_collision', window.draw_circle(dest[0], dest[1], r));
+		for (let m = 0; m < 8; m++) {
+			// Pick a random angle
+			const theta = Math.random() * 2 * Math.PI;
+			const v = [r * Math.cos(theta), r * Math.sin(theta)];
+
+			const new_dest = Util.vector_add(dest, v);
+			DEBUG_COLLISION && Draw.add_list('debug_collision', window.draw_line(dest[0], dest[1], new_dest[0], new_dest[1], null, 0x0000ff));
+
+			if (!Adventure.can_move_to(new_dest[0], new_dest[1])) {
+				// Unreachable position.
+				DEBUG_COLLISION && Draw.add_list('debug_collision', window.draw_circle(new_dest[0], new_dest[1], 2, null, 0xff0000));
+				continue;
+			}
+
+			const dist = Util.vector_distance(current_pos, new_dest);
+			if (dist < distance / 2) {
+				// Must move a minimum of half the desired distance.
+				// This is to avoid us going nowhere.
+				continue;
+			}
+
+			if (dist !== MAX_AVOIDANCE && will_collide_moving_to(new_dest)) {
+				// Avoid colliding with entities, except if we're searching really far.
+				// Better to run past an enemy than to get stuck against a wall.
+				DEBUG_COLLISION && Draw.add_list('debug_collision', window.draw_circle(new_dest[0], new_dest[1], 2, null, 0xffff00));
+				continue;
+			}
+
+			DEBUG_COLLISION && Draw.add_list('debug_collision', window.draw_circle(new_dest[0], new_dest[1], 4, null, 0x00ff00));
+			return new_dest;
+		}
+	}
+
+	// Just try moving where originally intended
+	return dest;
+}
+
+/**
+ * Check if we ara likely collide with an entity while moving towards a destination.
+ *
+ * @param {[number, number]} dest Destination.
+ * @returns {boolean} True if it appears we'd collide with an entity, otherwise False.
+ */
+function will_collide_moving_to(dest) {
+	// Since we're not yet moving, work out our intended motion
+	const current_pos = Movement.current_position();
+	const d = Util.vector_difference(current_pos, dest);
+	const v = Util.vector_resize(d, window.character.speed);
+	const t_max = Util.vector_length(d) / window.character.speed;
+	const char = {x: current_pos[0], y: current_pos[1], vx: v[0], vy: v[1]};
+
+	// Check if this motion collides with any of the entities
+	for (let entity of Object.values(Adventure.get_entities())) {
+		if (Entity.will_collide(entity, char, t_max)) {
+			DEBUG_COLLISION && Draw.add_list('debug_collision', window.draw_circle(entity.x, entity.y, entity.width / 2, null, 0xff0000));
+			return true;
+		}
+	}
+
+	return false;
 }
 
 /**
@@ -275,7 +378,7 @@ async function pathfind(location, options) {
 			}
 		}
 
-		DEBUG_MOVEMENT > 1 && draw_circle(current[0], current[1], 2, null, 0x00ff00);  // Searched
+		DEBUG_MOVEMENT > 1 && Draw.add_list('debug_pathfind', draw_circle(current[0], current[1], 2, null, 0x00ff00));  // Searched
 
 		const step = dist < SMALL_STEP_RANGE ? STEP / 2 : STEP;
 		for (let next of neighbours(current, step)) {
@@ -319,7 +422,7 @@ async function pathfind(location, options) {
 		found = came_from[position_to_string(found)];
 	} while (found);
 
-	DEBUG_MOVEMENT > 1 && path.forEach(([x, y]) => draw_circle(x, y, 2, null, 0xffff00));  // Path
+	DEBUG_MOVEMENT > 1 && path.forEach(([x, y]) => Draw.add_list('debug_move', draw_circle(x, y, 2, null, 0xffff00)));  // Path
 	return simplify ? simplify_path(path) : path;
 }
 
