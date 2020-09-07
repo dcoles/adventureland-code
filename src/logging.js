@@ -83,6 +83,9 @@ export function log(level, text, obj) {
 		safe_log(text, color);
 	} else if (obj instanceof Error) {
 		safe_log(`${text}: ${obj}`, color);
+	} else if (obj.reason) {
+		// Most AdventureLand exceptions are just objects
+		safe_log(`${text}: ${obj.reason}`, color)
 	} else {
 		switch (obj.type) {
 			case 'character':
