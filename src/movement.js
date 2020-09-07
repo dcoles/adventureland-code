@@ -8,6 +8,8 @@ import * as Task from '/task.js';
 import * as Util from '/util.js';
 
 const LOCATIONS = {
+	'town': {map: 'main', x: 0, y: 0},
+	'bank': {map: 'main', x: 168, y: -134},
 	'upgrade': {map: 'main', x: -204, y: -129},
 	'compound': {map: 'main', x: -204, y: -129},
 	'exchange': {map: 'main', x: -26, y: -432},
@@ -92,6 +94,23 @@ class Movement {
 
 		await this.follow_path(path, movement_options);
 		DEBUG_MOVEMENT && Draw.clear_list('debug_pathfind');
+	}
+
+	/**
+	 * Try to use our move, otherwise fall back to `smart_move`.
+	 *
+	 * @param {object} dest Destination to move to.
+	 */
+	async smarter_move(dest) {
+		if (typeof dest === 'string') {
+			dest = get_location_by_name(dest);
+		}
+
+		if (character.map === dest.map) {
+			await this.pathfind_move(dest, null, {avoid: true});
+		} else {
+			await window.smart_move(dest);
+		}
 	}
 
 	/**
