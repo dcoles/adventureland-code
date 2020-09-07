@@ -27,6 +27,24 @@ export async function sleep_until(date) {
 }
 
 /**
+ * Is this value a string?
+ *
+ * @param {any} value An unknown value.
+ */
+export function is_string(value) {
+	return typeof value === 'string';
+}
+
+/**
+ * Is this value a string?
+ *
+ * @param {any} value An unknown value.
+ */
+export function is_object(value) {
+	return value !== null && typeof value === 'object';
+}
+
+/**
  * Calculate the distance between two points (`x1`, `y1`) and (`x2`, `y2`).
  *
  * This differs from the built-in `distance` function that does something
