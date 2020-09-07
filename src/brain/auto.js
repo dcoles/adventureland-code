@@ -399,9 +399,9 @@ export class AutoBrain extends Brain {
 		}
 
 		// Help party
-		const party = Entity.get_party_members({alive: true, exclude_self: true});
+		const party = Entity.get_party_members({alive: true});
 		for (let member of party) {
-			const targeted_by = Entity.get_nearby_monsters({target: member, exclude_self: true});
+			const targeted_by = Entity.get_nearby_monsters({target: member});
 			if (targeted_by.length < 1) {
 				continue;
 			}

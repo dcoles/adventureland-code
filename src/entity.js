@@ -14,31 +14,19 @@ const character = Adventure.get_character();
  */
 export function get_nearby_monsters(criteria) {
 	criteria = criteria || {};
-	criteria.type = 'monster';
-	criteria.min_xp = criteria.min_xp || 1;  // don't kill puppies
-
-	return get_entities(criteria).sort(compare_distance);
+	return get_entities({...criteria, type: 'monster', min_xp: 1}).sort(compare_distance);
 }
 
 /**
  * Return nearby party members ordered by HP ratio.
  *
- * @param {object} [criteria] Criteria to filter entities by.
- * @param {boolean} [criteria.exclude_self] Exclude ourselves.
- * @param {boolean} [criteria.alive] Party member must be alive.
+ * @param {object} [criteria] Criteria for matching party member.
  * @returns {Array} Character objects.
  */
 export function get_party_members(criteria) {
 	criteria = criteria || {};
 
-	return get_entities(
-		{
-			type: 'character',
-			party: true,
-			alive: criteria.alive,
-			exclude_self: criteria.exclude_self,
-		})
-		.sort(compare_hp);
+	return get_entities({...criteria, type: 'character', party: true}).sort(compare_hp);
 }
 
 /**
@@ -58,7 +46,6 @@ export function get_entities(criteria) {
  * @param {object} criteria Criteria to filter entities by.
  * @param {"character"|"monster"} [criteria.type] Entity must match this type.
  * @param {string} [criteria.ctype] Entity must be of this class type.
- * @param {boolean} [criteria.exclude_self] Exclude ourselves.
  * @param {object|string} [criteria.target] Entity must be targetting this entity.
  * @param {boolean} [criteria.no_target] Entity must not have a target.
  * @param {boolean} [criteria.alive] If true, entity must be alive.
@@ -80,10 +67,6 @@ export function filter(entities, criteria) {
 		}
 
 		if (criteria.ctype && entity.ctype !== criteria.ctype) {
-			return false;
-		}
-
-		if (criteria.exclude_self && entity.name === character.name) {
 			return false;
 		}
 
