@@ -212,6 +212,12 @@ class Skill {
 					break;
 				}
 
+				// They're dead
+				// Sometimes skills don't tell you that the entity is gone
+				if (target && (target.dead || target.rip)) {
+					break;
+				}
+
 				try {
 					await this.use(target, extra_args);
 				} catch (e) {
