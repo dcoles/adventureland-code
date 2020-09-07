@@ -236,6 +236,7 @@ class Character {
 	 * Stop doing anything!
 	 */
 	stop_all() {
+		movement.stop();
 		Adventure.stop('move');
 		Adventure.stop('town');
 		Adventure.stop('revival');
