@@ -17,8 +17,7 @@ export function get_nearby_monsters(criteria) {
 	criteria.type = 'monster';
 	criteria.min_xp = criteria.min_xp || 1;  // don't kill puppies
 
-	const entities = Object.values(Adventure.get_entities());
-	return filter(entities, criteria).sort(compare_distance);
+	return get_entities(criteria).sort(compare_distance);
 }
 
 /**
@@ -32,18 +31,24 @@ export function get_nearby_monsters(criteria) {
 export function get_party_members(criteria) {
 	criteria = criteria || {};
 
-	const members = filter(
-		Adventure.get_entities(),
-		{type: 'character', party: true, exclude_self: criteria.exclude_self})
-	.filter((c) => {
-		if (criteria.alive && c.rip) {
-			return false;
-		}
+	return get_entities(
+		{
+			type: 'character',
+			party: true,
+			alive: criteria.alive,
+			exclude_self: criteria.exclude_self,
+		})
+		.sort(compare_hp);
+}
 
-		return true;
-	});
-
-	return members.sort(compare_hp);
+/**
+ * Return nearby entities.
+ *
+ * @param {object} [criteria] Criteria to filter entities by.
+ * @returns {Array} Character objects.
+ */
+export function get_entities(criteria) {
+	return filter(Object.values(Adventure.get_entities()), criteria);
 }
 
 /**
