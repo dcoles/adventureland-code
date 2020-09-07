@@ -2,9 +2,12 @@
 // @ts-check
 import * as Adventure from '/adventure.js';
 import * as Character from '/character.js';
-import * as Logging from '/logging.js';
 import * as Entity from '/entity.js';
+import * as Logging from '/logging.js';
 import * as Util from '/util.js';
+
+// Brain
+import { Brain } from '/brain/brain.js';
 
 // The #maincode
 const maincode = Adventure.get_maincode();
@@ -12,8 +15,6 @@ const maincode = Adventure.get_maincode();
 // Character wrapper
 const character = Character.get_character();
 
-const IDLE_MS = 250;
-const STOP_MS = 1000;
 const TICK_MS = 1000;
 const TARGET_RANGE_RATIO = 0.90;
 const HOME_RANGE_RADIUS = 500;
@@ -22,13 +23,11 @@ const MAX_DIFFICULTY = 9.0;
 const KITING_THRESHOLD = 0.5;
 const MOVEMENT_TOLLERANCE = 20;
 
-class AutoBrain {
+export class AutoBrain extends Brain {
 	constructor() {
-		this.stopped = !character.bot && Adventure.get('stopped') || false;
+		super();
 		this.home = null;
 		this.tick = 0;
-		this.target = null;
-		this.target_difficulty = 0;
 		this.leader_name = null;
 	}
 
@@ -117,75 +116,33 @@ class AutoBrain {
 	}
 
 	/**
-	 * Stop the event loop.
+	 * Set character's home location.
+	 *
+	 * @param {object} [location] Location to set as home (default: current location).
+	 * @returns {object} Home location set.
 	 */
-	stop() {
-		Logging.warn('Stopping event loop');
-		Adventure.set('stopped', true);
-		this.stopped = true;
+	set_home(location) {
+		location = location || {x: character.x, y: character.y, map: character.map};
 
-		// Cease all motor functions
-		character.stop_all();
+		Logging.info(`Setting home: ${Entity.location_to_string(location)}`);
+		Adventure.set('home', location);
+		this.home = location;
+
+		return location;
 	}
 
-	/** Resume the event loop. */
-	resume() {
-		Logging.warn('Resuming event loop');
-		Adventure.set('stopped', false);
-		this.stopped = false;
-	}
-
-	/** Set current target. */
-	set_target(target) {
-		if (!target) {
-			this.target = null;
-			this.target_difficulty = 0;
-			return;
-		}
-
-		this.target = target;
-		this.target_difficulty = Entity.difficulty(this.target);
-		Logging.info(`Target: ${target.name} (${this.target_difficulty.toFixed(1)})`);
-		character.change_target(target);
-	}
-
-	/** Run the main loop. */
-	async run() {
-		this.on_state('Init')
-		await this._init();
-		do {
-			if (this.stopped) {
-				this.on_state('Stop');
-				await this._stop();
-			} else if (character.rip) {
-				this.on_state('RIP');
-				await this._rip();
-			} else if (!this.is_safe()) {
-				this.on_state('Panic');
-				await this._panic();
-			} else if (this.is_party_healable()) {
-				this.on_state('Heal');
-				await this._heal_party();
-			} else if (this.is_target_alive()) {
-				this.on_state('Attack');
-				await this._attack();
-			} else if (this.is_low_hp()) {
-				this.on_state('Rest');
-				await this._rest();
-			} else if (this.is_lost()) {
-				this.on_state('Lost');
-				await this._return_to_leader();
-			} else {
-				this.on_state('Find');
-				await this._find_next_target();
-			}
-
-			// Small pause for safety
-			await Util.sleep(100);
-		} while (true)
+	/**
+	 * Get character's current home location.
+	 *
+	 * @returns {object|null} Home location.
+	 */
+	get_home() {
+		return Adventure.get('home');
 	}
 
 	async _init() {
+		Logging.info('Starting Auto brain');
+
 		// We might be a bot and not even know it!
 		if (character.bot) {
 			this.leader_name = maincode.character.name;
@@ -221,38 +178,12 @@ class AutoBrain {
 		change_target(null);
 	}
 
-	/**
-	 * Set character's home location.
-	 *
-	 * @param {object} [location] Location to set as home (default: current location).
-	 * @returns {object} Home location set.
-	 */
-	set_home(location) {
-		location = location || {x: character.x, y: character.y, map: character.map};
-
-		Logging.info(`Setting home: ${Entity.location_to_string(location)}`);
-		Adventure.set('home', location);
-		this.home = location;
-
-		return location;
-	}
-
-	/**
-	 * Get character's current home location.
-	 *
-	 * @returns {object|null} Home location.
-	 */
-	get_home() {
-		return Adventure.get('home');
-	}
-
 	/** Try to join the party. */
 	_join_party() {
 		// Check if we're already in a party
 		if (character.party) {
 			return;
 		}
-
 
 		Adventure.send_party_request(this.leader_name);
 	}
@@ -297,26 +228,29 @@ class AutoBrain {
 		}
 	}
 
-	/** Wait until loop is restarted. */
-	async _stop() {
-		while (this.stopped) {
-			await Util.sleep(STOP_MS);
+	/**
+	 * Single step of brain logic.
+	 */
+	async _step() {
+		if (!this.is_safe()) {
+			this.on_state('Panic');
+			await this._panic();
+		} else if (this.is_party_healable()) {
+			this.on_state('Heal');
+			await this._heal_party();
+		} else if (this.is_target_alive()) {
+			this.on_state('Attack');
+			await this._attack();
+		} else if (this.is_low_hp()) {
+			this.on_state('Rest');
+			await this._rest();
+		} else if (this.is_lost()) {
+			this.on_state('Lost');
+			await this._return_to_leader();
+		} else {
+			this.on_state('Find');
+			await this._find_next_target();
 		}
-	}
-
-	/** "He's dead Jim." */
-	async _rip() {
-		Logging.warn('Died at', new Date());
-		character.stop_all();
-		this.set_target(null);
-
-		// Respawn after short delay (respawn has 12-sec cooldown)
-		Logging.info('Respawning in 15s...')
-		for (let n = 15; n > 0 && character.rip; n--) {
-			set_message(`RIP (${n})`);
-			await Util.sleep(1000);
-		}
-		Adventure.respawn();
 	}
 
 	/** Emergency maneuvers. */
@@ -362,8 +296,6 @@ class AutoBrain {
 		if (!character.skills.heal.is_autouse()) {
 			character.skills.heal.autouse(target, null, (t) => t.hp < t.max_hp);
 		}
-
-		await Util.sleep(IDLE_MS);
 	}
 
 	/** Return to our fearless leader! */
@@ -379,7 +311,7 @@ class AutoBrain {
 			await character.xmove(leader.x, leader.y, leader.map);
 		} catch (e) {
 			Logging.warn(`Movement failed: ${e.reason}`);
-			await Util.sleep(1000);
+			await this._sleep();
 		}
 	}
 
@@ -390,7 +322,7 @@ class AutoBrain {
 		// Let autocasts do their job
 		while (character.hp < character.max_hp && character.hp >= last_hp && !this.is_interrupted()) {
 			last_hp = character.hp;
-			await Util.sleep(IDLE_MS);
+			await this._sleep();
 		}
 	}
 
@@ -421,8 +353,6 @@ class AutoBrain {
 		if (!character.skills.attack.is_autouse()) {
 			character.skills.attack.autouse(this.target, null, (t) => !t.rip);
 		}
-
-		await Util.sleep(IDLE_MS);
 	}
 
 	/**
@@ -452,7 +382,7 @@ class AutoBrain {
 		// Keep searching for a target
 		do {
 			this._pick_target();
-			await Util.sleep(IDLE_MS);
+			await this._sleep();
 		} while (!this.target && !this.is_interrupted())
 	}
 
@@ -513,8 +443,4 @@ class AutoBrain {
 			}
 		}
 	}
-}
-
-export function get_brain() {
-	return new AutoBrain();
 }

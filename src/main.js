@@ -9,13 +9,15 @@
 
 import * as Adventure from '/adventure.js';
 import * as Logging from '/logging.js';
-import * as AutoBrain from '/brain/auto.js';
 import * as Character from '/character.js';
 import * as BattleLog from '/battlelog.js';
 import * as Command from '/command.js';
 import * as Widgets from '/widgets.js';
 import * as Item from '/item.js';
 import * as Movement from './movement.js';
+
+// Brains
+import { AutoBrain } from '/brain/auto.js';
 
 const START_BOTS = false;
 const BOT_SCRIPT = 'loader';
@@ -86,6 +88,7 @@ export function stop_bots() {
 			continue;
 		}
 
+		// FIXME: Don't stop other signed in characters (who aren't bots!)
 		Logging.info('Stopping bot', char.name);
 		Adventure.stop_character(char.name);
 	}
@@ -107,7 +110,7 @@ export function call_character_command(character, command, ...args) {
  * Call /command on this character.
  *
  * @param {string} command Command name.
- * @param  {...any} args Command arguments.
+ * @param {...any} args Command arguments.
  */
 export function call_command(command, ...args) {
 	return Command.call(command, ...args);
@@ -280,7 +283,12 @@ async function main() {
 	}
 
 	// Start running!
-	g_brain = AutoBrain.get_brain();
+	switch (character.ctype) {
+		default:
+			g_brain = new AutoBrain();
+			break;
+	}
+
 	g_brain.run().catch((e) => {
 		critical('Unhandled exception in brain', e);
 	});
