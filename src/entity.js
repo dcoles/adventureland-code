@@ -55,6 +55,7 @@ export function get_party_members(criteria) {
  * @param {boolean} [criteria.exclude_self] Exclude ourselves.
  * @param {object|string} [criteria.target] Entity must be targetting this entity.
  * @param {boolean} [criteria.no_target] Entity must not have a target.
+ * @param {boolean} [criteria.alive] If true, entity must be alive.
  * @param {boolean} [criteria.party] If true, entity must be in our party.
  * @param {number} [criteria.min_xp] Entity must give at least this much XP.
  * @param {boolean} [criteria.path_check] Entity must be directly reachable.
@@ -80,6 +81,10 @@ export function filter(entities, criteria) {
 		}
 
 		if (criteria.no_target && entity.target && entity.target.name !== character.name) {
+			return false;
+		}
+
+		if (criteria.alive && (character.rip || character.dead)) {
 			return false;
 		}
 
