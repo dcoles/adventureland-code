@@ -3,7 +3,7 @@
 My code for [Adventure Land](https://adventure.land/).
 
 
-# Development
+## Development
 
 Development is done primarily using [Visual Studio Code](https://code.visualstudio.com/).
 
@@ -20,3 +20,9 @@ This can be used to load code for characters from a remote location.
 >
 > Untrusted code may hijack your account, use it to mine crypto currency,
 > steal personal data, cause your cat to run away and other nasty things.
+
+## Guide
+
+I have written a small programming guide for Adventure Land that attempts to cover some of the common questions that may come up while writing code for the game.
+
+[View the Guide](guide.md)
