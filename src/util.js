@@ -1,6 +1,10 @@
 // General utility functions
 // @ts-check
 
+export const SECOND_MS = 1_000;
+export const MINUTE_MS = 60_000;
+export const HOUR_MS = 3600_000;
+
 /**
  * Sleep for a period of time.
  *
@@ -24,6 +28,15 @@ export async function sleep_until(date) {
 		await sleep(ts - now);
 		now = Date.now();
 	}
+}
+
+/**
+ * Return the current time plus a time duration.
+ *
+ * @param {number} duration_ms Duration in ms.
+ */
+export function date_add(duration_ms) {
+	return new Date(Date.now() + duration_ms);
 }
 
 /**
