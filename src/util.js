@@ -36,6 +36,15 @@ export function is_string(value) {
 }
 
 /**
+ * Is this value a number?
+ *
+ * @param {any} value An unknown value.
+ */
+export function is_number(value) {
+	return typeof value === 'number';
+}
+
+/**
  * Is this value a string?
  *
  * @param {any} value An unknown value.
