@@ -297,7 +297,7 @@ async function main() {
 	Command.register('c', call_character_command, ['character', 'command'], ['arg1', 'arg2', 'arg3', 'arg4'])
 
 	// Start our bots
-	if (Adventure.get('start_bots')) {
+	if (Adventure.get('start_bots') && character.ctype !== 'merchant') {
 		_start_bots();
 	}
 
