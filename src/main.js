@@ -20,7 +20,6 @@ import * as Movement from './movement.js';
 import { AutoBrain } from '/brain/auto.js';
 import { MerchantBrain } from '/brain/merchant.js';
 
-const START_BOTS = false;
 const BOT_SCRIPT = 'loader';
 
 // Your Character
@@ -70,6 +69,11 @@ export function start() {
 
 /** Start bots. */
 export function start_bots() {
+	Adventure.set('start_bots', true);
+	_start_bots();
+}
+
+function _start_bots() {
 	const chars = Adventure.get_characters();
 	for (let char of chars) {
 		if (char.name === character.name) {
@@ -87,6 +91,11 @@ export function start_bots() {
 
 /** Stop bots. */
 export function stop_bots() {
+	Adventure.set('start_bots', false);
+	_stop_bots();
+}
+
+function _stop_bots() {
 	const chars = Adventure.get_characters();
 	for (let char of chars) {
 		if (char.name === character.name) {
@@ -245,7 +254,7 @@ window.on_destroy = function() {
 	window.clear_buttons();
 
 	// Stop bots
-	stop_bots();
+	_stop_bots();
 }
 
 /** Main function */
@@ -288,8 +297,8 @@ async function main() {
 	Command.register('c', call_character_command, ['character', 'command'], ['arg1', 'arg2', 'arg3', 'arg4'])
 
 	// Start our bots
-	if (START_BOTS) {
-		start_bots();
+	if (Adventure.get('start_bots')) {
+		_start_bots();
 	}
 
 	// Start running!
