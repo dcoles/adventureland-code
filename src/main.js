@@ -75,6 +75,10 @@ export function start_bots() {
 			continue;
 		}
 
+		if (char.type === 'merchant') {
+			continue;
+		}
+
 		Logging.info('Starting bot', char.name);
 		Adventure.start_character(char.name, BOT_SCRIPT);
 	}
@@ -85,6 +89,10 @@ export function stop_bots() {
 	const chars = Adventure.get_characters();
 	for (let char of chars) {
 		if (char.name === character.name) {
+			continue;
+		}
+
+		if (char.type === 'merchant') {
 			continue;
 		}
 
