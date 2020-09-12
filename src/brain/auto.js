@@ -3,6 +3,7 @@
 import * as Adventure from '/adventure.js';
 import * as Character from '/character.js';
 import * as Entity from '/entity.js';
+import * as Item from '/item.js';
 import * as Logging from '/logging.js';
 import * as Util from '/util.js';
 
@@ -113,6 +114,7 @@ export class AutoBrain extends Brain {
 
 		character.loot();
 		this._update_autocasts();
+		this._transfer_items();
 	}
 
 	/**
@@ -225,6 +227,26 @@ export class AutoBrain extends Brain {
 		// Cast autocast
 		if (skill_id && !character.skills[skill_id].is_autouse()) {
 			character.skills[skill_id].autouse(null, null, conditon);
+		}
+	}
+
+	/**
+	 * Attempt to transfer items to a nearby merchant.
+	 */
+	_transfer_items() {
+		const merchants = Entity.get_entities({'owner': true, ctype: 'merchant'});
+		if (merchants.length === 0) {
+			// No nearby merchants
+			return;
+		}
+
+		for (let [i, item] of Item.indexed_items()) {
+			// First two slots are reserved
+			if (i < 2) {
+				continue;
+			}
+
+			window.send_item(Util.random_choice(merchants), i, item.q);
 		}
 	}
 

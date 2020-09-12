@@ -147,6 +147,16 @@ export function random_id() {
 }
 
 /**
+ * Return a random choice from an Array.
+ *
+ * @param {Array} choices Array of potential choices.
+ * @returns Random selection from choices.
+ */
+export function random_choice(choices) {
+	return choices[Math.floor(Math.random() * choices.length)];
+}
+
+/**
  * Split a string on whitespace.
  *
  * @param {string} str String.
