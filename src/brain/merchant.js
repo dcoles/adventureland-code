@@ -85,6 +85,12 @@ export class MerchantBrain extends Brain {
 				continue;
 			}
 
+			const server = window.server.region + window.server.id;
+			if (char.server !== server) {
+				// Not on this sever!
+				continue;
+			}
+
 			Logging.info(`Collecting from ${char.name}`);
 			window.set_message('Collect');
 			await this.loop_until_interrupted(async () => {
@@ -93,8 +99,9 @@ export class MerchantBrain extends Brain {
 					return false;
 				}
 
-				if (!Adventure.get_characters().find((c) => c.name === char.name && c.online)) {
-					// Character now offline
+				const c = Adventure.get_characters().find((c) => c.name === char.name && c.online);
+				if (!c || c.server !== server) {
+					// Character now offline or changed server
 					return false;
 				}
 
