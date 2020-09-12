@@ -167,9 +167,11 @@ export class AutoBrain extends Brain {
 		character.on('hit', (data) => {
 			if (data.damage > 0) {
 				const attacker = get_entity(data.actor);
-				Logging.warn('Attacked by', attacker ? attacker.name : '???');
-				character.stop('move');
-				this.set_target(attacker);
+				if (this.target != attacker) {
+					Logging.warn('Attacked by', attacker ? attacker.name : '???');
+					character.stop('move');
+					this.set_target(attacker);
+				}
 			}
 		});
 
