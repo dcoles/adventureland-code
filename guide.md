@@ -30,9 +30,9 @@ show_json(character.items)
 ]
 ```
 
-You can also determine the inventory index by inspecting your Inventory (Press `i`).
+You can also determine the inventory slot by inspecting your Inventory (Press `i`).
 
-The Inventory starts at index `0` (top-left position) and moves left-to-right, top-to-bottom as follows:
+Inventory slots start at index `0` (top-left position) and moves left-to-right, top-to-bottom:
 
 |  |  |  |  |  |  |  |
 |--|--|--|--|--|--|--|
@@ -144,4 +144,27 @@ transport('main', 3)  // Exit the bank back to "main"
 		[…, …, …, …, dest_map, spawn_index, …],
 	]
 }
+```
+
+### Change server
+
+The server you are connected to is controlled by the page URL. For example:
+
+> https://adventure.land/character/LigLig/in/US/III/
+
+Corresponds to character `LigLig` in region `US` on server `III`.
+
+```javascript
+change_server(region, name)
+change_server('EU', 'I')  // Change to Europas I
+change_server('US', 'PVP')  // Change to Americas PVP
+```
+
+### Open/Close a merchant stand?
+
+This does not appear to be exposed in `runners.js` however, it's available via `parent`.
+
+```javascript
+parent.open_merchant(41)  // Open merchant stand in inventory slot #41
+parent.close_merchant()  // Close merchant stand
 ```
