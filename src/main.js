@@ -18,6 +18,7 @@ import * as Movement from './movement.js';
 
 // Brains
 import { AutoBrain } from '/brain/auto.js';
+import { MerchantBrain } from '/brain/merchant.js';
 
 const START_BOTS = false;
 const BOT_SCRIPT = 'loader';
@@ -293,6 +294,10 @@ async function main() {
 
 	// Start running!
 	switch (character.ctype) {
+		case 'merchant':
+			g_brain = new MerchantBrain();
+			break;
+
 		default:
 			g_brain = new AutoBrain();
 			break;

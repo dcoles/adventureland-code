@@ -20,6 +20,13 @@ export class Brain {
 	}
 
 	/**
+	 * Are we interrupted from normal flow?
+	 */
+	is_interrupted() {
+		return this.stopped || character.rip;
+	}
+
+	/**
 	 * Stop the event loop.
 	 */
 	stop() {
@@ -36,6 +43,21 @@ export class Brain {
 		Logging.warn('Resuming event loop');
 		Adventure.set('stopped', false);
 		this.stopped = false;
+	}
+
+	/**
+	 * Loop until interupted.
+	 *
+	 * @param {Function} func Function to call.
+	 */
+	async loop_until_interrupted(func) {
+		while (!this.is_interrupted()) {
+			if (await func() === false) {
+				break;
+			};
+
+			await this._idle();
+		}
 	}
 
 	/** Set current target. */
