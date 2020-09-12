@@ -1,6 +1,5 @@
 // Item upgrades and compounding
 // @ts-check
-import * as Adventure from '/adventure.js';
 import * as Logging from '/logging.js';
 import * as Movement from '/movement.js';
 
@@ -97,6 +96,32 @@ export function indexed_items(filter) {
 
 		return true;
 	});
+}
+
+/**
+ * Find slot of an item.
+ *
+ * @param {object} criteria Criteria for matching item.
+ * @param {string} [criteria.name] Match item name.
+ * @param {number} [criteria.level] Match item level.
+ * @returns {number} Inventory slot.
+ */
+export function find(criteria) {
+	return character.items.findIndex((item) => {
+		if (!item) {
+			return false;
+		}
+
+		if (criteria.name && item.name !== criteria.name) {
+			return false;
+		}
+
+		if (Number.isInteger(criteria.level) && item.level !== criteria.level) {
+			return false;
+		}
+
+		return true;
+	})
 }
 
 /**

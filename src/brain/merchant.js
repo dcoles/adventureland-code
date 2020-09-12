@@ -38,6 +38,8 @@ const movement = Movement.get_movement();
 export class MerchantBrain extends Brain {
 	constructor() {
 		super();
+
+		this.home = {x: -120, y: 0, map: 'main'};  // Home for vending
 		this.stock = null;  // Track bank contents
 		this.tasks = {};
 	}
@@ -45,6 +47,9 @@ export class MerchantBrain extends Brain {
 	async _init() {
 		Logging.info('Starting Merchant brain');
 		window.set_message('Merchant');
+
+		// Close our stand if it was open
+		this.close_stand();
 
 		// Task for keeping us healthy
 		this.tasks['regen_autocast'] = Task.create(async (task) => {
@@ -73,6 +78,7 @@ export class MerchantBrain extends Brain {
 		await this._upgrade();
 		await this._exchange();
 		await this._bank();
+		await this._vend();
 
 		await movement.smarter_move('town');
 		await this._sleep();
@@ -144,6 +150,25 @@ export class MerchantBrain extends Brain {
 			for (let item_id of compoundable) {
 				await Item.compound_all(item_id, MAX_COMPOUND[item_id] || DEFAULT_MAX_COMPOUND);
 			}
+		}
+	}
+
+	/** Exchange items for goodies! */
+	async _exchange() {
+		const exchangeable = Item.indexed_items().filter(([_, item]) => G.items[item.name].e);
+		if (exchangeable.length < 1) {
+			return;
+		}
+
+		Logging.info('Exchanging items');
+		window.set_message('Exchange');
+		await movement.smarter_move('exchange');
+		for (let [i, item] of exchangeable) {
+			Logging.info(`Exchanging ${G.items[item.name].name}`);
+			exchange(i);
+
+			// FIXME: Wait until exchange is complete
+			await this._sleep(5000);
 		}
 	}
 
@@ -255,23 +280,30 @@ export class MerchantBrain extends Brain {
 		this.last_stocktake = new Date();
 	}
 
-	/** Exchange items for goodies! */
-	async _exchange() {
-		const exchangeable = Item.indexed_items().filter(([_, item]) => G.items[item.name].e);
-		if (exchangeable.length < 1) {
-			return;
-		}
+	/** Vendor some goods. */
+	async _vend() {
+		Logging.info('Vending items');
+		window.set_message('Vending');
+		await movement.smarter_move(this.home);
 
-		Logging.info('Exchanging items');
-		window.set_message('Exchange');
-		await movement.smarter_move('exchange');
-		for (let [i, item] of exchangeable) {
-			Logging.info(`Exchanging ${G.items[item.name].name}`);
-			exchange(i);
+		// Set up shop
+		let until = new Date(Date.now() + 900_000);  // +15 minutes
+		Logging.info('Vending until', until);
 
-			// FIXME: Wait until exchange is complete
-			await this._sleep(5000);
-		}
+		this.open_stand();
+		await Util.sleep_until(until);
+		this.close_stand();
+
+	}
+
+	open_stand() {
+		// TODO: Upstream to runner_functions.js
+		parent.open_merchant(Item.find({name: 'stand0'}));
+	}
+
+	close_stand() {
+		// TODO: Upstream to runner_functions.js
+		parent.close_merchant();
 	}
 }
 
