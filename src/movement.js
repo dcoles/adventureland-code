@@ -71,7 +71,9 @@ class Movement {
 			this.task = null;
 		}
 
-		window.move(window.character.real_x, window.character.real_y);
+		if (!character.rip) {
+			window.move(window.character.real_x, window.character.real_y);
+		}
 	}
 
 	/**
