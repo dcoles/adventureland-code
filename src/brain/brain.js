@@ -13,10 +13,24 @@ export class Brain {
 	static SLEEP_MS = 1000;
 
 	constructor() {
-		this.stopped = !character.bot && Adventure.get('stopped') || false;
+		this._deserialize_state();
 		this.target = null;
 		this.target_difficulty = 0;
 		this.home = null;
+	}
+
+	/**
+	 * Deserialize character state.
+	 */
+	_deserialize_state() {
+		this.state = JSON.parse(window.sessionStorage.getItem('c:' + character.name)) || {};
+	}
+
+	/**
+	 * Serialize character state.
+	 */
+	_serialize_state() {
+		window.sessionStorage.setItem('c:' + character.name, JSON.stringify(this.state));
 	}
 
 	/**
@@ -26,13 +40,16 @@ export class Brain {
 		return this.stopped || character.rip;
 	}
 
+	get stopped() {
+		return this.state.stopped || false;
+	}
+
 	/**
 	 * Stop the event loop.
 	 */
 	stop() {
 		Logging.warn('Stopping event loop');
-		Adventure.set('stopped', true);
-		this.stopped = true;
+		this.state.stopped = true;
 
 		// Cease all motor functions
 		character.stop_all();
@@ -42,7 +59,7 @@ export class Brain {
 	resume() {
 		Logging.warn('Resuming event loop');
 		Adventure.set('stopped', false);
-		this.stopped = false;
+		this.state.stopped = false;
 	}
 
 	/**
@@ -110,6 +127,8 @@ export class Brain {
 				this.stop();
 				continue;
 			}
+
+			this._serialize_state();
 
 			// Avoid a runaway loop
 			await this._idle();
