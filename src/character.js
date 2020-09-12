@@ -81,6 +81,8 @@ class Character {
 	get vy() { return character.vy; }
 	get width() { return Adventure.get_width(character); }
 	get height() { return Adventure.get_height(character); }
+	get items() { return character.items; }
+	get bank() { return character.bank; }
 
 	/**
 	 * Register callback for Character events.
