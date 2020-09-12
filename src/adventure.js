@@ -131,8 +131,13 @@ export function map_key(key, skill, code) {
  * @param {*} [second] ???
  */
 export function stop(action, second) {
-	console.debug(`Stopping ${action || "move"}`);
-	window.stop(action, second)
+	console.debug(`Stopping ${action || 'move'}`);
+	try {
+		window.stop(action, second)
+	} catch (e) {
+		// Workaround `stop("move")` throwing error when character is dead
+		window.log(`Failed to stop ${action}: ${e.reason}`);
+	}
 }
 
 /**
