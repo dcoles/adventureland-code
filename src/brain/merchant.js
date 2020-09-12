@@ -115,7 +115,11 @@ export class MerchantBrain extends Brain {
 					return false;
 				}
 
-				await movement.smarter_move({x: char.x, y: char.y, map: char.map});
+				try {
+					await movement.smarter_move({x: char.x, y: char.y, map: char.map});
+				} catch (e) {
+					Logging.warn(`Moving to ${char.name} failed`, e);
+				}
 			})
 		}
 	}

@@ -148,6 +148,7 @@ export class Brain {
 				await this._step();
 			} catch (e) {
 				Logging.error('Unhandled exception in Brain loop', e);
+				window.set_message('Oops!', 'red');
 				this.stop();
 				continue;
 			}
