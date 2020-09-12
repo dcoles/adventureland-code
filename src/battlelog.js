@@ -16,12 +16,14 @@ class BattleLog {
 	/**
 	 * @param {object} [options] BattleLog options.
 	 * @param {string} [options.entity_id] Entity to monitor (default: `character`).
+	 * @param {boolean} [options.party] Monitor all party members.
 	 * @param {boolean} [options.all] Monitor all actors.
 	 */
 	constructor(options) {
 		options = options || {}
 
 		this.all = options.all || false;
+		this.party = options.party || false;
 		this.entity_id = options.entity_id || character.name;
 	}
 
@@ -31,7 +33,10 @@ class BattleLog {
 	 * @param {object} data Event data.
 	 */
 	on_hit(data) {
-		if (!this.all && data.actor !== this.entity_id && data.target !== this.entity_id) {
+		const party = window.get_party();
+		if (!(this.all
+			|| (this.party && (data.actor in party || data.target in party))
+			|| (data.actor === this.entity_id || data.target === this.entity_id))) {
 			return;
 		}
 
@@ -45,7 +50,7 @@ class BattleLog {
 		else { msg += ' hits '};
 		msg += actor_name_with_icon(target);
 		if (!data.miss) { msg += ` for ${(data.heal || data.damage).toLocaleString()}` };
-		
+
 		// Statues
 		let statuses = [];
 		if (data.crit) statuses.push('crit!');
@@ -67,6 +72,7 @@ class BattleLog {
  *
  * @param {object} [options] BattleLog options.
  * @param {string} [options.entity_id] Entity to monitor (default: `character`).
+ * @param {boolean} [options.party] Monitor all party members.
  * @param {boolean} [options.all] Monitor all actors.
  */
 export function monitor(options) {

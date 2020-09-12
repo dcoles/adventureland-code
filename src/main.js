@@ -242,13 +242,14 @@ window.on_destroy = function() {
 /** Main function */
 async function main() {
 	Logging.info('== Starting CODE ==');
+	window.set_message('Starting...');
 
 	g_start_time = new Date();
 	Logging.info('Start time', g_start_time);
 
 	// Log combat events
 	if (!character.bot) {
-		BattleLog.monitor();
+		BattleLog.monitor({party: true});
 	}
 
 	// Log all events
