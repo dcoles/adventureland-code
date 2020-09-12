@@ -77,6 +77,30 @@ export class Brain {
 		}
 	}
 
+	/**
+	 * Countdown until a certain time or interrupted.
+	 *
+	 * @param {Date} until Time to count down to.
+	 * @param {string} [message] Status message.
+	 */
+	async countdown(until, message) {
+		message = message || 'Countdown';
+
+		Logging.info(`${message} until`, until);
+		const until_ts = until.getTime();
+
+		await this.loop_until_interrupted(async () => {
+			const now = Date.now();
+			if (now > until_ts) {
+				return false;
+			}
+
+			const remaining = (until_ts - now) / Util.SECOND_MS;
+			window.set_message(`${message} (${remaining.toFixed()})`)
+			await Util.sleep(remaining > 1 ? 250 : remaining * Util.SECOND_MS);
+		})
+	}
+
 	/** Set current target. */
 	set_target(target) {
 		if (!target) {
@@ -181,13 +205,13 @@ export class Brain {
 	async _respawn() {
 		// Respawn has 12-sec cooldown
 		Logging.info('Respawning in 15s...')
-		for (let n = 15; n > 0; n--) {
-			if (!character.rip) {
-				return;
-			}
+		const until_ts = Date.now() + 15 * Util.SECOND_MS;
 
-			set_message(`RIP (${n})`);
-			await this._sleep(1000);
+		let now;
+		while ((now = Date.now()) < until_ts || !character.rip) {
+			const remaining = (until_ts - now) / Util.SECOND_MS;
+			window.set_message(`RIP (${remaining.toFixed()})`)
+			await Util.sleep(remaining > 1 ? 250 : remaining * Util.SECOND_MS);
 		}
 
 		Adventure.respawn();

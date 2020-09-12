@@ -32,6 +32,9 @@ const UPGRADE_PACK = 'items0';
 const COMPOUND_PACK = 'items1';
 const MATERIAL_PACK = 'items1';
 
+// Misc
+const DEFAULT_VENDING_DURATION = 15 * Util.MINUTE_MS;
+
 const character = Character.get_character();
 const movement = Movement.get_movement();
 
@@ -41,6 +44,7 @@ export class MerchantBrain extends Brain {
 
 		this.home = {x: -120, y: 0, map: 'main'};  // Home for vending
 		this.stock = null;  // Track bank contents
+		this.vending_duration = DEFAULT_VENDING_DURATION;
 		this.tasks = {};
 	}
 
@@ -287,13 +291,9 @@ export class MerchantBrain extends Brain {
 		await movement.smarter_move(this.home);
 
 		// Set up shop
-		let until = new Date(Date.now() + 900_000);  // +15 minutes
-		Logging.info('Vending until', until);
-
 		this.open_stand();
-		await Util.sleep_until(until);
+		await this.countdown(Util.date_add(this.vending_duration), 'Vending');
 		this.close_stand();
-
 	}
 
 	open_stand() {
