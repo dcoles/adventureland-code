@@ -37,7 +37,7 @@ export function get_nearby_monsters(criteria) {
 /**
  * Return nearby party members ordered by HP ratio.
  *
- * @param {Criteria} criteria Criteria to filter entities by.
+ * @param {Criteria} [criteria] Criteria to filter entities by.
  * @returns {Array} Character objects.
  */
 export function get_party_members(criteria) {
@@ -61,21 +61,6 @@ export function get_entities(criteria) {
  *
  * @param {Array} entities Entities to filter.
  * @param {Criteria} criteria Criteria to filter entities by.
- */
-/*
- * @param {object} criteria Criteria to filter entities by.
- * @param {string} [criteria.name] Entity must have this name.
- * @param {"character"|"monster"} [criteria.type] Entity must match this type.
- * @param {string} [criteria.ctype] Entity must be of this class type.
- * @param {object|string} [criteria.target] Entity must be targetting this entity.
- * @param {boolean} [criteria.no_target] Entity must not have a target.
- * @param {boolean} [criteria.alive] If true, entity must be alive.
- * @param {boolean} [criteria.owner] If true, entity must be owned by us.
- * @param {boolean} [criteria.party] If true, entity must be in our party.
- * @param {number} [criteria.min_xp] Entity must give at least this much XP.
- * @param {boolean} [criteria.path_check] Entity must be directly reachable.
- * @param {Function} [criteria.filter] General-purpose filter function.
- * @returns {Array} Filtered entities.
  */
 export function filter(entities, criteria) {
 	if (typeof entities === 'object') {
