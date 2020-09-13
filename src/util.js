@@ -198,3 +198,14 @@ export function split_whitespace(str) {
 export function quantize(number, q) {
 	return Math.floor(number / q) * q;
 }
+
+/**
+ * A mod B.
+ *
+ * @param {number} a
+ * @param {number} b
+ * @returns {number} `a` mod `b`
+ */
+export function modulo(a, b) {
+	return ((a % b) + b) % b;
+}
