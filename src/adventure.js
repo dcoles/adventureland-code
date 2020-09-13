@@ -2,6 +2,7 @@
 // @ts-check
 import * as Util from '/util.js';
 
+const TRACE = false;
 const IDLE_MS = 250;
 
 /**
@@ -83,7 +84,7 @@ export function change_target(target) {
  */
 export function get(name) {
 	const value = window.get(name);
-	console.debug(`Get ${name}`, value);
+	TRACE && console.debug(`Get ${name}`, value);
 
 	return value;
 }
@@ -97,7 +98,7 @@ export function get(name) {
  * @param {Object|Array|number|string|null} value Value to store.
  */
 export function set(name, value) {
-	console.debug(`Set ${name}`, value);
+	TRACE && console.debug(`Set ${name}`, value);
 	window.set(name, value);
 }
 
@@ -108,7 +109,7 @@ export function set(name, value) {
  * @param {string} code Code snippet.
  */
 export function map_snippet(key, code) {
-	console.debug(`Mapping ${key} to snippet`, code);
+	TRACE && console.debug(`Mapping ${key} to snippet`, code);
 	window.map_key(key, 'snippet', code);
 }
 
@@ -120,7 +121,7 @@ export function map_snippet(key, code) {
  * @param {string} [code] Optional code for skill.
  */
 export function map_key(key, skill, code) {
-	console.debug(`Mapping ${key}`, {skill: skill, code: code});
+	TRACE && console.debug(`Mapping ${key}`, {skill: skill, code: code});
 	window.map_key(key, skill, code);
 }
 
@@ -131,7 +132,7 @@ export function map_key(key, skill, code) {
  * @param {*} [second] ???
  */
 export function stop(action, second) {
-	console.debug(`Stopping ${action || 'move'}`);
+	TRACE && console.debug(`Stopping ${action || 'move'}`);
 	try {
 		window.stop(action, second)
 	} catch (e) {
@@ -144,7 +145,7 @@ export function stop(action, second) {
  * Respawn character.
  */
 export function respawn() {
-	console.debug('Respawning...');
+	TRACE && console.debug('Respawning...');
 	window.respawn();
 }
 
