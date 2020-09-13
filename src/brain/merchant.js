@@ -194,7 +194,7 @@ export class MerchantBrain extends Brain {
 				continue;
 			}
 
-			Adventure.bank_store(i, bank);
+			window.bank_store(i, bank);
 		}
 
 		// Wait for the game to catch up...
@@ -231,7 +231,7 @@ export class MerchantBrain extends Brain {
 					break;
 				}
 
-				Adventure.bank_retrieve(pack, i, free_slot);
+				window.bank_retrieve(pack, i, free_slot);
 			}
 		}
 	}
@@ -276,7 +276,7 @@ export class MerchantBrain extends Brain {
 					}
 
 					const [storage, storage_slot, _] = by_level[level][i];
-					Adventure.bank_retrieve(storage, storage_slot, free_slot);
+					window.bank_retrieve(storage, storage_slot, free_slot);
 				}
 			}
 		}
@@ -302,12 +302,12 @@ export class MerchantBrain extends Brain {
 
 	open_stand() {
 		// TODO: Upstream to runner_functions.js
-		parent.open_merchant(Item.find({name: 'stand0'}));
+		window.open_merchant(Item.find({name: 'stand0'}));
 	}
 
 	close_stand() {
 		// TODO: Upstream to runner_functions.js
-		parent.close_merchant();
+		window.close_merchant();
 	}
 }
 

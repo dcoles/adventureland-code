@@ -1,4 +1,4 @@
-/**
+/*
  * Fetch code from remote URL and run it.
  *
  * ⚠️ CAUTION -- Only use this with URLs you control and trust.
@@ -6,11 +6,15 @@
  * steal personal data, cause your cat to run away and other nasty things.
  */
 
-// URL to fetch code from
-const URL = 'http://127.0.0.1:5500/main.js';
+// URLs to fetch code from
+const RUNNER_EXT_URL = 'http://127.0.0.1:5500/runner_functions_ext.js';
+const MAIN_URL = 'http://127.0.0.1:5500/main.js';
 
-const script = document.createElement('script');
-script.type = 'module';
-script.textContent = `import * as Code from ${JSON.stringify(URL)}; window.Code = Code;`;
-script.id = 'my_code';
-document.head.appendChild(script);
+const runner_ext = document.createElement('script');
+runner_ext.src = RUNNER_EXT_URL;
+document.head.appendChild(runner_ext);
+
+const main = document.createElement('script');
+main.type = 'module';
+main.textContent = `import * as Code from ${JSON.stringify(MAIN_URL)}; window.Code = Code;`;
+document.head.appendChild(main);
