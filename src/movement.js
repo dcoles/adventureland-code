@@ -20,8 +20,8 @@ const LOCATIONS = {
 	'halloween_potions': {map: 'halloween', x: 149, y: -182},
 }
 
-const DEBUG_MOVEMENT = 0;  // 0: Off, 1: Movement, 2: Pathfinding
-const DEBUG_COLLISION = 0;  // 0: Off, 1: On
+const DEBUG_MOVEMENT = false;
+const DEBUG_COLLISION = false;
 const MAX_AVOIDANCE = 100;  // Maximum amount of avoidance to attempt
 const KITE_ANGLE = Math.PI / 3;  // 60° clockwise
 
@@ -190,7 +190,12 @@ class Movement {
 				}
 
 				const dist = options.max_distance ? Math.min(segment_distance, options.max_distance - distance_traveled) : segment_distance;
-				await this.move(p[0], p[1], {max_distance: dist, avoid: options.avoid});
+				try {
+					await this.move(p[0], p[1], {max_distance: dist, avoid: options.avoid});
+				} catch (e) {
+					console.warn('Movement failed', e);
+					return;
+				}
 
 				// Actual distance traveled
 				const new_pos = [window.character.real_x, window.character.real_y];
