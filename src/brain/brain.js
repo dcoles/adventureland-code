@@ -222,13 +222,16 @@ export class Brain {
 		const until_ts = Date.now() + 15 * Util.SECOND_MS;
 
 		let now;
-		while ((now = Date.now()) < until_ts || !character.rip) {
+		while ((now = Date.now()) < until_ts && character.rip) {
 			const remaining = (until_ts - now) / Util.SECOND_MS;
 			window.set_message(`RIP (${remaining.toFixed()})`)
 			await Util.sleep(remaining > 1 ? 250 : remaining * Util.SECOND_MS);
 		}
 
 		Adventure.respawn();
+		while (character.rip) {
+			await this._idle();
+		}
 	}
 
 	/**
@@ -240,6 +243,6 @@ export class Brain {
 		// Override me!
 		Logging.info('Nothing to do...');
 		window.set_message('Nothing');
-		await this._sleep(Brain.SLEEP_MS);
+		await this._sleep();
 	}
 }
