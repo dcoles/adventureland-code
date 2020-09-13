@@ -85,3 +85,15 @@ function bank_retrieve(pack, pack_slot, inventory_slot)
 
 	parent.socket.emit("bank",{operation:"swap",pack:pack,str:pack_slot,inv:inventory_slot});
 }
+
+/**
+ * Try to move to position.
+ *
+ * @param {number} x x-coordinate.
+ * @param {number} y y-coordinate.
+ */
+async function move(x, y) {
+	// Workaround bug where move promise doesn't resolve on death
+	const death = new Promise((resolve) => character.one('death', resolve));
+	await Promise.race([parent.move(x, y, true), death]);  // race death itself!
+}
