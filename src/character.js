@@ -113,6 +113,8 @@ class Character {
 	 * Get the current targeted monster.
 	 *
 	 * Returns `null` if not a monster or the target is dead.
+	 *
+	 * @returns {Monster}
 	 */
 	get_targeted_monster() {
 		return window.get_targeted_monster();

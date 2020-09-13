@@ -27,7 +27,7 @@ const character = Adventure.get_character();
  * Return nearest monsters.
  *
  * @param {Criteria} [criteria] Criteria for matching monster.
- * @returns {Array} Monsters ordered from nearest to furthest away.
+ * @returns {Array<Monster>} Monsters ordered from nearest to furthest away.
  */
 export function get_nearby_monsters(criteria) {
 	criteria = criteria || {};

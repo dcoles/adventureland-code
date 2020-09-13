@@ -249,7 +249,7 @@ export function get_location_by_name(name) {
 /**
  * Estimate target's movement over time `t`.
  *
- * @param {object} target Target entity.
+ * @param {Monster} target Target entity.
  * @param {number} t Time in seconds.
  */
 function movement_compensation(target, t) {
