@@ -20,6 +20,8 @@ import * as Movement from './movement.js';
 import { AutoBrain } from '/brain/auto.js';
 import { MerchantBrain } from '/brain/merchant.js';
 
+// Bots
+const BOTS = ['LigLig', 'LigLug', 'LigLog'];
 const BOT_SCRIPT = 'loader';
 
 // Your Character
@@ -74,18 +76,13 @@ export function start_bots() {
 }
 
 function _start_bots() {
-	const chars = Adventure.get_characters();
-	for (let char of chars) {
-		if (char.name === character.name) {
+	for (let name of BOTS) {
+		if (name === character.name) {
 			continue;
 		}
 
-		if (char.type === 'merchant') {
-			continue;
-		}
-
-		Logging.info('Starting bot', char.name);
-		Adventure.start_character(char.name, BOT_SCRIPT);
+		Logging.info('Starting bot', name);
+		Adventure.start_character(name, BOT_SCRIPT);
 	}
 }
 
@@ -97,18 +94,13 @@ export function stop_bots() {
 
 function _stop_bots() {
 	const chars = Adventure.get_characters();
-	for (let char of chars) {
-		if (char.name === character.name) {
+	for (let [name, state] of Object.entries(window.get_active_characters())) {
+		if (state === 'self') {
 			continue;
 		}
 
-		if (char.type === 'merchant') {
-			continue;
-		}
-
-		// FIXME: Don't stop other signed in characters (who aren't bots!)
-		Logging.info('Stopping bot', char.name);
-		Adventure.stop_character(char.name);
+		Logging.info('Stopping bot', name);
+		Adventure.stop_character(name);
 	}
 }
 
