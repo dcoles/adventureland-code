@@ -14,6 +14,7 @@ export class Brain {
 
 	constructor() {
 		this._deserialize_state();
+		this.interrupt = false;
 		this.target = null;
 		this.target_difficulty = 0;
 		this.home = null;
@@ -37,7 +38,7 @@ export class Brain {
 	 * Are we interrupted from normal flow?
 	 */
 	is_interrupted() {
-		return this.stopped || character.rip;
+		return this.interrupt || this.stopped || character.rip;
 	}
 
 	get stopped() {
@@ -144,6 +145,8 @@ export class Brain {
 		let tick = 1;
 		do {
 			Logging.debug('tick', tick++);
+			this.interrupt = false;  // Clear interrupt
+
 			if (this.stopped) {
 				await this._stop();
 				continue;

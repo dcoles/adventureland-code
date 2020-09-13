@@ -151,10 +151,10 @@ export class AutoBrain extends Brain {
 		character.on('hit', (data) => {
 			if (data.damage > 0) {
 				const attacker = get_entity(data.actor);
-				if (this.target != attacker) {
+				if (this.target !== attacker) {
 					Logging.warn('Attacked by', attacker ? attacker.name : '???');
-					character.stop('move');
 					this.set_target(attacker);
+					this.interrupt = true;
 				}
 			}
 		});
@@ -337,13 +337,14 @@ export class AutoBrain extends Brain {
 
 	/** Heal until we're fully recovered (or start losing HP). */
 	async _heal_up() {
-		let last_hp = character.hp;
-
 		// Let autocasts do their job
-		while (character.hp < character.max_hp && character.hp >= last_hp && !this.is_interrupted()) {
-			last_hp = character.hp;
+		await this.loop_until_interrupted(async () => {
+			if (!(Entity.hp_ratio(character) < 1.00)) {
+				return false;
+			}
+
 			await this._sleep();
-		}
+		});
 	}
 
 	/** Return to home and recover some HP. */
