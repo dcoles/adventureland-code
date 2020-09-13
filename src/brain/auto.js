@@ -29,13 +29,7 @@ export class AutoBrain extends Brain {
 	constructor() {
 		super();
 		this.home = null;
-		this.tick = 0;
 		this.leader_name = null;
-	}
-
-	/** Are we interrupted? */
-	is_interrupted() {
-		return this.stopped || character.rip;
 	}
 
 	/** Are we safe? */
@@ -105,19 +99,6 @@ export class AutoBrain extends Brain {
 	on_state(state) {
 		Logging.debug('State', state);
 		set_message(state);
-	}
-
-	/** Regular tick. */
-	on_tick(tick) {
-		Logging.debug('Tick', tick);
-		if (character.rip) {
-			// Nothing to do but go through his clothes and look for loose change.
-			return;
-		}
-
-		character.loot();
-		this._update_autocasts();
-		this._transfer_items();
 	}
 
 	/**
@@ -197,11 +178,13 @@ export class AutoBrain extends Brain {
 
 	/** Timer tick */
 	_tick() {
-		if (this.stopped) {
+		if (this.is_interrupted()) {
 			return;
 		}
 
-		this.on_tick(this.tick++);
+		character.loot();
+		this._update_autocasts();
+		this._transfer_items();
 	}
 
 	/** Update the selected autocasts. */

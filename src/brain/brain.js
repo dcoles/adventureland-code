@@ -141,7 +141,9 @@ export class Brain {
 	 */
 	async _loop() {
 		let t = Date.now();
+		let tick = 1;
 		do {
+			Logging.debug('tick', tick++);
 			if (this.stopped) {
 				await this._stop();
 				continue;
