@@ -369,7 +369,7 @@ export class AutoBrain extends Brain {
 				Logging.warn('Movement failed', e);
 				await this._sleep();
 			}
-		})
+		});
 	}
 
 	/** Find and move to our next target. */
@@ -386,10 +386,19 @@ export class AutoBrain extends Brain {
 		}
 
 		// Keep searching for a target
-		do {
+		await this.loop_until_interrupted(async () => {
 			this._pick_target();
+			if (this.target) {
+				return false;
+			}
+
+			// Go find our leader
+			if (this.is_lost()) {
+				return false;
+			}
+
 			await this._sleep();
-		} while (!this.target && !this.is_interrupted())
+		});
 	}
 
 	/** Try to pick a new target. */
