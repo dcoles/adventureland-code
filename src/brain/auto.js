@@ -306,20 +306,24 @@ export class AutoBrain extends Brain {
 
 	/** Heal someone in the party. */
 	async _heal_party() {
-		const party = Entity.get_party_members().filter((c) => !c.rip);
-		const target = party[0];
-
-		// No one to heal?
-		if (!target) {
+		const party = Entity.get_party_members({alive: true});
+		if (party.length < 1) {
+			// No one is alive...
 			return;
 		}
 
-		Logging.info(`Healing ${target.name}`)
-		await character.move_towards(target);
+		const target = party[0];
+		if (!(target.hp < target.max_hp)) {
+			// No one to heal
+			return;
+		}
 
 		if (!character.skills.heal.is_autouse()) {
+			Logging.info(`Healing ${target.name}`)
 			character.skills.heal.autouse(target, null, (t) => t.hp < t.max_hp);
 		}
+
+		await character.move_towards(target);
 	}
 
 	/** Return to our fearless leader! */
