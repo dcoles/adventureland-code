@@ -6,6 +6,7 @@ import * as Entity from '/entity.js';
 import * as Item from '/item.js';
 import * as Logging from '/logging.js';
 import * as Util from '/util.js';
+import * as Movement from '/movement.js';
 
 // Brain
 import { Brain } from '/brain/brain.js';
@@ -16,13 +17,13 @@ const maincode = Adventure.get_maincode();
 // Character wrapper
 const character = Character.get_character();
 
+// Movment helper
+const movement = Movement.get_movement();
+
 const TICK_MS = 1000;
-const TARGET_RANGE_RATIO = 0.90;
 const HOME_RANGE_RADIUS = 500;
 const MIN_DIFFICULTY = 0.1;
 const MAX_DIFFICULTY = 9.0;
-const KITING_THRESHOLD = 0.5;
-const MOVEMENT_TOLLERANCE = 20;
 
 export class AutoBrain extends Brain {
 	constructor() {
@@ -362,36 +363,22 @@ export class AutoBrain extends Brain {
 
 	/** Attack current target */
 	async _attack() {
-		const dist = character.distance_between(this.target);
-		if (!dist) {
-			return;
-		}
-
-		// Try to keep target at a good range
-		const target_dist = character.is_ranged() ? TARGET_RANGE_RATIO * character.range : 0;
-		const move = dist - target_dist;
-
-		if (Math.abs(move) > MOVEMENT_TOLLERANCE) {
-			if (this.is_kiting() || move > 0) {
-				await character.move_towards(this.target, move, {avoid: character.is_ranged()});
-				return;
+		await this.loop_until_interrupted(async () => {
+			if (!this.target || this.target.dead) {
+				return false;
 			}
-		}
 
-		if (!character.skills.attack.is_autouse()) {
-			character.skills.attack.autouse(this.target, null, (t) => !t.rip);
-		}
-	}
+			if (!character.skills.attack.is_autouse()) {
+				character.skills.attack.autouse(this.target, null, (t) => !t.rip);
+			}
 
-	/**
-	 * Are we kiting enemies?
-	 *
-	 * @returns {boolean} True if kiting, otherwise False.
-	 */
-	is_kiting() {
-		// Always kite difficult enemies or if our HP is below 50%
-		const hp_ratio = character.hp / character.max_hp;
-		return character.targets && (this.target_difficulty > KITING_THRESHOLD || hp_ratio < 0.50);
+			try {
+				await movement.kite(this.target);
+			} catch (e) {
+				Logging.warn('Movement failed', e);
+				await this._sleep();
+			}
+		})
 	}
 
 	/** Find and move to our next target. */

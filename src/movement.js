@@ -27,6 +27,7 @@ const RANGE = 32;  // When are we "close enough" to the target
 const MAX_SEGMENT = 128;  // Maximum length of a simplified path segment
 const OFFMAP_ESTIMATE = 10000;  // Estimate of distance outside this map
 const MAX_AVOIDANCE = 100;  // Maximum amount of avoidance to attempt
+const KITE_ANGLE = Math.PI / 3;  // 60° clockwise
 
 // Globals
 let g_movement = null;
@@ -113,6 +114,48 @@ class Movement {
 		} else {
 			await window.smart_move(dest);
 		}
+	}
+
+	/**
+	 * Attempt to kite the target.
+	 *
+	 * @param {Monster} entity Entity to kite.
+	 */
+	async kite(entity) {
+		const targeted = entity.target === character.name;
+
+		// Current positions
+		const char_pos = [character.x, character.y];
+		const entity_pos = [entity.x, entity.y];
+
+		// How far do we want to move?
+		const entity_distance = Util.vector_distance(char_pos, entity_pos);
+		const target_distance = Math.min(entity_distance + 50, 0.80 * character.range);
+
+		// Relative angles
+		const char_theta = Math.atan2(char_pos[1] - entity_pos[1], char_pos[0] - entity_pos[0]);
+		const entity_theta = targeted && entity.moving ? Math.atan2(entity.vy, entity.vx) : char_theta;
+
+		DEBUG_MOVEMENT && Draw.clear_list('debug_kite');
+		DEBUG_MOVEMENT && Draw.add_list('debug_kite', window.draw_circle(entity_pos[0], entity_pos[1], target_distance, null, 0x00ff00));
+
+		// Circle clockwise
+		let new_pos;
+		for (let offset = 0; offset < 2 * Math.PI; offset += Math.PI / 64) {
+			new_pos = [
+				entity_pos[0] + target_distance * Math.cos(entity_theta + KITE_ANGLE + offset),
+				entity_pos[1] + target_distance * Math.sin(entity_theta + KITE_ANGLE + offset)
+			];
+
+			if (Adventure.can_move_to(new_pos[0], new_pos[1])) {
+				break;
+			}
+		}
+
+		DEBUG_MOVEMENT && Draw.add_list('debug_kite', window.draw_line(entity_pos[0], entity_pos[1], char_pos[0], char_pos[1], null, 0xff0000));
+		DEBUG_MOVEMENT && Draw.add_list('debug_kite', window.draw_line(entity_pos[0], entity_pos[1], new_pos[0], new_pos[1], null, 0x0000ff));
+		const max_distance = Math.max(entity_distance * character.speed / entity.speed, 48);
+		await this.move(new_pos[0], new_pos[1], {max_distance: max_distance});
 	}
 
 	/**
