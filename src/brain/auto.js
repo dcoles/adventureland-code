@@ -24,6 +24,7 @@ const TICK_MS = 1000;
 const HOME_RANGE_RADIUS = 500;
 const MIN_DIFFICULTY = 0.1;
 const MAX_DIFFICULTY = 9.0;
+const MAX_GOLD = 500_000;  // Max gold before transfering
 
 export class AutoBrain extends Brain {
 	constructor() {
@@ -235,6 +236,10 @@ export class AutoBrain extends Brain {
 			}
 
 			window.send_item(Util.random_choice(merchants), i, item.q);
+		}
+
+		if (character.gold > MAX_GOLD) {
+			window.send_gold(Util.random_choice(merchants), character.gold - MAX_GOLD);
 		}
 	}
 
