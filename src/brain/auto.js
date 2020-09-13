@@ -40,16 +40,19 @@ export class AutoBrain extends Brain {
 
 	/** Are we safe? */
 	is_safe() {
-		const hp_ratio = character.hp / character.max_hp;
-
 		// Must either have more than 10% HP or we're within 100px of the map origin
-		return hp_ratio > 0.10 || character.distance(0, 0) < 100;
+		return Entity.hp_ratio(character) > 0.10 || character.distance(0, 0) < 100;
 	}
 
 	is_party_healable() {
 		// Only priests can heal
 		if (character.ctype !== 'priest') {
 			return false;
+		}
+
+		// We need healing!
+		if (Entity.hp_ratio(character) < 1.00) {
+			return true;
 		}
 
 		// Does anyone need healing?
@@ -95,8 +98,7 @@ export class AutoBrain extends Brain {
 
 	/** Is our HP getting low? */
 	is_low_hp() {
-		const hp_ratio = character.hp / character.max_hp;
-		return hp_ratio < 0.30;  // Below 30%
+		return Entity.hp_ratio(character) < 0.30;  // Below 30%
 	}
 
 	/** Called on major state updates. */
@@ -307,6 +309,12 @@ export class AutoBrain extends Brain {
 
 	/** Heal someone in the party. */
 	async _heal_party() {
+		// Do we need healing?
+		if (Entity.hp_ratio(character) < 1.00) {
+			await character.skills.heal.use_when_ready(window.character);
+			return;
+		}
+
 		const party = Entity.get_party_members({alive: true});
 		if (party.length < 1) {
 			// No one is alive...
@@ -314,7 +322,7 @@ export class AutoBrain extends Brain {
 		}
 
 		const target = party[0];
-		if (!(target.hp < target.max_hp)) {
+		if (!(Entity.hp_ratio(target) < 1.00)) {
 			// No one to heal
 			return;
 		}
