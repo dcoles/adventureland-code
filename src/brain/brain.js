@@ -68,12 +68,18 @@ export class Brain {
 	 * @param {Function} func Function to call.
 	 */
 	async loop_until_interrupted(func) {
+		let t = Date.now();
 		while (!this.is_interrupted()) {
 			if (await func() === false) {
 				break;
 			};
 
-			await this._idle();
+			// Ensure we don't spin too fast
+			const t_delta = Date.now() - t;
+			if (t_delta < Brain.IDLE_MS) {
+				await Util.sleep(Brain.IDLE_MS - t_delta);
+			}
+			t = Date.now();
 		}
 	}
 
@@ -134,6 +140,7 @@ export class Brain {
 	 * Main loop.
 	 */
 	async _loop() {
+		let t = Date.now();
 		do {
 			if (this.stopped) {
 				await this._stop();
@@ -156,7 +163,11 @@ export class Brain {
 			this._serialize_state();
 
 			// Avoid a runaway loop
-			await this._idle();
+			const t_delta = Date.now() - t;
+			if (t_delta < Brain.IDLE_MS) {
+				await Util.sleep(Brain.IDLE_MS - t_delta);
+			}
+			t = Date.now();
 		} while (true);
 	}
 
