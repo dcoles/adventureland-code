@@ -52,9 +52,6 @@ export class MerchantBrain extends Brain {
 		Logging.info('Starting Merchant brain');
 		window.set_message('Merchant');
 
-		// Close our stand if it was open
-		this.close_stand();
-
 		// Task for keeping us healthy
 		this.tasks['regen_autocast'] = Task.create(async (task) => {
 			while (!task.is_cancelled()) {
@@ -78,14 +75,14 @@ export class MerchantBrain extends Brain {
 	 * Single step of brain logic.
 	 */
 	async _step() {
+		// Close our stand if it was open
+		this.close_stand();
+
 		await this._collect();
 		await this._upgrade();
 		await this._exchange();
 		await this._bank();
 		await this._vend();
-
-		await movement.smarter_move('town');
-		await this._sleep();
 	}
 
 	/** Collect items from other characters. */
