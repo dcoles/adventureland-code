@@ -35,6 +35,14 @@ export class MovementError extends Error {
 	}
 }
 
+/**
+ * Movement options.
+ *
+ * @typedef MovementOptions
+ * @property {number} [options.max_distance] Maximum distance to move.
+ * @property {boolean} [options.avoid] If true, try and avoid other entities.
+ */
+
 class Movement {
 	constructor() {
 		this.task = null;
@@ -77,17 +85,17 @@ class Movement {
 	 * Find a path to location, then follow it.
 	 *
 	 * @param {object|string} location Location to move to.
-	 * @param {object} [pathfinding_options] Options for pathfinding behaviour.
-	 * @param {object} [movement_options] Options for path movement behaviour.
+	 * @param {Pathfind.PathfindOptions} [pathfind_options] Options for pathfinding behaviour.
+	 * @param {MovementOptions} [movement_options] Options for path movement behaviour.
 	 * @returns {Promise} Resolves when location is reached.
 	 */
-	async pathfind_move(location, pathfinding_options, movement_options) {
+	async pathfind_move(location, pathfind_options, movement_options) {
 		if (typeof location === 'string') {
 			location = get_location_by_name(location);
 		}
 
 		DEBUG_MOVEMENT && Draw.clear_list('debug_pathfind');
-		const path = await Pathfind.pathfind(location, pathfinding_options);
+		const path = await Pathfind.pathfind(location, pathfind_options);
 		DEBUG_MOVEMENT && Draw.add_list('debug_pathfind', draw_circle(location.x, location.y, 4, null, 0x0000ff));
 		DEBUG_MOVEMENT && path.forEach(([x, y]) => Draw.add_list('debug_pathfind', draw_circle(x, y, 2, null, 0xff0000)));
 
@@ -99,17 +107,20 @@ class Movement {
 	 * Try to use our move, otherwise fall back to `smart_move`.
 	 *
 	 * @param {object} dest Destination to move to.
+	 * @param {Pathfind.PathfindOptions} [pathfind_options] Options for pathfinding behaviour.
+	 * @param {MovementOptions} [movement_options] Options for path following behaviour.
 	 */
-	async smarter_move(dest) {
+	async smarter_move(dest, pathfind_options, movement_options) {
 		if (typeof dest === 'string') {
 			dest = get_location_by_name(dest);
 		}
 
-		if (character.map === dest.map) {
-			await this.pathfind_move(dest, null, {avoid: true});
-		} else {
-			await window.smart_move(dest);
+		// pathfind_move can't do maps yet!
+		if (character.map !== dest.map) {
+			await window.smart_move(dest.map);
 		}
+
+		await this.pathfind_move(dest, pathfind_options, movement_options);
 	}
 
 	/**
@@ -158,9 +169,7 @@ class Movement {
 	 * Follow a path of positions.
 	 *
 	 * @param {Array<[number, number]>} path Path to follow.
-	 * @param {object} [options] Path movement options.
-	 * @param {number} [options.max_distance] Maximum distance to move.
-	 * @param {boolean} [options.avoid] If true, try and avoid other entities.
+	 * @param {MovementOptions} [options] Path movement options.
 	 * @returns {Promise} Resolves when this movement completes.
 	 */
 	async follow_path(path, options) {

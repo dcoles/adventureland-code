@@ -9,7 +9,7 @@ import * as Util from '/util.js';
 const DEBUG_PATHFIND = false;  // Enable debugging
 const SMALL_STEP_RANGE = 64;  // Start with small steps for this much distance
 const STEP = 16;  // Size of a tile
-const RANGE = 32;  // When are we "close enough" to the target
+const DEFAULT_RANGE = 32;  // When are we "close enough" to the target
 const MAX_SEGMENT = 128;  // Maximum length of a simplified path segment
 const OFFMAP_ESTIMATE = 10000;  // Estimate of distance outside this map
 
@@ -23,13 +23,20 @@ class PathfindError extends Error {
 }
 
 /**
+ * Pathfinding options.
+ *
+ * @typedef PathfindOptions
+ * @property {number} [options.max_distance] Maximum distance to search (default: infinite).
+ * @property {boolean} [options.exact=false] If true, must exactly reach target.
+ * @property {number} [options.range=DEFAULT_RANGE] How close do we need to get to the target?
+ * @property {boolean} [options.simplify=true] If true, attempt to simplify the path.
+ */
+
+/**
  * Find path to location.
  *
  * @param {object|string} location Location to move to.
- * @param {object} [options] Options for controlling pathfinding behaviour.
- * @param {number} [options.max_distance] Maximum distance to search (default: infinite).
- * @param {boolean} [options.exact=false] If true, must exactly reach target.
- * @param {boolean} [options.simplify=true] If true, attempt to simplify the path.
+ * @param {PathfindOptions} [options] Options for controlling pathfinding behaviour.
  * @returns {Promise<Array<[number, number]>>} Path found.
  * @throws {PathfindError} If path could not be found.
  */
@@ -78,7 +85,7 @@ export async function pathfind(location, options) {
 			}
 		} else {
 			// Try to get "close enough"
-			if (heuristic(current, target) < RANGE) {
+			if (heuristic(current, target) < (options.range || DEFAULT_RANGE)) {
 				// Path found!
 				found = current;
 				break;
