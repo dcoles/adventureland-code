@@ -46,6 +46,26 @@ export class MerchantBrain extends Brain {
 		this.stock = null;  // Track bank contents
 		this.vending_duration = DEFAULT_VENDING_DURATION;
 		this.tasks = {};
+
+		// States
+		this.states = {
+			Collect: {next: 'Upgrade'},
+			Upgrade: {next: 'Exchange'},
+			Exchange: {next: 'Bank'},
+			Bank: {next: 'Vend'},
+			Vend: {next: 'Collect'},
+		}
+
+		// Default state is Collect
+		this.brain_state.state = this.brain_state.state in this.states ? this.brain_state.state : 'Collect';
+	}
+
+	get state_name() {
+		return this.brain_state.state;
+	}
+
+	get _state() {
+		return this[`_${this.brain_state.state.toLowerCase()}`];
 	}
 
 	async _init() {
@@ -78,11 +98,10 @@ export class MerchantBrain extends Brain {
 		// Close our stand if it was open
 		this.close_stand();
 
-		await this._collect();
-		await this._upgrade();
-		await this._exchange();
-		await this._bank();
-		await this._vend();
+		window.set_message(this.brain_state.state);
+		const state = this.states[this.brain_state.state];
+		await this._state();
+		this.brain_state.state = state.next;
 	}
 
 	/** Collect items from other characters. */
@@ -99,7 +118,6 @@ export class MerchantBrain extends Brain {
 			}
 
 			Logging.info(`Collecting from ${char.name}`);
-			window.set_message('Collect');
 			await this.loop_until_interrupted(async () => {
 				if (Entity.get_entities({name: char.name}).length !== 0) {
 					// Found character
@@ -113,7 +131,7 @@ export class MerchantBrain extends Brain {
 				}
 
 				try {
-					await movement.smarter_move({x: char.x, y: char.y, map: char.map});
+					await movement.smarter_move({x: char.x, y: char.y, map: char.map}, {range: 250}, {avoid: true});
 				} catch (e) {
 					Logging.warn(`Moving to ${char.name} failed`, e);
 				}
@@ -144,7 +162,7 @@ export class MerchantBrain extends Brain {
 			window.set_message('Upgrade');
 
 			for (let item_id of upgradable) {
-				await Item.upgrade_all(item_id, MAX_UPGRADE[item_id] || DEFAULT_MAX_UPGRADE);
+				await upgrade_all(item_id, MAX_UPGRADE[item_id] || DEFAULT_MAX_UPGRADE);
 			}
 		}
 
@@ -153,7 +171,7 @@ export class MerchantBrain extends Brain {
 			window.set_message('Compound');
 
 			for (let item_id of compoundable) {
-				await Item.compound_all(item_id, MAX_COMPOUND[item_id] || DEFAULT_MAX_COMPOUND);
+				await compound_all(item_id, MAX_COMPOUND[item_id] || DEFAULT_MAX_COMPOUND);
 			}
 		}
 	}
@@ -166,7 +184,6 @@ export class MerchantBrain extends Brain {
 		}
 
 		Logging.info('Exchanging items');
-		window.set_message('Exchange');
 		await movement.smarter_move('exchange');
 		for (let [i, item] of exchangeable) {
 			Logging.info(`Exchanging ${G.items[item.name].name}`);
@@ -180,7 +197,6 @@ export class MerchantBrain extends Brain {
 	/** Unload at the bank. */
 	async _bank() {
 		Logging.info('Banking items');
-		window.set_message('Bank');
 
 		await movement.smarter_move('bank');
 		await Adventure.transport('bank');
@@ -288,12 +304,11 @@ export class MerchantBrain extends Brain {
 	/** Vendor some goods. */
 	async _vend() {
 		Logging.info('Vending items');
-		window.set_message('Vending');
 		await movement.smarter_move(this.home);
 
 		// Set up shop
 		this.open_stand();
-		await this.countdown(Util.date_add(this.vending_duration), 'Vending');
+		await this.countdown(Util.date_add(this.vending_duration), this.state_name);
 		this.close_stand();
 	}
 
@@ -307,6 +322,72 @@ export class MerchantBrain extends Brain {
 		window.close_merchant();
 	}
 }
+
+/**
+ * Compound all of a certain type of item.
+ *
+ * @param {string} name Name of item (e.g. "hpamulet").
+ * @param {number} max_level Maximum level to compound to.
+ * @param {string} [scroll] Combining scroll (default: auto).
+ */
+async function compound_all(name, max_level, scroll) {
+	await movement.smarter_move('compound');
+	for (let level=0; level<max_level; level++) {
+		const scroll_ = scroll ? scroll : `cscroll${Item.scroll_level(name, level)}`;
+		const i_scrolls = Item.indexed_items({name: scroll_});
+		const i_items = Item.indexed_items({name: name, level: level});
+
+		// Combine!
+		for (let i=0; i<i_items.length-2; i+=3) {
+			const i_scroll = i_scrolls[0];
+			if (!i_scroll || i_scroll[1].q < 1) {
+				// Need more scrolls
+				await window.buy_with_gold(scroll_, 5);
+			}
+
+			try {
+				Logging.info(`Compounding ${G.items[name].name} (${level} to ${level+1}) ${scroll_}`);
+				await window.compound(i_items[i][0], i_items[i+1][0], i_items[i+2][0], i_scroll[0]);
+			} catch (e) {
+				Logging.warn('Compounding failed', e.reason);
+			}
+		}
+	}
+}
+
+/**
+ * Upgrade all of a certain item.
+ *
+ * @param {string} name Name of item (e.g. "slimestaff").
+ * @param {number} max_level Maximum level to upgrade to.
+ * @param {string} [scroll] Upgrade scroll (default: auto).
+ */
+async function upgrade_all(name, max_level, scroll) {
+	await movement.smarter_move('upgrade');
+
+	for (let level=0; level<max_level; level++) {
+		const scroll_ = scroll ? scroll : `scroll${Item.scroll_level(name, level)}`;
+		const i_scrolls = Item.indexed_items({name: scroll_});
+		const i_items = Item.indexed_items({name: name, level: level});
+
+		// Upgrade!
+		for (let i=0; i<i_items.length; i++) {
+			const i_scroll = i_scrolls[0];
+			if (!i_scroll || i_scroll[1].q < 1) {
+				// Need more scrolls
+				await window.buy_with_gold(scroll_, 5);
+			}
+
+			try {
+				Logging.info(`Upgrading ${G.items[name].name} (${level} to ${level+1}) ${scroll_}`);
+				await window.upgrade(i_items[i][0], i_scroll[0]);
+			} catch (e) {
+				Logging.warn('Upgrading failed', e.reason);
+			}
+		}
+	}
+}
+
 
 /**
  * Find empty inventory slot.

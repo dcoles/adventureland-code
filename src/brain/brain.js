@@ -24,14 +24,14 @@ export class Brain {
 	 * Deserialize character state.
 	 */
 	_deserialize_state() {
-		this.state = JSON.parse(window.sessionStorage.getItem('c:' + character.name)) || {};
+		this.brain_state = JSON.parse(window.sessionStorage.getItem('c:' + character.name)) || {};
 	}
 
 	/**
 	 * Serialize character state.
 	 */
 	_serialize_state() {
-		window.sessionStorage.setItem('c:' + character.name, JSON.stringify(this.state));
+		window.sessionStorage.setItem('c:' + character.name, JSON.stringify(this.brain_state));
 	}
 
 	/**
@@ -47,7 +47,7 @@ export class Brain {
 			return false;
 		}
 
-		return this.state.stopped || false;
+		return this.brain_state.stopped || false;
 	}
 
 	/**
@@ -55,7 +55,7 @@ export class Brain {
 	 */
 	stop() {
 		Logging.warn('Stopping event loop');
-		this.state.stopped = true;
+		this.brain_state.stopped = true;
 
 		// Cease all motor functions
 		character.stop_all();
@@ -64,7 +64,7 @@ export class Brain {
 	/** Resume the event loop. */
 	resume() {
 		Logging.warn('Resuming event loop');
-		this.state.stopped = false;
+		this.brain_state.stopped = false;
 	}
 
 	/**
