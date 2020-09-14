@@ -42,6 +42,11 @@ export class Brain {
 	}
 
 	get stopped() {
+		// Bots are never stopped
+		if (character.bot) {
+			return false;
+		}
+
 		return this.state.stopped || false;
 	}
 
@@ -59,7 +64,6 @@ export class Brain {
 	/** Resume the event loop. */
 	resume() {
 		Logging.warn('Resuming event loop');
-		Adventure.set('stopped', false);
 		this.state.stopped = false;
 	}
 
