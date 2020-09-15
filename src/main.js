@@ -20,6 +20,10 @@ import * as Movement from './movement.js';
 import { AutoBrain } from '/brain/auto.js';
 import { MerchantBrain } from '/brain/merchant.js';
 
+// Debugging
+const DEBUG_LOG_EVENTS = false;
+const DEBUG_LOG_CEVENTS = false;
+
 // Bots
 const BOTS = ['LigLig', 'LigLug', 'LigLog'];
 const BOT_SCRIPT = 'loader';
@@ -257,15 +261,18 @@ async function main() {
 	g_start_time = new Date();
 	Logging.info('Start time', g_start_time);
 
+	if (DEBUG_LOG_EVENTS) {
+		window.game.all((name, data) => console.debug('EVENT:', name, data));
+	}
+
+	if (DEBUG_LOG_CEVENTS) {
+		window.character.all((name, data) => console.debug('CEVENT:', name, data));
+	}
+
 	// Log combat events
 	if (!character.bot) {
 		BattleLog.monitor({party: true});
 	}
-
-	// Log all events
-	game.all((name, data) => {
-		//console.log('EVENT:', name, data);
-	});
 
 	// Show XP/s and GOLD/s
 	Widgets.stat_monitor('xp');
