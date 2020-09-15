@@ -202,7 +202,6 @@ class Character {
 	 **/
 	async move_towards(target, distance, args) {
 		args = args || {};
-		const avoid = args.avoid || true;
 
 		if (target instanceof String) {
 			target = get_entity(target);
@@ -216,14 +215,10 @@ class Character {
 		// Default to 80% of range
 		distance = distance || this.distance_between(target) - 0.80 * this.range;
 		if (distance < 0) {
-			// Retreat
-			const current_pos = [this.real_x, this.real_y];
-			const v = Util.vector_scale(Util.vector_difference(current_pos, [target.x, target.y]), -1);
-			const pos = Util.vector_add(current_pos, v);
-			await movement.move(pos[0], pos[1], {max_distance: Math.abs(distance), avoid: true});
-		} else {
-			await movement.move_to(target, {max_distance: distance, avoid: true});
+			return;
 		}
+
+		await movement.move_to(target, {max_distance: distance, avoid: args.avoid});
 	}
 
 	/**
