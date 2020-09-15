@@ -1,6 +1,7 @@
 // General utility functions
 // @ts-check
 
+export const IDLE_MS = 250;  // Magic idle time
 export const SECOND_MS = 1_000;
 export const MINUTE_MS = 60_000;
 export const HOUR_MS = 3600_000;
@@ -13,6 +14,16 @@ export const HOUR_MS = 3600_000;
 */
 export function sleep(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Idle for a short period of time.
+ *
+ * This is usually used when either waiting for the game to update its state
+ * or to prevent running in a tight loop.
+ */
+export async function idle() {
+	return await sleep(IDLE_MS);
 }
 
 /**

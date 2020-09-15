@@ -3,7 +3,6 @@
 import * as Util from '/util.js';
 
 const TRACE = false;
-const IDLE_MS = 250;
 
 /**
  * Is `target` in range of this skill?
@@ -63,7 +62,7 @@ export async function transport(map, spawn) {
 	// Wait for transport to complete
 	// FIXME: Allow waiting on transport
 	do {
-		await Util.sleep(IDLE_MS);
+		await Util.sleep(Util.IDLE_MS);
 	} while (character.map !== map);
 }
 
