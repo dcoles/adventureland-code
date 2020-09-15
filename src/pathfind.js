@@ -16,7 +16,7 @@ const OFFMAP_ESTIMATE = 10000;  // Estimate of distance outside this map
 /**
  * Thrown when pathfinding fails.
  */
-class PathfindError extends Error {
+export class PathfindError extends Error {
 	constructor (message) {
 		super(message);
 	}

@@ -8,6 +8,8 @@ import * as Pathfind from '/pathfind.js';
 import * as Task from '/task.js';
 import * as Util from '/util.js';
 
+export { PathfindError } from '/pathfind.js';
+
 const LOCATIONS = {
 	'town': {map: 'main', x: 0, y: 0},
 	'bank': {map: 'main', x: 168, y: -134},
@@ -84,16 +86,12 @@ class Movement {
 	/**
 	 * Find a path to location, then follow it.
 	 *
-	 * @param {object|string} location Location to move to.
+	 * @param {object} location Location to move to.
 	 * @param {Pathfind.PathfindOptions} [pathfind_options] Options for pathfinding behaviour.
 	 * @param {MovementOptions} [movement_options] Options for path movement behaviour.
 	 * @returns {Promise} Resolves when location is reached.
 	 */
 	async pathfind_move(location, pathfind_options, movement_options) {
-		if (typeof location === 'string') {
-			location = get_location_by_name(location);
-		}
-
 		DEBUG_MOVEMENT && Draw.clear_list('debug_pathfind');
 		const path = await Pathfind.pathfind(location, pathfind_options);
 		DEBUG_MOVEMENT && Draw.add_list('debug_pathfind', draw_circle(location.x, location.y, 4, null, 0x0000ff));
@@ -116,7 +114,7 @@ class Movement {
 		}
 
 		// pathfind_move can't do maps yet!
-		if (character.map !== dest.map) {
+		if (dest.map && character.map !== dest.map) {
 			await window.smart_move(dest.map);
 		}
 
@@ -292,8 +290,20 @@ export function get_movement() {
  * @param {string} name Location name.
  */
 export function get_location_by_name(name) {
+	// Named location
 	if (name in LOCATIONS) {
 		return LOCATIONS[name];
+	}
+
+	// Map
+	if (name in G.maps) {
+		return {x: G.maps[name].spawns[0][0], y: G.maps[name].spawns[0][1], map: name};
+	}
+
+	// NPC
+	const npc = window.find_npc(name);
+	if (npc) {
+		return npc;
 	}
 
 	throw new MovementError(`Could not find location: ${name}`);
