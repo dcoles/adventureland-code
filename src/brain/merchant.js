@@ -24,8 +24,8 @@ const MAX_UPGRADE = {
 	'wshoes': 6,
 }
 const MAX_COMPOUND = {}
-const DEFAULT_MAX_UPGRADE = 4;
-const DEFAULT_MAX_COMPOUND = 2;
+const DEFAULT_MAX_UPGRADE = 0;
+const DEFAULT_MAX_COMPOUND = 0;
 
 // Bank packs
 const UPGRADE_PACK = 'items0';
