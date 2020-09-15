@@ -25,12 +25,14 @@ const HOME_RANGE_RADIUS = 500;
 const MIN_DIFFICULTY = 0.1;
 const MAX_DIFFICULTY = 9.0;
 const MAX_GOLD = 500_000;  // Max gold before transfering
+const PRIORITY_TARGETS = ['phoenix'];
 
 export class AutoBrain extends Brain {
 	constructor() {
 		super();
 		this.home = null;
 		this.leader_name = null;
+		this.priority_targets = new Set(PRIORITY_TARGETS);
 	}
 
 	/** Are we safe? */
@@ -442,6 +444,13 @@ export class AutoBrain extends Brain {
 			return;
 		}
 
+		// Are there any priority targets?
+		for (let monster of Entity.get_nearby_monsters({path_check: true, filter: (t) => this.priority_targets.has(t.mtype)})) {
+			Logging.info('Spotted priority target', monster.name);
+			this.set_target(monster);
+			return;
+		}
+
 		// Find a new monster
 		for (let monster of Entity.get_nearby_monsters({path_check: true, no_target: true})) {
 			const difficulty = Entity.difficulty(monster);
@@ -450,7 +459,7 @@ export class AutoBrain extends Brain {
 			}
 
 			this.set_target(monster);
-			break;
+			return;
 		}
 	}
 
