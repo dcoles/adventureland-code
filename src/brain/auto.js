@@ -239,7 +239,8 @@ export class AutoBrain extends Brain {
 		}
 
 		if (character.gold > MAX_GOLD) {
-			window.send_gold(Util.random_choice(merchants), character.gold - MAX_GOLD);
+			// Send 1% extra to avoid a flood of small change
+			window.send_gold(Util.random_choice(merchants), character.gold - 0.99 * MAX_GOLD);
 		}
 	}
 
