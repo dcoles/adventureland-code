@@ -19,11 +19,18 @@ const N_COMPOUNDED = 3;
 const MAX_UPGRADE = {
 	'cclaw': 6,
 	'helmet': 5,
+	'helmet1': 4,
 	'mace': 6,
 	'shoes': 5,
 	'wshoes': 6,
+	'wcap': 6,
+	'quiver': 5,
 }
-const MAX_COMPOUND = {}
+const MAX_COMPOUND = {
+	'ringsj': 3,
+	'hpbelt': 3,
+	'hpamulet': 3,
+}
 const DEFAULT_MAX_UPGRADE = 0;
 const DEFAULT_MAX_COMPOUND = 0;
 
