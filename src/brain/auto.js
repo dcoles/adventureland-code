@@ -365,6 +365,10 @@ export class AutoBrain extends Brain {
 				return false;
 			}
 
+			if (this.is_party_healable()) {
+				return false;
+			}
+
 			if (!character.skills.attack.is_autouse()) {
 				character.skills.attack.autouse(this.target, null, (t) => !t.rip);
 			}
