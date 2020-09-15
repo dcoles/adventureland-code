@@ -323,6 +323,7 @@ export class AutoBrain extends Brain {
 			character.skills.heal.autouse(target, null, (t) => t.hp < t.max_hp);
 		}
 
+		window.set_message(`Heal (${target.name})`);
 		await character.move_towards(target);
 	}
 
