@@ -19,7 +19,7 @@ const N_COMPOUNDED = 3;
 const MAX_UPGRADE = {
 	'cclaw': 6,
 	'helmet': 5,
-	'helmet1': 4,
+	'helmet1': 5,
 	'mace': 6,
 	'shoes': 5,
 	'wshoes': 6,
@@ -30,6 +30,10 @@ const MAX_COMPOUND = {
 	'ringsj': 3,
 	'hpbelt': 3,
 	'hpamulet': 3,
+	'dexearring': 1,
+	'intearring': 1,
+	'vitearring': 1,
+	'strearring': 1,
 }
 const DEFAULT_MAX_UPGRADE = 0;
 const DEFAULT_MAX_COMPOUND = 0;
