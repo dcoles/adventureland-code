@@ -157,12 +157,11 @@ export class MerchantBrain extends Brain {
 	async _upgrade() {
 		const upgradable = new Set();
 		const compoundable = new Set();
-		for (let [i, item] of Item.indexed_items()) {
-			const item_id = item.name;
-			if (is_upgradeable(item_id)) {
-				upgradable.add(item_id);
-			} else if (is_compoundable(item_id)) {
-				compoundable.add(item_id);
+		for (let [_, item] of Item.indexed_items()) {
+			if (is_upgradeable(item)) {
+				upgradable.add(item.name);
+			} else if (is_compoundable(item)) {
+				compoundable.add(item.name);
 			}
 		}
 
@@ -192,19 +191,43 @@ export class MerchantBrain extends Brain {
 
 	/** Exchange items for goodies! */
 	async _exchange() {
-		const exchangeable = Item.indexed_items().filter(([_, item]) => G.items[item.name].e);
+		const exchangeable = Item.indexed_items().filter(([_, item]) => is_exchangeable(item));
 		if (exchangeable.length < 1) {
 			return;
 		}
 
 		Logging.info('Exchanging items');
-		await movement.smarter_move('exchange');
-		for (let [i, item] of exchangeable) {
-			Logging.info(`Exchanging ${G.items[item.name].name}`);
-			exchange(i);
+		const quests = new Map();
+		for (let [id, npc] of Object.entries(G.npcs)) {
+			if (!npc.quest || !find_npc(npc.quest)) {
+				continue;
+			}
+			quests.set(npc.quest, id);
+		}
 
-			// FIXME: Wait until exchange is complete
-			await this._sleep(5000);
+		for (let [slot_num, item] of exchangeable) {
+			if (!is_exchangeable(item)) {
+				continue
+			}
+
+			const npc_id = quests.get(item.name) || 'exchange';
+			Logging.info(`Exchanging ${G.items[item.name].name} with ${G.npcs[npc_id].name}`);
+			try {
+				await movement.smarter_move(npc_id);
+			} catch (e) {
+				// Couldn't find them?
+				Logging.warn(`Couldn't move to NPC ${G.npcs[npc_id].name}`, e);
+				continue;
+			}
+
+			while (character.items[slot_num]) {
+				if (window.character.q.exchange) {
+					await this._sleep(window.character.q.exchange.ms);
+				}
+
+				exchange(slot_num);
+				await this._idle();
+			}
 		}
 	}
 
@@ -216,23 +239,23 @@ export class MerchantBrain extends Brain {
 		await Adventure.transport('bank');
 
 		for (let [i, item] of Item.indexed_items()) {
-			const bank = bank_sort(item.name);
+			const bank = bank_sort(item);
 			if (!bank) {
 				continue;
 			}
-
 			window.bank_store(i, bank);
 		}
 
 		// Wait for the game to catch up...
-		await Util.sleep(1000);
+		await Util.sleep(250);
 
 		// Do stocktake
 		this._stocktake();
 
 		// Pick up items
-		this._retrieve_upgradeable();
-		this._retrieve_compoundable();
+		await this._retrieve_upgradeable();
+		await this._retrieve_compoundable();
+		await this._retrieve_exchangeable();
 
 		// Leave bank
 		const door = G.maps['bank'].doors.find((d) => d[4] === 'main');
@@ -240,49 +263,37 @@ export class MerchantBrain extends Brain {
 	}
 
 	/** Retrieve upgradable items. */
-	_retrieve_upgradeable() {
-		let free_slot = -1;
-		for (let [item_id, items] of this.stock.entries()) {
-			if (!is_upgradeable(item_id)) {
-				continue;
-			}
-
-			for (let [pack, i, item] of items) {
-				if (item.level >= (MAX_UPGRADE[item_id] || DEFAULT_MAX_UPGRADE)) {
-					break;
+	async _retrieve_upgradeable() {
+		const to_upgrade = [];
+		for (let items of this.stock.values()) {
+			for (let [pack, pack_slot, item] of items) {
+				if (!is_upgradeable(item)) {
+					continue;
 				}
 
-				// Retrieve item
-				free_slot = find_free_inventory_slot(free_slot);
-				if (free_slot == -1) {
-					break;
-				}
-
-				window.bank_retrieve(pack, i, free_slot);
+				to_upgrade.push([pack, pack_slot]);
 			}
 		}
+
+		await Item.retrieve_items(to_upgrade);
 	}
 
 	/** Retrieve compoundable items. */
-	_retrieve_compoundable() {
-		let free_slot = -1;
-		for (let [item_id, items] of this.stock.entries()) {
-			if (!is_compoundable(item_id)) {
-				continue;
-			}
-
+	async _retrieve_compoundable() {
+		const to_compound = [];
+		for (let items of this.stock.values()) {
 			// Group by item level
 			const by_level = []
-			for (let [storage, storage_slot, item] of items) {
-				if (item.level >= (MAX_COMPOUND[item_id] || DEFAULT_MAX_COMPOUND)) {
-					break;
+			for (let [pack, pack_slot, item] of items) {
+				if (!is_compoundable(item)) {
+					continue;
 				}
 
 				if (!(item.level in by_level)) {
 					by_level[item.level] = [];
 				}
 
-				by_level[item.level].push([storage, storage_slot, item]);
+				by_level[item.level].push([pack, pack_slot, item]);
 			}
 
 			// Work out how many items will bubble up a level
@@ -297,16 +308,29 @@ export class MerchantBrain extends Brain {
 
 				// Retrieve items
 				for (let i = 0; i < Math.min(N_COMPOUNDED * bubble_up[level], by_level[level].length); i++) {
-					free_slot = find_free_inventory_slot(free_slot);
-					if (free_slot == -1) {
-						break;
-					}
-
 					const [storage, storage_slot, _] = by_level[level][i];
-					window.bank_retrieve(storage, storage_slot, free_slot);
+					to_compound.push([storage, storage_slot]);
 				}
 			}
 		}
+
+		await Item.retrieve_items(to_compound);
+	}
+
+	/** Retrieve exchangeable items. */
+	async _retrieve_exchangeable() {
+		const to_exchange = [];
+		for (let items of this.stock.values()) {
+			for (let [pack, pack_slot, item] of items) {
+				if (!is_exchangeable(item)) {
+					continue;
+				}
+
+				to_exchange.push([pack, pack_slot]);
+			}
+		}
+
+		await Item.retrieve_items(to_exchange);
 	}
 
 	/** Do stocktake. */
@@ -406,60 +430,58 @@ async function upgrade_all(name, max_level, scroll) {
 	}
 }
 
-
 /**
- * Find empty inventory slot.
+ * Is this item upgradeable?
  *
- * @param {number} [after=-1] Find the next empty slot after this one.
- * @returns {number} Inventory index or -1 if no space available.
+ * @param {Item} item Item ID (e.g. "helm")
  */
-function find_free_inventory_slot(after) {
-	after = after || -1;
-	for (let i = after + 1; i < character.items.length; i++) {
-		if (!character.items[i]) {
-			return i;
-		}
+function is_upgradeable(item) {
+	if (item.level >= (MAX_UPGRADE[item.name] || DEFAULT_MAX_UPGRADE)) {
+		return false;
 	}
 
-	// No available space
-	return -1;
+	return 'upgrade' in G.items[item.name];
 }
 
 /**
  * Is this item upgradeable?
  *
- * @param {string} item_id Item ID (e.g. "helm")
+ * @param {Item} item Item
  */
-function is_upgradeable(item_id) {
-	return 'upgrade' in G.items[item_id];
+function is_compoundable(item) {
+	if (item.level >= (MAX_COMPOUND[item.name] || DEFAULT_MAX_COMPOUND)) {
+		return false;
+	}
+
+	return 'compound' in G.items[item.name];
 }
 
 /**
- * Is this item upgradeable?
+ * Is this item exchangeable?
  *
- * @param {string} item_id Item ID (e.g. "helm")
+ * @param {Item} item Item object
  */
-function is_compoundable(item_id) {
-	return 'compound' in G.items[item_id];
+function is_exchangeable(item) {
+	return item.q >= G.items[item.name].e;
 }
 
 /**
  * Decide which bank slot an item should go in.
  *
- * @param {string} item_id Item ID (e.g. "hpbelt").
+ * @param {Item} item Item ID (e.g. "hpbelt").
  * @returns {string} Bank "pack".
  */
-function bank_sort(item_id) {
-	const details = G.items[item_id];
+function bank_sort(item) {
+	const details = G.items[item.name];
 	if (!details) {
 		return null;
 	}
 
-	if (details.upgrade) {
+	if (is_upgradeable(item)) {
 		return UPGRADE_PACK;
 	}
 
-	if (details.compound) {
+	if (is_compoundable(item)) {
 		return COMPOUND_PACK;
 	}
 

@@ -9,8 +9,8 @@ import * as Util from '/util.js';
 const character = Character.get_character();
 
 export class Brain {
-	static IDLE_MS = 250;
-	static SLEEP_MS = 1000;
+	static IDLE_MS = Util.IDLE_MS;
+	static SLEEP_MS = Util.SECOND_MS;
 
 	constructor() {
 		this._deserialize_state();
