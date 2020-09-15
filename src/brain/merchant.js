@@ -35,9 +35,9 @@ const DEFAULT_MAX_UPGRADE = 0;
 const DEFAULT_MAX_COMPOUND = 0;
 
 // Bank packs
+const MATERIAL_PACK = 'items0';
 const UPGRADE_PACK = 'items0';
 const COMPOUND_PACK = 'items1';
-const MATERIAL_PACK = 'items1';
 
 // Misc
 const DEFAULT_VENDING_DURATION = 15 * Util.MINUTE_MS;
