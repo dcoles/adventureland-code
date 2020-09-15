@@ -47,6 +47,9 @@ export class MerchantBrain extends Brain {
 		this.vending_duration = DEFAULT_VENDING_DURATION;
 		this.tasks = {};
 
+		this.should_collect = true;
+		this.should_vend = true;
+
 		// States
 		this.states = {
 			Collect: {next: 'Upgrade'},
@@ -106,6 +109,10 @@ export class MerchantBrain extends Brain {
 
 	/** Collect items from other characters. */
 	async _collect() {
+		if (!this.should_collect) {
+			return;
+		}
+
 		for (let char of Adventure.get_characters()) {
 			if (char.name === character.name || !char.online) {
 				continue;
@@ -303,6 +310,10 @@ export class MerchantBrain extends Brain {
 
 	/** Vendor some goods. */
 	async _vend() {
+		if (!this.should_vend) {
+			return;
+		}
+
 		Logging.info('Vending items');
 		await movement.smarter_move(this.home);
 
