@@ -24,6 +24,8 @@ const LOCATIONS = {
 
 const DEBUG_MOVEMENT = false;
 const DEBUG_COLLISION = false;
+const MIN_MOVE_DIST = 0.5 * character.speed;
+const MAX_MOVE_DIST = character.speed;
 const MAX_AVOIDANCE = 100;  // Maximum amount of avoidance to attempt
 const KITE_ANGLE = Math.PI / 3;  // 60° clockwise
 
@@ -132,10 +134,26 @@ class Movement {
 		// Current positions
 		const char_pos = [character.x, character.y];
 		const entity_pos = [entity.x, entity.y];
+		const entity_going = [entity.going_x, entity.going_y];
 
 		// How far do we want to move?
 		const entity_distance = Util.vector_distance(char_pos, entity_pos);
 		const target_distance = Math.min(entity_distance + 50, 0.80 * character.range);
+
+		if (!targeted) {
+			if (entity_distance > target_distance) {
+				// Need to get in range first
+				await this.move(entity_pos[0], entity_pos[1], {max_distance: entity_distance - target_distance});
+			}
+
+			if (entity.target) {
+				// They're busy attacking someone else
+				await Util.idle();
+				return;
+			}
+
+			// Our attack will probably make us the target
+		}
 
 		// Relative angles
 		const char_theta = Math.atan2(char_pos[1] - entity_pos[1], char_pos[0] - entity_pos[0]);
@@ -147,9 +165,10 @@ class Movement {
 		// Circle clockwise
 		let new_pos;
 		for (let offset = 0; offset < 2 * Math.PI; offset += Math.PI / 64) {
+			const theta = entity_theta + KITE_ANGLE + offset;
 			new_pos = [
-				entity_pos[0] + target_distance * Math.cos(entity_theta + KITE_ANGLE + offset),
-				entity_pos[1] + target_distance * Math.sin(entity_theta + KITE_ANGLE + offset)
+				entity_pos[0] + target_distance * Math.cos(theta),
+				entity_pos[1] + target_distance * Math.sin(theta)
 			];
 
 			if (Adventure.can_move_to(new_pos[0], new_pos[1])) {
@@ -157,9 +176,14 @@ class Movement {
 			}
 		}
 
+		// How long is the entity going to keep it's current course?
+		const remaining_move_time = targeted && entity.moving ? Util.vector_distance(entity_pos, entity_going) / entity.speed
+		: entity_distance / character.speed * (character.speed / entity.speed);
+		DEBUG_MOVEMENT && Draw.add_list('debug_kite', window.draw_line(entity_pos[0], entity_pos[1], entity_going[0], entity_going[1], null, 0xff0000));
+
 		DEBUG_MOVEMENT && Draw.add_list('debug_kite', window.draw_line(entity_pos[0], entity_pos[1], char_pos[0], char_pos[1], null, 0xff0000));
 		DEBUG_MOVEMENT && Draw.add_list('debug_kite', window.draw_line(entity_pos[0], entity_pos[1], new_pos[0], new_pos[1], null, 0x0000ff));
-		const max_distance = Math.max(entity_distance * character.speed / entity.speed, 48);
+		const max_distance = Math.min(Math.max(character.speed * remaining_move_time, MIN_MOVE_DIST), MAX_MOVE_DIST);
 		await this.move(new_pos[0], new_pos[1], {max_distance: max_distance});
 	}
 
