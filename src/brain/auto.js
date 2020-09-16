@@ -300,21 +300,11 @@ export class AutoBrain extends Brain {
 
 	/** Heal someone in the party. */
 	async _heal_party() {
-		// Do we need healing?
-		if (Entity.hp_ratio(character) < 1.00) {
-			await character.skills.heal.use_when_ready(window.character);
-			return;
-		}
-
 		const party = Entity.get_party_members({alive: true});
-		if (party.length < 1) {
-			// No one is alive...
-			return;
-		}
-
-		const target = party[0];
+		const target = party.length == 0 || Entity.hp_ratio(character) < Entity.hp_ratio(party[0]) ? character : party[0];
 		if (!(Entity.hp_ratio(target) < 1.00)) {
 			// No one to heal
+			await this._idle();
 			return;
 		}
 
