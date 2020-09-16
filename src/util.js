@@ -7,6 +7,32 @@ export const MINUTE_MS = 60_000;
 export const HOUR_MS = 3600_000;
 
 /**
+ * Regulate tight loops.
+ *
+ * Ensures that a minimum amount of time is spent on each iteration.
+ */
+export class Regulator {
+	/**
+	 * @param {number} [min_duration=IDLE_MS] Minimum duration in milliseconds.
+	 */
+	constructor(min_duration) {
+		this.min_duration = min_duration || IDLE_MS;
+		this.last_t = Date.now();
+	}
+
+	/**
+	 * Regulate loop iteration if required.
+	 */
+	async regulate() {
+		const t_delta = Date.now() - this.last_t;
+		if (t_delta < this.min_duration) {
+			await sleep(this.min_duration - t_delta);
+		}
+		this.last_t = Date.now();
+	}
+}
+
+/**
  * Sleep for a period of time.
  *
  * @param {number} ms Timeout in milliseconds.
