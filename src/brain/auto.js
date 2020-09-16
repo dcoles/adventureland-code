@@ -374,7 +374,7 @@ export class AutoBrain extends Brain {
 			}
 
 			if (!character.skills.attack.is_autouse()) {
-				character.skills.attack.autouse(this.target, null, (t) => !t.rip);
+				character.skills.attack.autouse(this.target, null, (t) => t === this.target && !t.rip);
 			}
 
 			try {
