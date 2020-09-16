@@ -46,6 +46,7 @@ const UPGRADE_PACK = 'items0';
 const COMPOUND_PACK = 'items1';
 
 // Misc
+const MAX_GOLD = 1_000_000;
 const DEFAULT_VENDING_DURATION = 15 * Util.MINUTE_MS;
 
 const character = Character.get_character();
@@ -233,6 +234,12 @@ export class MerchantBrain extends Brain {
 		await movement.smarter_move('bank');
 		await Adventure.transport('bank');
 
+		// Deposit excess gold
+		if (character.gold > MAX_GOLD) {
+			window.bank_deposit(character.gold - MAX_GOLD);
+		}
+
+		// Store items
 		for (let [i, item] of Item.indexed_items()) {
 			const bank = bank_sort(item);
 			if (!bank) {
