@@ -25,6 +25,8 @@ const MAX_UPGRADE = {
 	'wshoes': 6,
 	'wcap': 6,
 	'quiver': 5,
+	'fireblade': 4,
+	'firestaff': 4,
 }
 const MAX_COMPOUND = {
 	'ringsj': 3,
