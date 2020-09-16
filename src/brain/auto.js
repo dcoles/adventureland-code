@@ -48,13 +48,13 @@ export class AutoBrain extends Brain {
 		}
 
 		// We need healing!
-		if (Entity.hp_ratio(character) < 1.00) {
+		if (Entity.hp_ratio(character) < 0.90) {
 			return true;
 		}
 
 		// Does anyone need healing?
 		for (let char of Entity.get_party_members()) {
-			if (!char.rip && Entity.hp_ratio(char) < 1.00) {
+			if (!char.rip && Entity.hp_ratio(char) < 0.90) {
 				return true;
 			}
 		}
