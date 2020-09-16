@@ -3,59 +3,97 @@
 import * as Util from '/util.js';
 
 /**
+ * Criteria for matching items.
+ *
+ * @typedef ItemCriteria
+ * @property {string} [name] Item name/ID
+ * @property {number} [level] Item level
+ * @property {boolean} [upgradeable] Is item upgradeable?
+ * @property {boolean} [compoundable] Is item compoundable?
+ * @property {boolean} [exchangeable] Is item exchangeable?
+ */
+
+/**
  * Get indexed character items.
  *
- * @param {object} [filter] Filter the returned items.
- * @param {string} [filter.name] Match item name.
- * @param {number} [filter.level] Match item level.
+ * @param {ItemCriteria} [criteria] Filter the returned items.
  * @returns {[number, object][]} Array of `[index, item]` tuples.
 */
-export function indexed_items(filter) {
-	filter = filter || {};
-	return character.items.map((item, index) => [index, item]).filter(([_, item]) => {
-		if (!item) {
-			// Empty slot
-			return false;
-		}
-
-		if (filter.name && item.name !== filter.name) {
-			return false;
-		}
-
-		if (Number.isInteger(filter.level) && item.level !== filter.level) {
-			return false;
-		}
-
-		return true;
-	});
+export function indexed_items(criteria) {
+	criteria = criteria || {};
+	return character.items.map((item, index) => [index, item]).filter(([_, item]) => match(item, criteria));
 }
 
 /**
  * Find slot of an item.
  *
- * @param {object} criteria Criteria for matching item.
- * @param {string} [criteria.name] Match item name.
- * @param {number} [criteria.level] Match item level.
+ * @param {ItemCriteria} criteria Criteria for matching item.
  * @returns {number} Inventory slot.
  */
 export function find(criteria) {
-	return character.items.findIndex((item) => {
-		if (!item) {
-			return false;
-		}
-
-		if (criteria.name && item.name !== criteria.name) {
-			return false;
-		}
-
-		if (Number.isInteger(criteria.level) && item.level !== criteria.level) {
-			return false;
-		}
-
-		return true;
-	})
+	return character.items.findIndex((item) => match(item, criteria));
 }
 
+/**
+ * Does this item match certain criteria?
+ *
+ * @param {Item} item
+ * @param {ItemCriteria} criteria
+ */
+export function match(item, criteria) {
+	if (!item) {
+		return false;
+	}
+
+	if (criteria.name && item.name !== criteria.name) {
+		return false;
+	}
+
+	if (Number.isInteger(criteria.level) && item.level !== criteria.level) {
+		return false;
+	}
+
+	if (criteria.upgradeable && !is_upgradeable(item)) {
+		return false;
+	}
+
+	if (criteria.compoundable && !is_compoundable(item)) {
+		return false;
+	}
+
+	if (criteria.exchangeable && !is_exchangeable(item)) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
+ * Is this item upgradeable?
+ *
+ * @param {Item} item Item ID (e.g. "helm")
+ */
+export function is_upgradeable(item) {
+	return 'upgrade' in G.items[item.name];
+}
+
+/**
+ * Is this item upgradeable?
+ *
+ * @param {Item} item Item
+ */
+export function is_compoundable(item) {
+	return 'compound' in G.items[item.name];
+}
+
+/**
+ * Is this item exchangeable?
+ *
+ * @param {Item} item Item object
+ */
+export function is_exchangeable(item) {
+	return item.q >= G.items[item.name].e;
+}
 /**
  * What is the minimum scroll level we must use to upgrade this item?
  *

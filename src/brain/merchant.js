@@ -66,7 +66,8 @@ export class MerchantBrain extends Brain {
 		// States
 		this.states = {
 			Collect: {next: 'Upgrade'},
-			Upgrade: {next: 'Exchange'},
+			Upgrade: {next: 'Compound'},
+			Compound: {next: 'Exchange'},
 			Exchange: {next: 'Bank'},
 			Bank: {next: 'Vend'},
 			Vend: {next: 'Collect'},
@@ -161,43 +162,35 @@ export class MerchantBrain extends Brain {
 
 	/** Upgrade the merch! */
 	async _upgrade() {
-		const upgradable = new Set();
-		const compoundable = new Set();
-		for (let [_, item] of Item.indexed_items()) {
-			if (is_upgradeable(item)) {
-				upgradable.add(item.name);
-			} else if (is_compoundable(item)) {
-				compoundable.add(item.name);
-			}
-		}
-
-		if (upgradable.size < 1 && compoundable.size < 1) {
-			// Nothing to upgrade
+		const upgradeable = Item.indexed_items({upgradeable: true});
+		if (upgradeable.length < 1) {
 			return;
 		}
 
-		if (upgradable.size > 0) {
-			Logging.info('Upgrading items');
+		Logging.info('Upgrading items');
+		for (let [_, item] of upgradeable) {
 			window.set_message('Upgrade');
+			await upgrade_all(item.name, MAX_UPGRADE[item.name] || DEFAULT_MAX_UPGRADE);
+		}
+	}
 
-			for (let item_id of upgradable) {
-				await upgrade_all(item_id, MAX_UPGRADE[item_id] || DEFAULT_MAX_UPGRADE);
-			}
+	/** Compound items! */
+	async _compound() {
+		const compoundable = Item.indexed_items({compoundable: true});
+		if (compoundable.length < 1) {
+			return;
 		}
 
-		if (compoundable.size > 0) {
-			Logging.info('Compounding items');
-			window.set_message('Compound');
-
-			for (let item_id of compoundable) {
-				await compound_all(item_id, MAX_COMPOUND[item_id] || DEFAULT_MAX_COMPOUND);
-			}
+		Logging.info('Compounding items');
+		window.set_message('Compound');
+		for (let [_, item] of compoundable) {
+			await compound_all(item.name, MAX_COMPOUND[item.name] || DEFAULT_MAX_COMPOUND);
 		}
 	}
 
 	/** Exchange items for goodies! */
 	async _exchange() {
-		const exchangeable = Item.indexed_items().filter(([_, item]) => is_exchangeable(item));
+		const exchangeable = Item.indexed_items({exchangeable: true});
 		if (exchangeable.length < 1) {
 			return;
 		}
@@ -212,10 +205,6 @@ export class MerchantBrain extends Brain {
 		}
 
 		for (let [slot_num, item] of exchangeable) {
-			if (!is_exchangeable(item)) {
-				continue
-			}
-
 			const npc_id = quests.get(item.name) || 'exchange';
 			Logging.info(`Exchanging ${G.items[item.name].name} with ${G.npcs[npc_id].name}`);
 			try {
@@ -273,7 +262,7 @@ export class MerchantBrain extends Brain {
 		const to_upgrade = [];
 		for (let items of this.stock.values()) {
 			for (let [pack, pack_slot, item] of items) {
-				if (!is_upgradeable(item)) {
+				if (!Item.is_upgradeable(item) || item.level >= (MAX_UPGRADE[item.name] || DEFAULT_MAX_UPGRADE)) {
 					continue;
 				}
 
@@ -291,7 +280,7 @@ export class MerchantBrain extends Brain {
 			// Group by item level
 			const by_level = []
 			for (let [pack, pack_slot, item] of items) {
-				if (!is_compoundable(item)) {
+				if (!Item.is_compoundable(item) || item.level >= (MAX_COMPOUND[item.name] || DEFAULT_MAX_COMPOUND)) {
 					continue;
 				}
 
@@ -328,7 +317,7 @@ export class MerchantBrain extends Brain {
 		const to_exchange = [];
 		for (let items of this.stock.values()) {
 			for (let [pack, pack_slot, item] of items) {
-				if (!is_exchangeable(item)) {
+				if (!Item.is_exchangeable(item)) {
 					continue;
 				}
 
@@ -382,20 +371,20 @@ async function compound_all(name, max_level, scroll) {
 	await movement.smarter_move('compound');
 	for (let level=0; level<max_level; level++) {
 		const scroll_ = scroll ? scroll : `cscroll${Item.scroll_level(name, level)}`;
-		const i_scrolls = Item.indexed_items({name: scroll_});
 		const i_items = Item.indexed_items({name: name, level: level});
 
 		// Combine!
 		for (let i=0; i<i_items.length-2; i+=3) {
-			const i_scroll = i_scrolls[0];
-			if (!i_scroll || i_scroll[1].q < 1) {
+			let i_scroll = Item.find({name: scroll_});
+			if (i_scroll === -1 || character.items[i_scroll].q < 1) {
 				// Need more scrolls
 				await window.buy_with_gold(scroll_, 5);
+				i_scroll = Item.find({name: scroll_});
 			}
 
 			try {
 				Logging.info(`Compounding ${G.items[name].name} (${level} to ${level+1}) ${scroll_}`);
-				await window.compound(i_items[i][0], i_items[i+1][0], i_items[i+2][0], i_scroll[0]);
+				await window.compound(i_items[i][0], i_items[i+1][0], i_items[i+2][0], i_scroll);
 			} catch (e) {
 				Logging.warn('Compounding failed', e.reason);
 			}
@@ -415,60 +404,25 @@ async function upgrade_all(name, max_level, scroll) {
 
 	for (let level=0; level<max_level; level++) {
 		const scroll_ = scroll ? scroll : `scroll${Item.scroll_level(name, level)}`;
-		const i_scrolls = Item.indexed_items({name: scroll_});
 		const i_items = Item.indexed_items({name: name, level: level});
 
 		// Upgrade!
 		for (let i=0; i<i_items.length; i++) {
-			const i_scroll = i_scrolls[0];
-			if (!i_scroll || i_scroll[1].q < 1) {
+			let i_scroll = Item.find({name: scroll_});
+			if (i_scroll === -1 || character.items[i_scroll].q < 1) {
 				// Need more scrolls
 				await window.buy_with_gold(scroll_, 5);
+				i_scroll = Item.find({name: scroll_});
 			}
 
 			try {
 				Logging.info(`Upgrading ${G.items[name].name} (${level} to ${level+1}) ${scroll_}`);
-				await window.upgrade(i_items[i][0], i_scroll[0]);
+				await window.upgrade(i_items[i][0], i_scroll);
 			} catch (e) {
 				Logging.warn('Upgrading failed', e.reason);
 			}
 		}
 	}
-}
-
-/**
- * Is this item upgradeable?
- *
- * @param {Item} item Item ID (e.g. "helm")
- */
-function is_upgradeable(item) {
-	if (item.level >= (MAX_UPGRADE[item.name] || DEFAULT_MAX_UPGRADE)) {
-		return false;
-	}
-
-	return 'upgrade' in G.items[item.name];
-}
-
-/**
- * Is this item upgradeable?
- *
- * @param {Item} item Item
- */
-function is_compoundable(item) {
-	if (item.level >= (MAX_COMPOUND[item.name] || DEFAULT_MAX_COMPOUND)) {
-		return false;
-	}
-
-	return 'compound' in G.items[item.name];
-}
-
-/**
- * Is this item exchangeable?
- *
- * @param {Item} item Item object
- */
-function is_exchangeable(item) {
-	return item.q >= G.items[item.name].e;
 }
 
 /**
@@ -483,11 +437,11 @@ function bank_sort(item) {
 		return null;
 	}
 
-	if (is_upgradeable(item)) {
+	if (Item.is_upgradeable(item)) {
 		return UPGRADE_PACK;
 	}
 
-	if (is_compoundable(item)) {
+	if (Item.is_compoundable(item)) {
 		return COMPOUND_PACK;
 	}
 
