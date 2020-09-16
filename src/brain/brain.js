@@ -75,12 +75,12 @@ export class Brain {
 	async loop_until_interrupted(func) {
 		const regulator = new Util.Regulator();
 		while (!this.is_interrupted()) {
+			// Ensure we don't spin too fast
+			await regulator.regulate();
+
 			if (await func() === false) {
 				break;
 			};
-
-			// Ensure we don't spin too fast
-			await regulator.regulate();
 		}
 	}
 
@@ -144,6 +144,9 @@ export class Brain {
 		const regulator = new Util.Regulator();
 		let tick = 1;
 		do {
+			// Avoid a runaway loop
+			await regulator.regulate();
+
 			Logging.debug('tick', tick++);
 			this.interrupt = false;  // Clear interrupt
 
@@ -166,9 +169,6 @@ export class Brain {
 			}
 
 			this._serialize_state();
-
-			// Avoid a runaway loop
-			await regulator.regulate();
 		} while (true);
 	}
 

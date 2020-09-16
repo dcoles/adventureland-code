@@ -92,9 +92,12 @@ export class MerchantBrain extends Brain {
 
 		// Task for keeping us healthy
 		this.tasks['regen_autocast'] = Task.create(async (task) => {
+			const regulator = new Util.Regulator(Util.SECOND_MS);
 			while (!task.is_cancelled()) {
+				// Ensure we don't spin too fast
+				await regulator.regulate();
+
 				if (this.is_interrupted()) {
-					await this._sleep();
 					continue;
 				}
 
@@ -103,8 +106,6 @@ export class MerchantBrain extends Brain {
 				} else if (!character.is_fully_charged() && !character.skills.regen_mp.is_autouse()) {
 					character.skills.regen_mp.autouse(null, null, () => !character.is_fully_charged());
 				}
-
-				await Util.sleep(1000);
 			}
 		});
 	}

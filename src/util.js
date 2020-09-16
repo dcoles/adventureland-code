@@ -17,7 +17,7 @@ export class Regulator {
 	 */
 	constructor(min_duration) {
 		this.min_duration = min_duration || IDLE_MS;
-		this.last_t = Date.now();
+		this.last_t = 0;  // a long time ago...
 	}
 
 	/**
