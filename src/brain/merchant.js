@@ -48,6 +48,7 @@ const COMPOUND_PACK = 'items1';
 // Misc
 const MAX_GOLD = 1_000_000;
 const DEFAULT_VENDING_DURATION = 15 * Util.MINUTE_MS;
+const MLUCK_MIN_MS = 58 * Util.MINUTE_MS;  // Every 2 minutes
 
 const character = Character.get_character();
 const movement = Movement.get_movement();
@@ -105,6 +106,39 @@ export class MerchantBrain extends Brain {
 					character.skills.regen_hp.autouse(null, null, () => !character.is_fully_healed());
 				} else if (!character.is_fully_charged() && !character.skills.regen_mp.is_autouse()) {
 					character.skills.regen_mp.autouse(null, null, () => !character.is_fully_charged());
+				}
+			}
+		});
+
+		// Task for casting Merchant's Luck
+		this.tasks['mluck'] = Task.create(async (task) => {
+			const regulator = new Util.Regulator(Util.SECOND_MS);
+			while (!task.is_cancelled()) {
+				await regulator.regulate();
+
+				if (this.is_interrupted()) {
+					continue;
+				}
+
+				// Can we use this skill yet?
+				if (character.level < G.skills.mluck.level) {
+					continue;
+				}
+
+				for (let char of Entity.get_entities({type: 'character'})) {
+					// Should we cast on this character?
+					// Don't cast on other merchants, since this tends to start a buff-war
+					if (char.npc || char.ctype === 'merchant' || Entity.distance_between(character, char) > G.skills.mluck.range) {
+						continue;
+					}
+
+					// Do they have a recent buff from us (or a strong buff)?
+					if (char.s.mluck && (char.s.mluck.ms > MLUCK_MIN_MS || (char.s.mluck.strong && char.s.mluck.f !== character.name))) {
+						continue;
+					}
+
+					Logging.info(`Casting Merchant's luck on ${char.name}`);
+					await character.skills.mluck.use_when_ready(char);
 				}
 			}
 		});

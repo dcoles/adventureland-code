@@ -275,7 +275,8 @@ async function wait_until_ready(cooldown_id) {
 
 	const next_skill_at = parent.next_skill[cooldown_id];
 	if (!next_skill_at) {
-		throw new TypeError(`Unknown cooldown skill: ${cooldown_id}`);
+		// No cooldown
+		return;
 	}
 
 	Logging.debug(`Sleeping until '${cooldown_id}' ready`, next_skill_at);
