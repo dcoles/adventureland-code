@@ -201,12 +201,17 @@ class Movement {
 			let distance_traveled = 0;
 			for (let p of path) {
 				if (task.is_cancelled()) {
-					Logging.debug('Follow path interrupted');
+					Logging.debug('Follow path cancelled');
 					return;
 				}
 
+				// FIXME: Workaround for movement not being interrupted on death
+				if (character.rip) {
+					return {reason: 'interrupted'};
+				}
+
 				if (options.max_distance && distance_traveled > options.max_distance) {
-					return;
+					return {reason: 'stopped'};
 				}
 
 				// Calculate movement vector
@@ -221,12 +226,7 @@ class Movement {
 				}
 
 				const dist = options.max_distance ? Math.min(segment_distance, options.max_distance - distance_traveled) : segment_distance;
-				try {
-					await this.move(p[0], p[1], {max_distance: dist, avoid: options.avoid});
-				} catch (e) {
-					console.warn('Movement failed', e);
-					return;
-				}
+				await this.move(p[0], p[1], {max_distance: dist, avoid: options.avoid});
 
 				// Actual distance traveled
 				const new_pos = [window.character.real_x, window.character.real_y];
