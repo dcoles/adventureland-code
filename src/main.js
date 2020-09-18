@@ -15,6 +15,7 @@ import * as Command from '/command.js';
 import * as Widgets from '/widgets.js';
 import * as Item from '/item.js';
 import * as Movement from './movement.js';
+import * as Util from './util.js';
 
 // Brains
 import { AutoBrain } from '/brain/auto.js';
@@ -27,6 +28,9 @@ const DEBUG_LOG_CEVENTS = false;
 // Bots
 const BOTS = ['LigLig', 'LigLug', 'LigLog'];
 const BOT_SCRIPT = 'loader';
+
+// Misc
+const AUTO_PAUSE = true;  // Pause graphics on AFK
 
 // Your Character
 export const character = Character.get_character();
@@ -300,6 +304,16 @@ async function main() {
 	// Start our bots
 	if (Adventure.get('start_bots') && character.ctype !== 'merchant') {
 		_start_bots();
+	}
+
+	// Auto pause on AFK
+	if (AUTO_PAUSE) {
+		window.setInterval(() => {
+			if (window.character.afk ^ window.is_paused()) {
+				Logging.info('Toggling pause');
+				window.pause();
+			}
+		}, Util.IDLE_MS);
 	}
 
 	// Start running!
