@@ -132,6 +132,16 @@ class Character {
 		window.loot(id_or_arg);
 	}
 
+	/**
+	 * Warp to center of the map.
+	 */
+	async town() {
+		await this.skills.use_town.use_when_ready();
+		do {
+			await Util.sleep(character.c.town && character.c.town.ms || Util.IDLE_MS);
+		} while (character.c.town)
+	}
+
 	/** Are we fully healed? */
 	is_fully_healed() {
 		return character.hp == character.max_hp;

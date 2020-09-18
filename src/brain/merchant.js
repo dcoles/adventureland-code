@@ -217,10 +217,7 @@ export class MerchantBrain extends Brain {
 		}
 
 		// Warp back to town
-		await character.skills.use_town.use_when_ready();
-		do {
-			await Util.sleep(window.character.c.town && window.character.c.town.ms || Util.IDLE_MS);
-		} while (window.character.c.town)
+		await character.town();
 	}
 
 	/** Upgrade the merch! */
