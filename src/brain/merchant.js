@@ -142,6 +142,26 @@ export class MerchantBrain extends Brain {
 				}
 			}
 		});
+
+		// Task for joining parties
+		this.tasks['party'] = Task.create(async (task) => {
+			const regulator = new Util.Regulator(Util.SECOND_MS);
+			while (!task.is_cancelled()) {
+				await regulator.regulate();
+
+				if (this.is_interrupted()) {
+					continue;
+				}
+
+				// Join party of our nearby characters
+				for (let char of Entity.get_entities({owner: true})) {
+					if (char.party && character.party !== char.party) {
+						window.send_party_request(char.party);
+						break;
+					}
+				}
+			}
+		});
 	}
 
 	/**
