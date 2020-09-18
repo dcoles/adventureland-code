@@ -50,6 +50,7 @@ class Task {
 			if (this.is_cancelled()) {
 				result = new CancelledError();
 			} else {
+				console.warn('Task failed', result);
 				this._result = result;
 				this._state = Task.FAILED;
 			}
