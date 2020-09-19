@@ -285,7 +285,13 @@ export class MerchantBrain extends Brain {
 	/** Unload at the bank. */
 	async _bank() {
 		Logging.info('Banking items');
-		await movement.pathfind_move('bank');
+		while (!character.bank) {
+			if (this.is_interrupted()) {
+				return;
+			}
+
+			await movement.pathfind_move('bank');
+		}
 
 		// Deposit excess gold
 		if (character.gold > MAX_GOLD) {
