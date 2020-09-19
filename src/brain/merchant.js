@@ -196,20 +196,21 @@ export class MerchantBrain extends Brain {
 			}
 
 			Logging.info(`Collecting from ${char.name}`);
-			await this.loop_until_interrupted(async () => {
-				if (Entity.get_entities({name: char.name}).length !== 0) {
-					// Found character
-					return false;
+			const regulator = new Util.Regulator(Util.SECOND_MS);
+			while (Entity.get_entities({name: char.name}).length === 0) {
+				await regulator.regulate();
+
+				if (this.is_interrupted()) {
+					return;
 				}
 
-				const c = Adventure.get_characters().find((c) => c.name === char.name && c.online);
-				if (!c || c.server !== server) {
-					// Character now offline or changed server
-					return false;
+				const c = Brain.get_character(char.name);
+				if (!c.online || c.server !== server) {
+					break;
 				}
 
-				await movement.pathfind_move({x: char.x, y: char.y, map: char.map}, {range: 250}, {avoid: true});
-			})
+				await movement.pathfind_move({x: c.x, y: c.y, map: c.map}, {range: 250}, {avoid: true});
+			}
 		}
 
 		// Warp back to town

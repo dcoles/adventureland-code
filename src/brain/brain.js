@@ -12,6 +12,35 @@ export class Brain {
 	static IDLE_MS = Util.IDLE_MS;
 	static SLEEP_MS = Util.SECOND_MS;
 
+	/**
+	 * Get current character information of another character.
+	 *
+	 * @param {string} name Character name.
+	 */
+	static get_character(name) {
+		let state = Brain.get_state(name);
+		if (state && state.character) {
+			return state.character;
+		}
+
+		// Fall back to built-in state
+		return window.get_characters().find((c) => c.name === name);
+	}
+
+	/**
+	 * Get brain state of another character.
+	 *
+	 * @param {string} name Character name.
+	 */
+	static get_state(name) {
+		let state = JSON.parse(window.localStorage.getItem('c:' + name));
+		if (!state || state.last_updated < Date.now() - Util.MINUTE_MS) {
+			return null;
+		}
+
+		return state;
+	}
+
 	constructor() {
 		this._deserialize_state();
 		this.interrupt = false;
@@ -24,14 +53,33 @@ export class Brain {
 	 * Deserialize character state.
 	 */
 	_deserialize_state() {
-		this.brain_state = JSON.parse(window.sessionStorage.getItem('c:' + character.name)) || {};
+		this.brain_state = JSON.parse(window.localStorage.getItem('c:' + character.name)) || {};
+	}
+
+	/**
+	 * Update persistant character state.
+	 */
+	_update_state() {
+		// Same values as `parent.X.characters`
+		this.brain_state.character = {
+			name: character.name,
+			type: character.ctype,
+			level: character.level,
+			in: character.in,
+			map: character.map,
+			x: character.real_x,
+			y: character.real_y,
+			online: true,  // TODO: Find out how to get online time
+			server: window.server.region + window.server.id,
+		}
+		this.last_update = Date.now();
 	}
 
 	/**
 	 * Serialize character state.
 	 */
 	_serialize_state() {
-		window.sessionStorage.setItem('c:' + character.name, JSON.stringify(this.brain_state));
+		window.localStorage.setItem('c:' + character.name, JSON.stringify(this.brain_state));
 	}
 
 	/**
@@ -168,6 +216,7 @@ export class Brain {
 				continue;
 			}
 
+			this._update_state();
 			this._serialize_state();
 		} while (true);
 	}
