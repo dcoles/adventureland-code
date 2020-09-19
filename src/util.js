@@ -95,6 +95,15 @@ export function is_number(value) {
 }
 
 /**
+ * Is this value a boolean?
+ *
+ * @param {any} value An unknown value.
+ */
+export function is_boolean(value) {
+	return typeof value === 'boolean';
+}
+
+/**
  * Is this value a string?
  *
  * @param {any} value An unknown value.
