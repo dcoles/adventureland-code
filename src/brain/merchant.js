@@ -208,11 +208,7 @@ export class MerchantBrain extends Brain {
 					return false;
 				}
 
-				try {
-					await movement.smarter_move({x: char.x, y: char.y, map: char.map}, {range: 250}, {avoid: true});
-				} catch (e) {
-					Logging.warn(`Moving to ${char.name} failed`, e);
-				}
+				await movement.pathfind_move({x: char.x, y: char.y, map: char.map}, {range: 250}, {avoid: true});
 			})
 		}
 
@@ -268,7 +264,7 @@ export class MerchantBrain extends Brain {
 			const npc_id = quests.get(item.name) || 'exchange';
 			Logging.info(`Exchanging ${G.items[item.name].name} with ${G.npcs[npc_id].name}`);
 			try {
-				await movement.smarter_move(npc_id);
+				await movement.pathfind_move(npc_id);
 			} catch (e) {
 				// Couldn't find them?
 				Logging.warn(`Couldn't move to NPC ${G.npcs[npc_id].name}`, e);
@@ -289,9 +285,7 @@ export class MerchantBrain extends Brain {
 	/** Unload at the bank. */
 	async _bank() {
 		Logging.info('Banking items');
-
-		await movement.smarter_move('bank');
-		await Adventure.transport('bank');
+		await movement.pathfind_move('bank');
 
 		// Deposit excess gold
 		if (character.gold > MAX_GOLD) {
@@ -317,10 +311,6 @@ export class MerchantBrain extends Brain {
 		await this._retrieve_upgradeable();
 		await this._retrieve_compoundable();
 		await this._retrieve_exchangeable();
-
-		// Leave bank
-		const door = G.maps['bank'].doors.find((d) => d[4] === 'main');
-		await Adventure.transport('main', door[5]);
 	}
 
 	/** Retrieve upgradable items. */
@@ -407,7 +397,7 @@ export class MerchantBrain extends Brain {
 		}
 
 		Logging.info('Vending items');
-		await movement.smarter_move(this.home);
+		await movement.pathfind_move(this.home);
 
 		// Set up shop
 		this.open_stand();
@@ -434,7 +424,7 @@ export class MerchantBrain extends Brain {
  * @param {string} [scroll] Combining scroll (default: auto).
  */
 async function compound_all(name, max_level, scroll) {
-	await movement.smarter_move('compound');
+	await movement.pathfind_move('compound');
 	for (let level=0; level<max_level; level++) {
 		const scroll_ = scroll ? scroll : `cscroll${Item.scroll_level(name, level)}`;
 		const i_items = Item.indexed_items({name: name, level: level});
@@ -466,7 +456,7 @@ async function compound_all(name, max_level, scroll) {
  * @param {string} [scroll] Upgrade scroll (default: auto).
  */
 async function upgrade_all(name, max_level, scroll) {
-	await movement.smarter_move('upgrade');
+	await movement.pathfind_move('upgrade');
 
 	for (let level=0; level<max_level; level++) {
 		const scroll_ = scroll ? scroll : `scroll${Item.scroll_level(name, level)}`;

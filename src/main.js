@@ -298,7 +298,7 @@ async function main() {
 	Command.register('stopbots', stop_bots);
 	Command.register('startbot', (name, script) => window.start_character(name, script || BOT_SCRIPT), ['character'], ['script'])
 	Command.register('stopbot', (name) => window.stop_character(name), ['character'])
-	Command.register('go', movement.smarter_move, ['location']);
+	Command.register('go', movement.pathfind_move, ['location']);
 	Command.register('c', call_character_command, ['character', 'command'], ['arg1', 'arg2', 'arg3', 'arg4'])
 
 	// Start our bots

@@ -267,12 +267,7 @@ class Character {
 	async xmove(x, y, map) {
 		map = map || character.map;
 		const location = {x: x, y: y, map: map};
-		if (character.map !== map) {
-			// FIXME: pathfind_move does not yet support moving between maps
-			return await Adventure.smart_move(location);
-		} else {
-			return await movement.pathfind_move(location, null, {avoid: true});
-		}
+		return await movement.pathfind_move(location, null, {avoid: true});
 	}
 
 	toString() {

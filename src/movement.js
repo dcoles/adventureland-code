@@ -12,7 +12,6 @@ export { PathfindError } from '/pathfind.js';
 
 const LOCATIONS = {
 	'town': {map: 'main', x: 0, y: 0},
-	'bank': {map: 'main', x: 168, y: -134},
 	'upgrade': {map: 'main', x: -204, y: -129},
 	'compound': {map: 'main', x: -204, y: -129},
 	'exchange': {map: 'main', x: -26, y: -432},
@@ -88,39 +87,25 @@ class Movement {
 	/**
 	 * Find a path to location, then follow it.
 	 *
-	 * @param {object} location Location to move to.
+	 * This can be used as a drop-in replacement for `smart_move`.
+	 *
+	 * @param {MapLocation|string} dest Location to move to.
 	 * @param {Pathfind.PathfindOptions} [pathfind_options] Options for pathfinding behaviour.
 	 * @param {MovementOptions} [movement_options] Options for path movement behaviour.
 	 * @returns {Promise} Resolves when location is reached.
 	 */
-	async pathfind_move(location, pathfind_options, movement_options) {
-		DEBUG_MOVEMENT && Draw.clear_list('debug_pathfind');
-		const path = await Pathfind.pathfind(location, pathfind_options);
-		DEBUG_MOVEMENT && Draw.add_list('debug_pathfind', draw_circle(location.x, location.y, 4, null, 0x0000ff));
-		DEBUG_MOVEMENT && path.forEach(([x, y]) => Draw.add_list('debug_pathfind', draw_circle(x, y, 2, null, 0xff0000)));
-
-		await this.follow_path(path, movement_options);
-		DEBUG_MOVEMENT && Draw.clear_list('debug_pathfind');
-	}
-
-	/**
-	 * Try to use our move, otherwise fall back to `smart_move`.
-	 *
-	 * @param {object} dest Destination to move to.
-	 * @param {Pathfind.PathfindOptions} [pathfind_options] Options for pathfinding behaviour.
-	 * @param {MovementOptions} [movement_options] Options for path following behaviour.
-	 */
-	async smarter_move(dest, pathfind_options, movement_options) {
+	async pathfind_move(dest, pathfind_options, movement_options) {
 		if (typeof dest === 'string') {
 			dest = get_location_by_name(dest);
 		}
 
-		// pathfind_move can't do maps yet!
-		if (dest.map && character.map !== dest.map) {
-			await window.smart_move(dest.map);
-		}
+		DEBUG_MOVEMENT && Draw.clear_list('debug_pathfind');
+		const path = await Pathfind.pathfind(dest, pathfind_options);
+		DEBUG_MOVEMENT && (dest.map || character.map) === character.map && Draw.add_list('debug_pathfind', draw_circle(dest.x, dest.y, 4, null, 0x0000ff));
+		DEBUG_MOVEMENT && path.forEach(([x, y, map]) => map === character.map && Draw.add_list('debug_pathfind', draw_circle(x, y, 2, null, 0xff0000)));
 
-		await this.pathfind_move(dest, pathfind_options, movement_options);
+		await this.follow_path(path, movement_options);
+		DEBUG_MOVEMENT && Draw.clear_list('debug_pathfind');
 	}
 
 	/**
@@ -190,14 +175,14 @@ class Movement {
 	/**
 	 * Follow a path of positions.
 	 *
-	 * @param {Array<[number, number]>} path Path to follow.
+	 * @param {Array<[number, number, string]>} path Path to follow (`x`, `y`, `map`).
 	 * @param {MovementOptions} [options] Path movement options.
 	 * @returns {Promise} Resolves when this movement completes.
 	 */
 	async follow_path(path, options) {
 		options = options || {};
 		this._create_task(async (task) => {
-			Logging.debug(`Following path: ${path.map(([x, y]) => `${x},${y}`).join('; ')}`);
+			Logging.debug(`Following path: ${path.map(([x, y, map]) => `${x.toFixed()},${y.toFixed()}@${map}`).join('; ')}`);
 			let distance_traveled = 0;
 			for (let p of path) {
 				if (task.is_cancelled()) {
@@ -223,6 +208,22 @@ class Movement {
 					// Stop any current motion
 					await window.move(current_pos[0], current_pos[1]);
 					continue;
+				}
+
+				if (p[2] !== character.map) {
+					// Change maps
+					for (let door of G.maps[character.map].doors) {
+						if (!window.is_door_close(character.map, door, character.real_x, character.real_y)
+						|| !window.can_use_door(character.map, door, character.real_x, character.real_y)) {
+							continue;
+						}
+						await transport(door[4], door[5]);
+						break;
+					}
+
+					if (character.map !== p[2]) {
+						throw new MovementError('No door between maps!');
+					}
 				}
 
 				const dist = options.max_distance ? Math.min(segment_distance, options.max_distance - distance_traveled) : segment_distance;
@@ -312,6 +313,7 @@ export function get_movement() {
  * Get location by name.
  *
  * @param {string} name Location name.
+ * @returns {MapLocation}
  */
 export function get_location_by_name(name) {
 	// Named location
@@ -331,6 +333,21 @@ export function get_location_by_name(name) {
 	}
 
 	throw new MovementError(`Could not find location: ${name}`);
+}
+
+/**
+ * Transport between maps.
+ *
+ * @param {string} map New map to transport to.
+ * @param {number} spawn Spawn point index (see `G.maps[].spawn`).
+ * @returns {Promise} Resolves when transported to new map.
+ */
+function transport(map, spawn) {
+	window.transport(map, spawn || 0);
+	return new Promise((resolve, reject) => {
+		window.game.once('new_map', resolve);
+		window.setInterval(() => reject({reason: 'timeout'}), Util.SECOND_MS);
+	});
 }
 
 /**

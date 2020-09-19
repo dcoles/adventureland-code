@@ -284,7 +284,7 @@ export class AutoBrain extends Brain {
 			// We're probably under attack
 			if (this.target && !this.target.dead) {
 				// Start running away
-				movement.smarter_move({x: 0, y: 0});
+				movement.pathfind_move({x: 0, y: 0});
 
 				// Pop a potion
 				await character.skills.use_hp.use_when_ready();

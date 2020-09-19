@@ -97,3 +97,12 @@ async function move(x, y) {
 	const death = new Promise((resolve) => character.one('death', resolve));
 	await Promise.race([parent.move(x, y, true), death]);  // race death itself!
 }
+
+/**
+ * Override `smart_move` with `pathfind_move`.
+ *
+ * @param {object|string} dest
+ */
+async function smart_move(dest) {
+	await Code.movement.pathfind_move(dest);
+}

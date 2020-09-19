@@ -11,7 +11,7 @@ const SMALL_STEP_RANGE = 64;  // Start with small steps for this much distance
 const STEP = 16;  // Size of a tile
 const DEFAULT_RANGE = 32;  // When are we "close enough" to the target
 const MAX_SEGMENT = 128;  // Maximum length of a simplified path segment
-const OFFMAP_ESTIMATE = 10000;  // Estimate of distance outside this map
+const OFFMAP_ESTIMATE = 1_000;  // Estimate of distance outside this map
 
 /**
  * Thrown when pathfinding fails.
@@ -35,18 +35,15 @@ export class PathfindError extends Error {
 /**
  * Find path to location.
  *
- * @param {object|string} location Location to move to.
+ * @param {MapLocation} location Location to move to.
  * @param {PathfindOptions} [options] Options for controlling pathfinding behaviour.
- * @returns {Promise<Array<[number, number]>>} Path found.
+ * @returns {Promise<Array<[number, number, string]>>} Path found.
  * @throws {PathfindError} If path could not be found.
  */
 export async function pathfind(location, options) {
 	options = options || {};
 	const simplify = 'simplify' in options ? options.simplify : true;
 	const map = location.map || character.map;
-	if (map !== character.map) {
-		throw new PathfindError('Moving between maps is not implemented!');
-	}
 
 	const origin = [character.real_x, character.real_y, character.map];
 	const origin_key = position_to_string(origin);
@@ -92,12 +89,12 @@ export async function pathfind(location, options) {
 			}
 		}
 
-		DEBUG_PATHFIND && Draw.add_list('debug_pathfind', draw_circle(current[0], current[1], 2, null, 0x00ff00));  // Searched
+		DEBUG_PATHFIND && current[2] === character.map && Draw.add_list('debug_pathfind', draw_circle(current[0], current[1], 2, null, 0x00ff00));  // Searched
 
 		const step = dist < SMALL_STEP_RANGE ? STEP / 2 : STEP;
 		for (let next of neighbours(current, step)) {
 			const next_key = position_to_string(next);
-			let next_dist = dist + Util.distance(current[0], current[1], next[0], next[1]);
+			let next_dist = dist + (next[2] === current[2] ? Util.distance(current[0], current[1], next[0], next[1]) : 0);
 			if (options.max_distance && next_dist > options.max_distance) {
 				// Too far!
 				continue;
@@ -136,14 +133,14 @@ export async function pathfind(location, options) {
 		found = came_from[position_to_string(found)];
 	} while (found);
 
-	DEBUG_PATHFIND && path.forEach(([x, y]) => Draw.add_list('debug_move', draw_circle(x, y, 2, null, 0xffff00)));  // Path
+	DEBUG_PATHFIND && path.forEach(([x, y, map]) => map === character.map && Draw.add_list('debug_move', draw_circle(x, y, 2, null, 0xffff00)));  // Path
 	return simplify ? simplify_path(path) : path;
 }
 
 /**
  * Format position.
  *
- * @param {[number, number, number]} position (`x`, `y`, `map`).
+ * @param {[number, number, string]} position (`x`, `y`, `map`).
  * @returns {string} Coordinates as `"x,y@map"`.
  */
 function position_to_string(position) {
@@ -153,8 +150,8 @@ function position_to_string(position) {
 /**
  * Heuristic estimating distance from here to there.
  *
- * @param {[number, number, number]} here Starting position (`x1`, `y1`, `map`).
- * @param {[number, number, number]} there Ending position (`x2`, `y2`, `map`).
+ * @param {[number, number, string]} here Starting position (`x1`, `y1`, `map`).
+ * @param {[number, number, string]} there Ending position (`x2`, `y2`, `map`).
  * @returns {number}
  */
 function heuristic(here, there) {
@@ -164,25 +161,40 @@ function heuristic(here, there) {
 /**
  * Find reachable neighbouring positions.
  *
- * @param {[number, number, number]} position (`x`, `y`, `map`) position.
+ * @param {[number, number, string]} position (`x`, `y`, `map`) position.
  * @param {number} step Step size.
- * @returns {Array<[number, number, number]>} Neighbouring positions.
+ * @returns {Array<[number, number, string]>} Neighbouring positions.
  */
 function neighbours(position, step) {
 	const pq_x = Util.quantize(position[0], step);
 	const pq_y = Util.quantize(position[1], step);
+	const map = position[2];
 	const points = [];
+
+	// Steps
 	for (let i=-step; i <= step; i += step) {
 		for (let j=-step; j <= step; j += step) {
 			if (i === 0 && j === 0) {
 				continue;
 			}
 
-			const new_position = [pq_x + i, pq_y + j, position[2]];
+			const new_position = [pq_x + i, pq_y + j, map];
 			if (can_move(position, new_position)) {
 				points.push(new_position);
 			}
 		}
+	}
+
+	// Doors
+	for (let door of G.maps[map].doors) {
+		if (!window.is_door_close(map, door, position[0], position[1]) || !window.can_use_door(map, door, position[0], position[1])) {
+			continue;
+		}
+		const new_map = door[4];
+		const spawn = door[5] || 0;
+		const new_x = G.maps[new_map].spawns[spawn][0];
+		const new_y = G.maps[new_map].spawns[spawn][1];
+		points.push([new_x, new_y, new_map]);
 	}
 
 	return points;
@@ -191,8 +203,8 @@ function neighbours(position, step) {
 /**
  * Can our character move from `here` to `there`?
  *
- * @param {[number, number, number]} here Starting position (`x1`, `y1`, `map`).
- * @param {[number, number, number]} there Ending position (`x2`, `y2`, `map`).
+ * @param {[number, number, string]} here Starting position (`x1`, `y1`, `map`).
+ * @param {[number, number, string]} there Ending position (`x2`, `y2`, `map`).
  * @returns {boolean} True if can move unobstructed, otherwise false.
  */
 function can_move(here, there) {
@@ -202,7 +214,7 @@ function can_move(here, there) {
 	}
 
 	return window.can_move({
-		map: character.map,
+		map: here[2],
 		x: here[0], y: here[1],
 		going_x: there[0], going_y: there[1],
 		base: character.base,
@@ -212,8 +224,8 @@ function can_move(here, there) {
 /**
  * Simplify path by removing unnessisary segments.
  *
- * @param {Array<[number, number]>} path Path to simplify.
- * @return {Array<[number, number]>}
+ * @param {Array<[number, number, string]>} path Path to simplify.
+ * @return {Array<[number, number, string]>}
  */
 function simplify_path(path) {
 	const new_path = [];

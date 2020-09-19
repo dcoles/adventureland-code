@@ -84,3 +84,16 @@ interface Status {
 interface StatusDuration {
 	ms: number;
 }
+
+/**
+ * A Location.
+ *
+ * @param x Map x-coordinate.
+ * @param y Map y-coordinate.
+ * @param map Map name.
+ */
+interface MapLocation {
+	x?: number;
+	y?: number;
+	map?: string;
+}
