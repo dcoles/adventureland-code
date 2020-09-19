@@ -75,22 +75,19 @@ export class MerchantBrain extends Brain {
 			Bank: {next: 'Vend'},
 			Vend: {next: 'Collect'},
 		}
-
-		// Default state is Collect
-		this.brain_state.state = this.brain_state.state in this.states ? this.brain_state.state : 'Collect';
 	}
 
 	get state_name() {
-		return this.brain_state.state;
+		return this.state.name;
 	}
 
-	get _state() {
-		return this[`_${this.brain_state.state.toLowerCase()}`];
+	get _current_state() {
+		return this[`_${this.state.name.toLowerCase()}`];
 	}
 
 	async _init() {
-		Logging.info('Starting Merchant brain');
-		window.set_message('Merchant');
+		// Default state is Collect
+		this.state.name = this.state.name in this.states ? this.state.name : 'Collect';
 
 		// Task for keeping us healthy
 		this.tasks['regen_autocast'] = Task.create(async (task) => {
@@ -172,10 +169,10 @@ export class MerchantBrain extends Brain {
 		// Close our stand if it was open
 		this.close_stand();
 
-		window.set_message(this.brain_state.state);
-		const state = this.states[this.brain_state.state];
-		await this._state();
-		this.brain_state.state = state.next;
+		window.set_message(this.state.name);
+		const state = this.states[this.state.name];
+		await this._current_state();
+		this.state.name = state.next;
 	}
 
 	/** Collect items from other characters. */

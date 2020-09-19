@@ -11,6 +11,7 @@ const character = Character.get_character();
 export class Brain {
 	static IDLE_MS = Util.IDLE_MS;
 	static SLEEP_MS = Util.SECOND_MS;
+	static STATE_UPDATE_MS = Util.SECOND_MS;
 
 	/**
 	 * Get current character information of another character.
@@ -42,44 +43,11 @@ export class Brain {
 	}
 
 	constructor() {
-		this._deserialize_state();
+		this.state = {};
 		this.interrupt = false;
 		this.target = null;
 		this.target_difficulty = 0;
 		this.home = null;
-	}
-
-	/**
-	 * Deserialize character state.
-	 */
-	_deserialize_state() {
-		this.brain_state = JSON.parse(window.localStorage.getItem('c:' + character.name)) || {};
-	}
-
-	/**
-	 * Update persistant character state.
-	 */
-	_update_state() {
-		// Same values as `parent.X.characters`
-		this.brain_state.character = {
-			name: character.name,
-			type: character.ctype,
-			level: character.level,
-			in: character.in,
-			map: character.map,
-			x: character.real_x,
-			y: character.real_y,
-			online: true,  // TODO: Find out how to get online time
-			server: window.server.region + window.server.id,
-		}
-		this.last_update = Date.now();
-	}
-
-	/**
-	 * Serialize character state.
-	 */
-	_serialize_state() {
-		window.localStorage.setItem('c:' + character.name, JSON.stringify(this.brain_state));
 	}
 
 	/**
@@ -95,7 +63,7 @@ export class Brain {
 			return false;
 		}
 
-		return this.brain_state.stopped || false;
+		return this.state.stopped || false;
 	}
 
 	/**
@@ -103,7 +71,7 @@ export class Brain {
 	 */
 	stop() {
 		Logging.warn('Stopping event loop');
-		this.brain_state.stopped = true;
+		this.state.stopped = true;
 
 		// Cease all motor functions
 		character.stop_all();
@@ -112,7 +80,7 @@ export class Brain {
 	/** Resume the event loop. */
 	resume() {
 		Logging.warn('Resuming event loop');
-		this.brain_state.stopped = false;
+		this.state.stopped = false;
 	}
 
 	/**
@@ -174,15 +142,66 @@ export class Brain {
 	 * Run brain.
 	 */
 	async run() {
+		await this._preinit();
 		await this._init();
 		await this._loop();
 	}
 
+	async _preinit() {
+		Logging.info(`Starting ${this}`);
+		this._deserialize_state();
+
+		// Regularly update state
+		window.setInterval(() => {
+			try {
+				this._update_state();
+				this._serialize_state();
+			} catch (e) {
+				Logging.error('Exception updating state', e);
+			}
+		}, Brain.STATE_UPDATE_MS);
+	}
+
+	/**
+	 * Deserialize character state.
+	 */
+	_deserialize_state() {
+		this.state = JSON.parse(window.localStorage.getItem('c:' + character.name)) || {};
+	}
+
+	/**
+	 * Update persistant character state.
+	 */
+	_update_state() {
+		// Same values as `parent.X.characters`
+		this.state.character = {
+			name: character.name,
+			type: character.ctype,
+			level: character.level,
+			in: character.in,
+			map: character.map,
+			x: character.real_x,
+			y: character.real_y,
+			online: true,  // TODO: Find out how to get online time
+			server: window.server.region + window.server.id,
+		}
+		this.state.last_update = Date.now();
+	}
+
+	/**
+	 * Serialize character state.
+	 */
+	_serialize_state() {
+		window.localStorage.setItem('c:' + character.name, JSON.stringify(this.state));
+	}
+
 	/**
 	 * Initialize brain.
+	 *
+	 * Called once.
 	 */
 	async _init() {
-		Logging.info(`Starting ${this} brain`);
+		// Override me!
 	}
 
 	/**
@@ -215,9 +234,6 @@ export class Brain {
 				this.stop();
 				continue;
 			}
-
-			this._update_state();
-			this._serialize_state();
 		} while (true);
 	}
 
@@ -292,5 +308,9 @@ export class Brain {
 		Logging.info('Nothing to do...');
 		window.set_message('Nothing');
 		await this._sleep();
+	}
+
+	toString() {
+		return this.constructor.name;
 	}
 }

@@ -99,9 +99,10 @@ export class AutoBrain extends Brain {
 	}
 
 	/** Called on major state updates. */
-	on_state(state) {
-		Logging.debug('State', state);
-		set_message(state);
+	on_state(name) {
+		Logging.debug('State', name);
+		this.state.name = name;
+		set_message(name);
 	}
 
 	/**
@@ -130,8 +131,6 @@ export class AutoBrain extends Brain {
 	}
 
 	async _init() {
-		Logging.info('Starting Auto brain');
-
 		// We might be a bot and not even know it!
 		if (character.bot) {
 			this.leader_name = maincode.character.name;
