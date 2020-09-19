@@ -99,6 +99,10 @@ class Movement {
 			dest = get_location_by_name(dest);
 		}
 
+		// Workaround `code_move` passing stringified numbers...
+		if (Util.is_string(dest.x)) dest.x = Number.parseInt(dest.x);
+		if (Util.is_string(dest.y)) dest.y = Number.parseInt(dest.y);
+
 		DEBUG_MOVEMENT && Draw.clear_list('debug_pathfind');
 		const path = await Pathfind.pathfind(dest, pathfind_options);
 		DEBUG_MOVEMENT && (dest.map || character.map) === character.map && Draw.add_list('debug_pathfind', draw_circle(dest.x, dest.y, 4, null, 0x0000ff));

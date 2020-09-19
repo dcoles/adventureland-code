@@ -35,19 +35,19 @@ export class PathfindError extends Error {
 /**
  * Find path to location.
  *
- * @param {MapLocation} location Location to move to.
+ * @param {MapLocation} dest Location to find path to.
  * @param {PathfindOptions} [options] Options for controlling pathfinding behaviour.
  * @returns {Promise<Array<[number, number, string]>>} Path found.
  * @throws {PathfindError} If path could not be found.
  */
-export async function pathfind(location, options) {
+export async function pathfind(dest, options) {
 	options = options || {};
 	const simplify = 'simplify' in options ? options.simplify : true;
-	const map = location.map || character.map;
+	const map = dest.map || character.map;
 
 	const origin = [character.real_x, character.real_y, character.map];
 	const origin_key = position_to_string(origin);
-	const target = [location.x, location.y, map];
+	const target = [dest.x, dest.y, map];
 	const target_key = position_to_string(target);
 
 	// Unsearched edge
