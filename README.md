@@ -31,7 +31,7 @@ Paste the contents of this file into the game's built-in CODE editor (`-` key) t
 
 I have written a small programming guide for Adventure Land that attempts to cover some of the common questions that may come up while writing code for the game.
 
-[View the Guide](guide.md)
+[View the Guide](docs/guide.md)
 
 ## License
 
