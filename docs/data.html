@@ -1,0 +1,43 @@
+---
+title: Data browser
+layout: default
+---
+<h1>Game Data Browser</h1>
+
+<h2 id="path"></h2>
+<div id="code">Loading&hellip;</div>
+
+<script src="https://adventure.land/data.js"></script>
+<script src="javascript/data-browser.js"></script>
+
+<script>
+	const pathElement = document.getElementById('path');
+	const codeElement = document.getElementById('code');
+	const data = {G: G};
+
+	window.addEventListener('load', update);
+	window.addEventListener('hashchange', update);
+
+	function update() {
+		const path = (window.location.hash.slice(1) || 'G').split('.');
+
+		// Breadcrumbs
+		const breadcrumbElement = createBreadcrumbs(path);
+		if (pathElement.firstChild) {
+			pathElement.firstChild.replaceWith(breadcrumbElement);
+		} else {
+			pathElement.appendChild(breadcrumbElement);
+		}
+
+		// Data
+		const dataElement = document.createElement('pre');
+		dataElement.style.tabSize = 4;
+		dataElement.style.whiteSpace = "pre-wrap";
+		appendDataElement(dataElement, data, path);
+		if (codeElement.firstChild) {
+			codeElement.firstChild.replaceWith(dataElement);
+		} else {
+			codeElement.appendChild(dataElement);
+		}
+	}
+</script>

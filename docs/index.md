@@ -5,4 +5,5 @@ layout: default
 
 # Contents
 
-- [Adventure Land Coding Guide](guide)
+- [Coding Guide](guide)
+- [Game Data Browser](data)
