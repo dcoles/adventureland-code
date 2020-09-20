@@ -1,3 +1,7 @@
+---
+title: Adventure Land Coding Guide
+---
+
 # Adventure Land Coding Guide
 
 ## General hints
@@ -136,17 +140,28 @@ transport('main', 3)  // Exit the bank back to "main"
 
 **Note:** You must be in range of the door to use it.
 
-Doors are the mechanism for moving between maps. All the doors on a map can be found in the `G.maps[name].doors` array.
+Doors are the mechanism for moving between maps.
+All the doors on a map can be found in the `G.maps[name].doors` array.
 
 ```javascript
 {
 	"doors": [
-		[…, …, …, …, dest_map, dest_spawn_index, …],
+		[x, y, width, height, dest_map, dest_spawn_index, spawn_index, …],
 	]
 }
 ```
 
-`spawn_index` is the index of `G.maps[dest_map].spawns[]` for the exit point of this door (or any other transport). However it is often easier to use `G.maps[origin_map].doors[i][5]` to find this index:
+- `x`: x-coordinate (center) of the door region.
+- `y`: y-coordinate (center) of the door region.
+- `width`: Width of the door region.
+- `height`: Height of the door region.
+- `dest_map`: Which map does this door lead to.
+- `dest_spawn_index`: What is the spawn point (`G.maps[dest_map].spawns[]`) of the destination map.
+- `spawn_index`: What is the spawn point (`G.maps[this_map].spawns[]`) of this door.
+
+`dest_spawn_index` is the index of `G.maps[dest_map].spawns[]` of the exit point for this door.
+
+However it is often easier to use `G.maps[origin_map].doors[i][5]` to find this index:
 
 
 ### Change server

@@ -1,0 +1,17 @@
+---
+---
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+// Headers
+$header-bg-color: #435BA9;
+$header-bg-color-secondary: #6BA8DB;
+
+// Text
+$section-headings-color: #F38D01 !default;
+
+.page-header {
+	font-family: 'Press Start 2P', monospace;
+}
+
+// Theme
+@import "{{ site.theme }}";
