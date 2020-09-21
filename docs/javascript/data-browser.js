@@ -9,7 +9,7 @@ const LARGE_OBJECT_SIZE = 50;
  */
 function createBreadcrumbs(path) {
 	const element = document.createElement('span');
-	element.style.fontFamily = 'monospace';
+	element.style.fontFamily = 'Consolas; monospace';
 	const crumbs = [];
 	for (let i = 0; i < path.length; i++) {
 		crumbs.push(path[i]);
