@@ -18,25 +18,26 @@ const N_COMPOUNDED = 3;
 // Highest levels to upgrade/compound to
 const MAX_UPGRADE = {
 	'cclaw': 6,
+	'fireblade': 5,
+	'firestaff': 4,
+	'gloves1': 5,
 	'helmet': 5,
 	'helmet1': 5,
 	'mace': 6,
-	'shoes': 5,
-	'wshoes': 6,
-	'wcap': 6,
-	'wattire': 5,
 	'quiver': 5,
-	'fireblade': 5,
-	'firestaff': 4,
+	'shoes': 5,
+	'wattire': 5,
+	'wcap': 6,
+	'wshoes': 6,
 }
 const MAX_COMPOUND = {
-	'ringsj': 3,
 	'hpbelt': 3,
 	'hpamulet': 3,
-	'dexearring': 1,
-	'intearring': 1,
-	'vitearring': 1,
-	'strearring': 1,
+	'ringsj': 3,
+	'dexearring': 2,
+	'intearring': 2,
+	'strearring': 2,
+	'vitearring': 2,
 }
 const DEFAULT_MAX_UPGRADE = 0;
 const DEFAULT_MAX_COMPOUND = 0;
@@ -65,6 +66,8 @@ export class MerchantBrain extends Brain {
 
 		this.should_collect = true;
 		this.should_vend = true;
+		//this.should_collect = false;
+		//this.should_vend = false;
 
 		// States
 		this.states = {
