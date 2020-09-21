@@ -9,15 +9,21 @@ const LARGE_OBJECT_SIZE = 50;
  */
 function createBreadcrumbs(path) {
 	const element = document.createElement('span');
+	element.style.fontFamily = 'monospace';
 	const crumbs = [];
 	for (let i = 0; i < path.length; i++) {
 		crumbs.push(path[i]);
 
 		const a = document.createElement('a');
-		a.href = '#' + crumbs.join('.');
-		a.textContent = path[i];
+		a.href = '#' + crumbs.map(uriEncode).join('.');
 
-		append(element, i === 0 ? a : ['.', a]);
+		if (isSafeName(path[i])) {
+			a.textContent = path[i];
+			append(element, i === 0 ? a : ['.', a]);
+		} else {
+			a.textContent = JSON.stringify(path[i]);
+			append(element, ['[', a, ']']);
+		}
 	}
 	return element;
 }
@@ -60,7 +66,7 @@ function appendDataElement(parent, data, path, indent) {
 			append(parent, '\t'.repeat(indent + 1));
 
 			const keyElement = document.createElement('a');
-			keyElement.href = '#' + encodeURIComponent(newPrefix.join('.'));
+			keyElement.href = '#' + newPrefix.map(uriEncode).join('.');
 			keyElement.innerText = p;
 
 			append(parent, [keyElement, ': ']);
@@ -165,5 +171,17 @@ function numericCompare(a, b) {
 
 /** Is this string numeric. */
 function isNumeric(s) {
-	return s.match(/^[0-9]+$/) ? true : false;
+	return s.match(/^[0-9]+$/) !== null;
+}
+
+/** Is this a safe variable name. */
+function isSafeName(s) {
+	return s.match(/^[a-z_][0-9a-z_]*$/i) !== null;
+}
+
+/** URI encoding which includes `.`. */
+function uriEncode(s) {
+	return encodeURIComponent(s).replace(/[.]/g, function(c) {
+		return '%' + c.charCodeAt(0).toString(16);
+	});
 }

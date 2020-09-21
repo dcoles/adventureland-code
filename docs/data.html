@@ -19,7 +19,7 @@ layout: default
 	window.addEventListener('hashchange', update);
 
 	function update() {
-		const path = (window.location.hash.slice(1) || 'G').split('.');
+		const path = (window.location.hash.slice(1) || 'G').split('.').map(decodeURIComponent);
 
 		// Breadcrumbs
 		const breadcrumbElement = createBreadcrumbs(path);
