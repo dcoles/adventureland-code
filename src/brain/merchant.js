@@ -250,17 +250,18 @@ export class MerchantBrain extends Brain {
 		}
 
 		Logging.info('Exchanging items');
-		const quests = new Map();
-		for (let [id, npc] of Object.entries(G.npcs)) {
-			if (!npc.quest || !find_npc(npc.quest)) {
-				continue;
-			}
-			quests.set(npc.quest, id);
-		}
+
+		// Build a map of Quest IDs → NPC IDs
+		// If we can't find the NPC's location, assume we can exchange at Xyn
+		const quests = new Map(Object.entries(G.npcs)
+			.filter(([id, npc]) => npc.quest && find_npc(id))
+			.map(([id, npc]) => [npc.quest, id]));
 
 		for (let [slot_num, item] of exchangeable) {
-			const npc_id = quests.get(item.name) || 'exchange';
-			Logging.info(`Exchanging ${G.items[item.name].name} with ${G.npcs[npc_id].name}`);
+			const item_details = G.items[item.name];
+			const npc_id = quests.get(item_details.quest) || 'exchange';
+
+			Logging.info(`Exchanging ${item_details.name} with ${G.npcs[npc_id].name}`);
 			try {
 				await movement.pathfind_move(npc_id);
 			} catch (e) {
@@ -270,6 +271,7 @@ export class MerchantBrain extends Brain {
 			}
 
 			while (character.items[slot_num]) {
+				// Wait until exchanging the previous item completes
 				if (window.character.q.exchange) {
 					await this._sleep(window.character.q.exchange.ms);
 				}

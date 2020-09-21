@@ -92,8 +92,10 @@ export function is_compoundable(item) {
  * @param {Item} item Item object
  */
 export function is_exchangeable(item) {
+	// Check if we have at least the required number of items to exchange
 	return item.q >= G.items[item.name].e;
 }
+
 /**
  * What is the minimum scroll level we must use to upgrade this item?
  *
