@@ -41,7 +41,7 @@ function appendDataElement(parent, data, path, indent) {
 	indent = indent || 0;
 
 	const current = getNested(data, path);
-	if (typeof current !== 'object') {
+	if (current === null || typeof current !== 'object') {
 		// Primitive type
 		append(parent, JSON.stringify(current));
 	} else if (Array.isArray(current)) {
