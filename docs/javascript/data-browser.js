@@ -54,7 +54,8 @@ function appendDataElement(parent, data, path, indent) {
 		// Object
 		append(parent, ['{', document.createElement('br')]);
 
-		for (let [p, child] of Object.entries(current)) {
+		for (let p of Object.keys(current).sort(numericCompare)) {
+			const child = current[p];
 			const newPrefix = [...path, p];
 			append(parent, '\t'.repeat(indent + 1));
 
@@ -146,4 +147,23 @@ function isLargeObject(value) {
  */
 function isObject(value) {
 	return typeof value === 'object' && !Array.isArray(value);
+}
+
+/**
+ * Compare two strings, treating digits as numbers.
+ *
+ * @param {string} a First string.
+ * @param {string} b Second string.
+ */
+function numericCompare(a, b) {
+	if (isNumeric(a) && isNumeric(b)) {
+		return Number.parseInt(a) - Number.parseInt(b);
+	}
+
+	return a === b ? 0 : a > b ? 1 : -1;
+}
+
+/** Is this string numeric. */
+function isNumeric(s) {
+	return s.match(/^[0-9]+$/) ? true : false;
 }
