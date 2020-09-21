@@ -13,6 +13,7 @@ const character = Adventure.get_character();
  * @property {string} [name] Entity must have this name.
  * @property {"character"|"monster"} [type] Entity must match this type.
  * @property {string} [ctype] Entity must be of this class type.
+ * @property {boolean} [npc] Entity must be an NPC.
  * @property {object|string} [target] Entity must be targetting this entity.
  * @property {boolean} [no_target] Entity must not have a target.
  * @property {boolean} [alive] If true, entity must be alive.
@@ -80,6 +81,10 @@ export function filter(entities, criteria) {
 			return false;
 		}
 
+		if (Util.is_boolean(criteria.npc) && entity.npc !== criteria.npc) {
+			return false;
+		}
+
 		if (criteria.target && entity.target !== name(criteria.target)) {
 			return false;
 		}
@@ -88,7 +93,7 @@ export function filter(entities, criteria) {
 			return false;
 		}
 
-		if (criteria.alive && (character.rip || character.dead)) {
+		if (Util.is_boolean(criteria.alive) && (character.rip === criteria.alive || character.dead === criteria.alive)) {
 			return false;
 		}
 
@@ -96,7 +101,7 @@ export function filter(entities, criteria) {
 			return false;
 		}
 
-		if (criteria.party && !(entity.name in Adventure.get_party())) {
+		if (Util.is_boolean(criteria.party) && entity.name in Adventure.get_party() !== criteria.party) {
 			return false;
 		}
 
