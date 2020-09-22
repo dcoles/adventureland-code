@@ -154,6 +154,8 @@ class Skill {
 	 */
 	async use(target, extra_args) {
 		Logging.debug('Using skill', this.skill_id);
+		// Don't pass Character wrapper
+		target = target && target.name === parent.character.name ? parent.character : target;
 		if (this.skill_id === 'attack') {
 			return await attack(target);
 		} else if (this.skill_id === 'heal') {
