@@ -227,7 +227,7 @@ class Skill {
 						// Target has gone. Cancel autouse.
 						break;
 					}
-					Logging.warn(`Autouse ${this.skill.name} failed`, e.reason);
+					Logging.warn(`Autouse ${this.skill.name} failed`, e);
 					// FIXME: Determine exactly when we can actually use the skill.
 					await Util.sleep(500);
 				}

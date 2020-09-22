@@ -451,7 +451,7 @@ async function compound_all(name, max_level, scroll) {
 				Logging.info(`Compounding ${G.items[name].name} (${level} to ${level+1}) ${scroll_}`);
 				await window.compound(i_items[i][0], i_items[i+1][0], i_items[i+2][0], i_scroll);
 			} catch (e) {
-				Logging.warn('Compounding failed', e.reason);
+				Logging.warn('Compounding failed', e);
 			}
 		}
 	}
@@ -484,7 +484,7 @@ async function upgrade_all(name, max_level, scroll) {
 				Logging.info(`Upgrading ${G.items[name].name} (${level} to ${level+1}) ${scroll_}`);
 				await window.upgrade(i_items[i][0], i_scroll);
 			} catch (e) {
-				Logging.warn('Upgrading failed', e.reason);
+				Logging.warn('Upgrading failed', e);
 			}
 		}
 	}

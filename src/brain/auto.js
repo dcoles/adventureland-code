@@ -328,7 +328,7 @@ export class AutoBrain extends Brain {
 		try {
 			await character.xmove(leader.x, leader.y, leader.map);
 		} catch (e) {
-			Logging.warn(`Movement failed: ${e.reason}`);
+			Logging.warn('Movement failed', e);
 			await this._sleep();
 		}
 	}

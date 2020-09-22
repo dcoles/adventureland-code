@@ -13,7 +13,6 @@ import * as Character from '/character.js';
 import * as BattleLog from '/battlelog.js';
 import * as Command from '/command.js';
 import * as Widgets from '/widgets.js';
-import * as Item from '/item.js';
 import * as Movement from './movement.js';
 import * as Util from './util.js';
 
@@ -163,50 +162,6 @@ export function get_home() {
 }
 
 /**
- * Attempt to compound items.
- *
- * @param {string} name Item name (e.g. "hpamulet")
- * @param {number} [max_level=4] Maximum level to upgrade to.
- * @param {string} [scroll='cscroll0'] Combining scroll.
- */
-export function compound_items(name, max_level, scroll) {
-	max_level = max_level || 2;
-	if (!G.items[name]) {
-		Logging.error(`Unknown item: ${name}`);
-		return;
-	}
-
-	set_message('Compounding', 'dodgerblue');
-	Logging.info(`Compounding all ${G.items[name].name} to level ${max_level}`);
-
-	Item.compound_all(name, max_level, scroll)
-	.then(() => { Logging.info('Finished compounding items'); set_message('Done') })
-	.catch((e) => { Logging.warn('Compounding items failed', e.reason); set_message('Failed', 'orange') });
-}
-
-/**
- * Attempt to upgrade items.
- *
- * @param {string} name Item name (e.g. "slimestaff")
- * @param {number} [max_level=4] Maximum level to upgrade to.
- * @param {string} [scroll='scroll0'] Upgrade scroll.
- */
-export function upgrade_items(name, max_level, scroll) {
-	max_level = max_level || 4;
-	if (!G.items[name]) {
-		Logging.error(`Unknown item: ${name}`);
-		return;
-	}
-
-	set_message('Upgrading', 'firebrick');
-	Logging.info(`Upgrading all ${G.items[name].name} to level ${max_level}`);
-
-	Item.upgrade_all(name, max_level, scroll)
-	.then(() => { Logging.info('Finished upgrading items'); set_message('Done') })
-	.catch((e) => { Logging.warn('Upgrading items failed', e.reason); set_message('Failed', 'orange') });
-}
-
-/**
  * Called when invited to join another character's party.
  *
  * @param {string} name Name of the character who sent the invitation.
@@ -290,8 +245,6 @@ async function main() {
 	Adventure.map_snippet('M', 'Code.set_target()');
 
 	// Map /commands
-	Command.register('compound', compound_items, ['item'], ['max_level:int', 'scroll']);
-	Command.register('upgrade', upgrade_items, ['item'], ['max_level:int', 'scroll']);
 	Command.register('stopbrain', stop, null, ['character']);
 	Command.register('startbrain', start, null, ['character']);
 	Command.register('startbots', start_bots);
