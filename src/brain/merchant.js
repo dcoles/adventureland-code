@@ -71,9 +71,9 @@ export class MerchantBrain extends Brain {
 
 		// States
 		this.states = {
-			Collect: {next: 'Upgrade'},
-			Upgrade: {next: 'Compound'},
-			Compound: {next: 'Exchange'},
+			Collect: {next: 'Compound'},
+			Compound: {next: 'Upgrade'},
+			Upgrade: {next: 'Exchange'},
 			Exchange: {next: 'Bank'},
 			Bank: {next: 'Vend'},
 			Vend: {next: 'Collect'},
