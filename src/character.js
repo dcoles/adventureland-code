@@ -7,8 +7,6 @@ import * as Movement from '/movement.js';
 import * as Util from '/util.js';
 import * as Skills from '/skills.js';
 
-const DEBUG_COLLISION = false;
-
 // Globals
 let g_character = null;
 

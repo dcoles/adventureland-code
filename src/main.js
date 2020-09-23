@@ -196,7 +196,7 @@ window.on_party_request = function(name) {
  */
 window.on_map_click = function(x, y) {
 	// This is almost always better than the default
-	movement.pathfind_move({x: x, y: y}, {max_distance: 1000, exact: true}).catch((e) => Logging.error('Move failed', e));
+	movement.pathfind_move({x: x, y: y}, {single_map: true, max_distance: 1000, exact: true}).catch((e) => Logging.error('Move failed', e));
 	return true;
 }
 

@@ -29,6 +29,7 @@ export class PathfindError extends Error {
  * @property {number} [options.max_distance] Maximum distance to search (default: infinite).
  * @property {boolean} [options.exact=false] If true, must exactly reach target.
  * @property {number} [options.range=DEFAULT_RANGE] How close do we need to get to the target?
+ * @property {boolean} [options.single_map=false] If true, don't search outside the current map.
  * @property {boolean} [options.simplify=true] If true, attempt to simplify the path.
  */
 
@@ -42,10 +43,15 @@ export class PathfindError extends Error {
  */
 export async function pathfind(dest, options) {
 	options = options || {};
+	const single_map = 'single_map' in options ? options.single_map : false;
 	const simplify = 'simplify' in options ? options.simplify : true;
 	const map = dest.map || character.map;
 
-	const origin = [character.real_x, character.real_y, character.map];
+	if (single_map && map !== character.map) {
+		throw new PathfindError('Destination outside current map!');
+	}
+
+	const origin = [character.x, character.y, character.map];
 	const origin_key = position_to_string(origin);
 	const target = [dest.x, dest.y, map];
 	const target_key = position_to_string(target);
@@ -92,7 +98,7 @@ export async function pathfind(dest, options) {
 		DEBUG_PATHFIND && current[2] === character.map && Draw.add_list('debug_pathfind', draw_circle(current[0], current[1], 2, null, 0x00ff00));  // Searched
 
 		const step = dist < SMALL_STEP_RANGE ? STEP / 2 : STEP;
-		for (let next of neighbours(current, step)) {
+		for (let next of neighbours(current, step, options.single_map)) {
 			const next_key = position_to_string(next);
 			let next_dist = dist + (next[2] === current[2] ? Util.distance(current[0], current[1], next[0], next[1]) : 0);
 			if (options.max_distance && next_dist > options.max_distance) {
@@ -163,9 +169,10 @@ function heuristic(here, there) {
  *
  * @param {[number, number, string]} position (`x`, `y`, `map`) position.
  * @param {number} step Step size.
- * @returns {Array<[number, number, string]>} Neighbouring positions.
+ * @param {boolean} [single_map] If true, don't search outside the current map.
+ * @returns {Array<Waypoint>} Neighbouring positions.
  */
-function neighbours(position, step) {
+function neighbours(position, step, single_map) {
 	const pq_x = Util.quantize(position[0], step);
 	const pq_y = Util.quantize(position[1], step);
 	const map = position[2];
@@ -183,6 +190,11 @@ function neighbours(position, step) {
 				points.push(new_position);
 			}
 		}
+	}
+
+	if (single_map) {
+		// No need to search beyond the current map
+		return points;
 	}
 
 	// Doors

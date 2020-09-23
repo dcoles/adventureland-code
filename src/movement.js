@@ -132,7 +132,7 @@ class Movement {
 		if (!targeted) {
 			if (entity_distance > target_distance) {
 				// Need to get in range first
-				await this.pathfind_move({x: entity_pos[0], y: entity_pos[1]}, null, {max_distance: entity_distance - target_distance});
+				await this.pathfind_move({x: entity_pos[0], y: entity_pos[1]}, {single_map: true}, {max_distance: entity_distance - target_distance});
 			}
 
 			if (entity.target) {
