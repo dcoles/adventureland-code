@@ -23,6 +23,7 @@ const LOCATIONS = {
 
 const DEBUG_MOVEMENT = false;
 const DEBUG_COLLISION = false;
+const TILE_SIZE = 8;
 const MIN_MOVE_DIST = 0.5 * character.speed;
 const MAX_MOVE_DIST = character.speed;
 const MAX_AVOIDANCE = 100;  // Maximum amount of avoidance to attempt
@@ -203,17 +204,6 @@ class Movement {
 					return {reason: 'stopped'};
 				}
 
-				// Calculate movement vector
-				const current_pos = [window.character.real_x, window.character.real_y];
-				const segment_distance = Util.vector_distance(current_pos, p);
-
-				// Must move at least 1 pixel length
-				if (segment_distance < 1) {
-					// Stop any current motion
-					await window.move(current_pos[0], current_pos[1]);
-					continue;
-				}
-
 				if (p[2] !== character.map) {
 					// Change maps
 					for (let door of G.maps[character.map].doors) {
@@ -230,12 +220,27 @@ class Movement {
 					}
 				}
 
-				const dist = options.max_distance ? Math.min(segment_distance, options.max_distance - distance_traveled) : segment_distance;
-				await this.move(p[0], p[1], {max_distance: dist, avoid: options.avoid});
+				// Move to waypoint
+				do {
+					let current_pos = [character.real_x, character.real_y];
+					const segment_distance = Util.vector_distance(current_pos, p);
 
-				// Actual distance traveled
-				const new_pos = [window.character.real_x, window.character.real_y];
-				distance_traveled += Util.distance(current_pos[0], current_pos[1], new_pos[0], new_pos[1]);
+					// How far should we move?
+					const dist = options.max_distance ? Math.min(segment_distance, options.max_distance - distance_traveled) : segment_distance;
+					await this.move(p[0], p[1], {max_distance: dist, avoid: options.avoid});
+
+					// Record distance traveled
+					distance_traveled += Util.distance(current_pos[0], current_pos[1], character.real_x, character.real_y);
+					current_pos = [character.real_x, character.real_y];
+
+					if (Util.vector_distance(current_pos, p) < TILE_SIZE || options.max_distance - distance_traveled < TILE_SIZE) {
+						// Reached waypoint
+						break;
+					}
+
+					// Try again
+					await Util.sleep(Util.IDLE_MS);
+				} while (!task.is_cancelled())
 			}
 		});
 
