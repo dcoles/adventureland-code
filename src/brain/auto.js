@@ -2,6 +2,7 @@
 // @ts-check
 import * as Adventure from '/adventure.js';
 import * as Character from '/character.js';
+import * as Color from '/color.js';
 import * as Entity from '/entity.js';
 import * as Item from '/item.js';
 import * as Logging from '/logging.js';
@@ -146,7 +147,7 @@ export class AutoBrain extends Brain {
 			}
 
 			Logging.info(`Home: ${Entity.location_to_string(this.home)}`);
-			window.draw_circle(this.home.x, this.home.y, this.home.range, null, 0xffff00);
+			window.draw_circle(this.home.x, this.home.y, this.home.range, null, Color.YELLOW);
 		}
 
 		// Focus on attacker when hit

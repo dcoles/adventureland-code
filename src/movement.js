@@ -1,6 +1,7 @@
 // Movement functions
 // @ts-check
 import * as Adventure from '/adventure.js';
+import * as Color from '/color.js';
 import * as Draw from '/draw.js';
 import * as Entity from '/entity.js';
 import * as Logging from '/logging.js';
@@ -150,7 +151,7 @@ class Movement {
 		const entity_theta = targeted && entity.moving ? Math.atan2(entity.vy, entity.vx) : char_theta;
 
 		DEBUG_MOVEMENT && Draw.clear_list('debug_kite');
-		DEBUG_MOVEMENT && Draw.add_list('debug_kite', window.draw_circle(entity_pos[0], entity_pos[1], target_distance, null, 0x00ff00));
+		DEBUG_MOVEMENT && Draw.add_list('debug_kite', window.draw_circle(entity_pos[0], entity_pos[1], target_distance, null, Color.GREEN));
 
 		// Circle clockwise
 		let new_pos;
@@ -169,10 +170,10 @@ class Movement {
 		// How long is the entity going to keep it's current course?
 		const remaining_move_time = targeted && entity.moving ? Util.vector_distance(entity_pos, entity_going) / entity.speed
 		: entity_distance / character.speed * (character.speed / entity.speed);
-		DEBUG_MOVEMENT && Draw.add_list('debug_kite', window.draw_line(entity_pos[0], entity_pos[1], entity_going[0], entity_going[1], null, 0xff0000));
+		DEBUG_MOVEMENT && Draw.add_list('debug_kite', window.draw_line(entity_pos[0], entity_pos[1], entity_going[0], entity_going[1], null, Color.RED));
 
-		DEBUG_MOVEMENT && Draw.add_list('debug_kite', window.draw_line(entity_pos[0], entity_pos[1], char_pos[0], char_pos[1], null, 0xff0000));
-		DEBUG_MOVEMENT && Draw.add_list('debug_kite', window.draw_line(entity_pos[0], entity_pos[1], new_pos[0], new_pos[1], null, 0x0000ff));
+		DEBUG_MOVEMENT && Draw.add_list('debug_kite', window.draw_line(entity_pos[0], entity_pos[1], char_pos[0], char_pos[1], null, Color.RED));
+		DEBUG_MOVEMENT && Draw.add_list('debug_kite', window.draw_line(entity_pos[0], entity_pos[1], new_pos[0], new_pos[1], null, Color.BLUE));
 		const max_distance = Math.min(Math.max(character.speed * remaining_move_time, MIN_MOVE_DIST), MAX_MOVE_DIST);
 		await this.move(new_pos[0], new_pos[1], {max_distance: max_distance});
 	}
@@ -272,7 +273,7 @@ class Movement {
 		const dist = Util.distance(current_pos[0], current_pos[1], dest[0], dest[1]);
 
 		DEBUG_MOVEMENT && Draw.clear_list('debug_move');
-		DEBUG_MOVEMENT && Draw.add_list('debug_move', draw_circle(dest[0], dest[1], 3, null, 0x0000ff));
+		DEBUG_MOVEMENT && Draw.add_list('debug_move', draw_circle(dest[0], dest[1], 3, null, Color.BLUE));
 
 		if (target.moving) {
 			// First order approximation
@@ -393,11 +394,11 @@ function collision_avoidance(dest) {
 			const v = [r * Math.cos(theta), r * Math.sin(theta)];
 
 			const new_dest = Util.vector_add(dest, v);
-			DEBUG_COLLISION && Draw.add_list('debug_collision', window.draw_line(dest[0], dest[1], new_dest[0], new_dest[1], null, 0x0000ff));
+			DEBUG_COLLISION && Draw.add_list('debug_collision', window.draw_line(dest[0], dest[1], new_dest[0], new_dest[1], null, Color.BLUE));
 
 			if (!Adventure.can_move_to(new_dest[0], new_dest[1])) {
 				// Unreachable position.
-				DEBUG_COLLISION && Draw.add_list('debug_collision', window.draw_circle(new_dest[0], new_dest[1], 2, null, 0xff0000));
+				DEBUG_COLLISION && Draw.add_list('debug_collision', window.draw_circle(new_dest[0], new_dest[1], 2, null, Color.RED));
 				continue;
 			}
 
@@ -415,7 +416,7 @@ function collision_avoidance(dest) {
 				continue;
 			}
 
-			DEBUG_COLLISION && Draw.add_list('debug_collision', window.draw_circle(new_dest[0], new_dest[1], 4, null, 0x00ff00));
+			DEBUG_COLLISION && Draw.add_list('debug_collision', window.draw_circle(new_dest[0], new_dest[1], 4, null, Color.GREEN));
 			return new_dest;
 		}
 	}
@@ -441,31 +442,10 @@ function will_collide_moving_to(dest) {
 	// Check if this motion collides with any of the entities
 	for (let entity of Object.values(Adventure.get_entities())) {
 		if (Entity.will_collide(entity, char, t_max)) {
-			DEBUG_COLLISION && Draw.add_list('debug_collision', window.draw_circle(entity.x, entity.y, entity.width / 2, null, 0xff0000));
+			DEBUG_COLLISION && Draw.add_list('debug_collision', window.draw_circle(entity.x, entity.y, entity.width / 2, null, Color.RED));
 			return true;
 		}
 	}
 
 	return false;
-}
-
-/** Draw all boundary lines on this map. */
-export function draw_lines() {
-	for (let y_line of G.geometry[character.map].y_lines) {
-		const x1 = y_line[1];
-		const y1 = y_line[0];
-		const x2 = y_line[2];
-		const y2 = y_line[0];
-
-		draw_line(x1, y1, x2, y2, null, 0xff0000);
-	}
-
-	for (let x_line of G.geometry[character.map].x_lines) {
-		const x1 = x_line[0];
-		const y1 = x_line[1];
-		const x2 = x_line[0];
-		const y2 = x_line[2];
-
-		draw_line(x1, y1, x2, y2, null, 0xff0000);
-	}
 }
