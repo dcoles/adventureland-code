@@ -11,7 +11,7 @@
 
 // URLs to fetch code from
 // Port 5500 is the default port of the VSCode Live Server extension
-const URL = 'http://127.0.0.1:5500/mainn.js';
+const URL = 'http://127.0.0.1:5500/main.js';
 
 // Create a new `<script>` tag
 const script = document.createElement('script');
