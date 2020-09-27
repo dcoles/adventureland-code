@@ -283,7 +283,7 @@ class Movement {
 
 		if (options.max_distance && dist > options.max_distance) {
 			// Respect `max_distance`
-			const v = Util.vector_resize(Util.vector_difference(current_pos, dest), options.max_distance);
+			const v = Util.vector_resize(Util.vector_difference(dest, current_pos), options.max_distance);
 			dest = Util.vector_add(current_pos, v);
 		}
 
@@ -434,7 +434,7 @@ function collision_avoidance(dest) {
 function will_collide_moving_to(dest) {
 	// Since we're not yet moving, work out our intended motion
 	const current_pos = Movement.current_position();
-	const d = Util.vector_difference(current_pos, dest);
+	const d = Util.vector_difference(dest, current_pos);
 	const v = Util.vector_resize(d, window.character.speed);
 	const t_max = Util.vector_length(d) / window.character.speed;
 	const char = {x: current_pos[0], y: current_pos[1], vx: v[0], vy: v[1]};

@@ -148,7 +148,7 @@ export function vector_add(v1, v2) {
  * @param {number[]} v2 Second vector.
  */
 export function vector_difference(v1, v2) {
-	return v1.map((x, i) => v2[i] - x);
+	return v1.map((x, i) => x - v2[i]);
 }
 
 /**
