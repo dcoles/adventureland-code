@@ -225,6 +225,31 @@ export function random_choice(choices) {
 }
 
 /**
+ * Binary search a sorted array.
+ *
+ * @param {number[]} array Sorted array.
+ * @param {number} n Number to search for.
+ * @param {Function} [index] Optional indexing function `function (i, array)`.
+ * @returns {number} Index where value `n` should be located.
+ */
+export function bsearch(array, n, index) {
+	let l = 0;
+	let r = array.length - 1;
+
+	while (l <= r) {
+		const mid = Math.floor((l + r) / 2);
+		const value = index ? index(mid, array) : array[mid];
+		if (value < n) {
+			l = mid + 1;
+		} else {
+			r = mid - 1;
+		}
+	}
+
+	return l;
+}
+
+/**
  * Split a string on whitespace.
  *
  * @param {string} str String.

@@ -49,7 +49,7 @@ function draw_grid() {
 			if (can_move_to(there[0], there[1])) {
 				draw_circle(there[0], there[1], 3, null, Color.BLUE);
 			} else {
-				draw_circle(there[0], there[1], 1, null, Color.YELLOW);
+				draw_circle(there[0], there[1], 1, null, Color.RED);
 			}
 		}
 	}

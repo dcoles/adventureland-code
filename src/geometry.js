@@ -31,16 +31,12 @@ export function can_move(here, there) {
 	const v = Util.vector_difference(there.slice(0, 2), here.slice(0, 2));
 
 	// Horizontal lines
-	for (let y_line of geometry.y_lines) {
+	const y_start = Util.bsearch(geometry.y_lines, min[1], (i, array) => array[i][0]);
+	for (let i = y_start; i < geometry.y_lines.length && geometry.y_lines[i][0] <= max[1]; i++) {
+		const y_line = geometry.y_lines[i];
 		const y = y_line[0];
 		const x1 = y_line[1];
 		const x2 = y_line[2];
-
-		if (y < min[1]) {
-			continue;
-		} else if (y > max[1]) {
-			break;
-		}
 
 		// Do the bounding boxes collide?
 		if (collide([x1, y], [x2, y], here_min, here_max, v)) {
@@ -49,16 +45,12 @@ export function can_move(here, there) {
 	}
 
 	// Vertical lines
-	for (let x_line of geometry.x_lines) {
+	const x_start = Util.bsearch(geometry.x_lines, min[0], (i, array) => array[i][0]);
+	for (let i = x_start; i < geometry.x_lines.length && geometry.x_lines[i][0] <= max[0]; i++) {
+		const x_line = geometry.x_lines[i];
 		const x = x_line[0];
 		const y1 = x_line[1];
 		const y2 = x_line[2];
-
-		if (x < min[0]) {
-			continue;
-		} else if (x > max[0]) {
-			continue;
-		}
 
 		// Do the bounding boxes collide?
 		if (collide([x, y1], [x, y2], here_min, here_max, v)) {
