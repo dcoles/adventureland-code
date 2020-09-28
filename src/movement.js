@@ -9,8 +9,6 @@ import * as Pathfind from '/pathfind.js';
 import * as Task from '/task.js';
 import * as Util from '/util.js';
 
-export { PathfindError } from '/pathfind.js';
-
 const LOCATIONS = {
 	'town': {map: 'main', x: 0, y: 0},
 	'upgrade': {map: 'main', x: -204, y: -129},
@@ -33,7 +31,9 @@ const KITE_ANGLE = Math.PI / 3;  // 60° clockwise
 // Globals
 let g_movement = null;
 
-/** Error thrown when movement actions fail. */
+/**
+ * Error thrown when movement actions fail.
+ */
 export class MovementError extends Error {
 	constructor(message) {
 		super(message);
@@ -51,6 +51,7 @@ export class MovementError extends Error {
 class Movement {
 	constructor() {
 		this.task = null;
+		this.pathfind_worker = new Pathfind.PathfindWorker();
 	}
 
 	/**
@@ -106,9 +107,9 @@ class Movement {
 		if (Util.is_string(dest.y)) dest.y = Number.parseInt(dest.y);
 
 		DEBUG_MOVEMENT && Draw.clear_list('debug_pathfind');
-		const path = await Pathfind.pathfind(dest, pathfind_options);
-		DEBUG_MOVEMENT && (dest.map || character.map) === character.map && Draw.add_list('debug_pathfind', draw_circle(dest.x, dest.y, 4, null, 0x0000ff));
-		DEBUG_MOVEMENT && path.forEach(([x, y, map]) => map === character.map && Draw.add_list('debug_pathfind', draw_circle(x, y, 2, null, 0xff0000)));
+		const path = await this.pathfind_worker.pathfind(dest, pathfind_options);
+		DEBUG_MOVEMENT && (dest.map || character.map) === character.map && Draw.add_list('debug_pathfind', draw_circle(dest.x, dest.y, 4, null, Color.BLUE));
+		DEBUG_MOVEMENT && path.forEach(([x, y, map]) => map === character.map && Draw.add_list('debug_pathfind', draw_circle(x, y, 2, null, Color.RED)));
 
 		await this.follow_path(path, movement_options);
 		DEBUG_MOVEMENT && Draw.clear_list('debug_pathfind');
@@ -181,7 +182,7 @@ class Movement {
 	/**
 	 * Follow a path of positions.
 	 *
-	 * @param {Array<[number, number, string]>} path Path to follow (`x`, `y`, `map`).
+	 * @param {Pathfind.Waypoint[]} path Path to follow (`x`, `y`, `map`).
 	 * @param {MovementOptions} [options] Path movement options.
 	 * @returns {Promise} Resolves when this movement completes.
 	 */
@@ -207,18 +208,7 @@ class Movement {
 
 				if (p[2] !== character.map) {
 					// Change maps
-					for (let door of G.maps[character.map].doors) {
-						if (!window.is_door_close(character.map, door, character.real_x, character.real_y)
-						|| !window.can_use_door(character.map, door, character.real_x, character.real_y)) {
-							continue;
-						}
-						await transport(door[4], door[5]);
-						break;
-					}
-
-					if (character.map !== p[2]) {
-						throw new MovementError('No door between maps!');
-					}
+					await transport(p[2], p[3]);
 				}
 
 				// Move to waypoint

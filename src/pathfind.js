@@ -3,13 +3,16 @@
 // See https://www.redblobgames.com/pathfinding/a-star/introduction.html for details.
 
 // @ts-check
-import * as Draw from '/draw.js';
+import * as Geometry from '/geometry.js';
 import * as Util from '/util.js';
+import * as Logging from '/logging.js';
 
-const DEBUG_PATHFIND = false;  // Enable debugging
 const SMALL_STEP_RANGE = 64;  // Start with small steps for this much distance
 const STEP = 16;  // Size of a tile
 const DEFAULT_RANGE = 32;  // When are we "close enough" to the target
+const DOOR_RANGE = 40;  // How close do we have to be to a door to use it?
+const DOOR_CHAR_WIDTH = 26;
+const DOOR_CHAR_HEIGHT = 35;
 const MAX_SEGMENT = 128;  // Maximum length of a simplified path segment
 const OFFMAP_ESTIMATE = 1_000;  // Estimate of distance outside this map
 
@@ -33,15 +36,119 @@ export class PathfindError extends Error {
  * @property {boolean} [options.simplify=true] If true, attempt to simplify the path.
  */
 
+ /**
+ * A single point along a path.
+ *
+ * Consists of a (`x`, `y`, `map`, `spawn`) tuple.
+ * Spawn is optional and only provided for map changes.
+ *
+ * @typedef {Array<number, number, string, number?>} Waypoint
+ */
+
+/**
+ * Dedicated WebWorker for pathfinding.
+ */
+export class PathfindWorker {
+	constructor() {
+		// Have to start workers from adventure.land origin
+		const url = new URL('/pathfind_worker.js', import.meta.url);
+		const blob = new Blob(
+			[`import { main } from ${JSON.stringify(url)}; main();`],
+			{type: 'application/javascript'});
+
+		this._jobs = new Map();  // Map of Job IDs → `[resolve, reject]` callbacks
+		this._worker = new Worker(window.URL.createObjectURL(blob), {type: 'module', name: 'pathfinder'});
+		this._worker.onerror = (e) => Logging.error('Error in pathfind worker', e);
+		this._worker.onmessage = (message) => this._on_message(message);
+
+		// Initialize global context
+		this._update_context({G: {geometry: G.geometry, maps: G.maps, npcs: G.npcs}});
+	}
+
+	/**
+	 * Pathfind.
+	 *
+	 * @param {MapLocation} dest Destination.
+	 * @param {PathfindOptions} options Pathfinding options.
+	 * @returns {Promise<Waypoint[]>} Promise which resolves to array of waypoints.
+	 */
+	async pathfind(dest, options) {
+		return new Promise((resolve, reject) => {
+			const id = Util.random_id();
+			this._jobs.set(id, [resolve, reject]);
+			this._update_context({
+				character: {
+					x: character.x,
+					y: character.y,
+					map: character.map,
+					base: character.base,
+				}
+			});
+			this._worker.postMessage(['pathfind', id, [dest, options]]);
+		});
+	}
+
+	/**
+	 * Update worker global context.
+	 *
+	 * @param {object} context Context values to update.
+	 */
+	_update_context(context) {
+		this._worker.postMessage(['update_context', null, context]);
+	}
+
+	/**
+	 * Worker message.
+	 *
+	 * @param {MessageEvent} message
+	 */
+	_on_message(message) {
+		const [type, id, data] = message.data;
+
+		switch (type) {
+			case 'resolve':
+				this._resolve(id, data);
+				break;
+			case 'reject':
+				this._reject(id, data);
+				break;
+			default:
+				Logging.error('Unknown pathfind message', data);
+		}
+	}
+
+	/**
+	 * Resolve a job.
+	 *
+	 * @param {string} id Job ID.
+	 * @param {*} data Associated data.
+	 */
+	_resolve(id, data) {
+		this._jobs.get(id)[0](data);
+		this._jobs.delete(id);
+	}
+
+	/**
+	 * Reject a job.
+	 *
+	 * @param {string} id Job ID.
+	 * @param {*} data Associated data.
+	 */
+	_reject(id, data) {
+		this._jobs.get(id)[1](data);
+		this._jobs.delete(id);
+	}
+}
+
 /**
  * Find path to location.
  *
  * @param {MapLocation} dest Location to find path to.
  * @param {PathfindOptions} [options] Options for controlling pathfinding behaviour.
- * @returns {Promise<Array<[number, number, string]>>} Path found.
+ * @returns {Waypoint[]} Path found.
  * @throws {PathfindError} If path could not be found.
  */
-export async function pathfind(dest, options) {
+export function pathfind(dest, options) {
 	options = options || {};
 	const single_map = 'single_map' in options ? options.single_map : false;
 	const simplify = 'simplify' in options ? options.simplify : true;
@@ -71,7 +178,6 @@ export async function pathfind(dest, options) {
 
 	// Find a path using A*
 	let found = null;
-	let t_snooze = Date.now();
 	while (edge.length > 0) {
 		const [_, current] = edge.shift();
 		const key = position_to_string(current);
@@ -79,7 +185,7 @@ export async function pathfind(dest, options) {
 
 		if (options.exact) {
 			// Try to get to the exact position
-			if (can_move(current, target)) {
+			if (Geometry.can_move(current, target)) {
 				// Exact path found!
 				came_from[target_key] = current;
 				dist_so_far[target_key] = dist + Util.distance(current[0], current[1], target[0], target[1]);
@@ -94,8 +200,6 @@ export async function pathfind(dest, options) {
 				break;
 			}
 		}
-
-		DEBUG_PATHFIND && current[2] === character.map && Draw.add_list('debug_pathfind', draw_circle(current[0], current[1], 2, null, 0x00ff00));  // Searched
 
 		const step = dist < SMALL_STEP_RANGE ? STEP / 2 : STEP;
 		for (let next of neighbours(current, step, options.single_map)) {
@@ -118,14 +222,6 @@ export async function pathfind(dest, options) {
 
 		// Order by distance
 		edge.sort(([c1, _p1], [c2, _p2]) => c1 - c2);
-
-		// Don't completely hog the main thread
-		// FIXME: This would be much better on a webworker
-		const now = Date.now();
-		if (Date.now() - t_snooze > 10) {
-			await Util.sleep(0);
-			t_snooze = now;
-		}
 	}
 
 	if (!found) {
@@ -139,7 +235,6 @@ export async function pathfind(dest, options) {
 		found = came_from[position_to_string(found)];
 	} while (found);
 
-	DEBUG_PATHFIND && path.forEach(([x, y, map]) => map === character.map && Draw.add_list('debug_move', draw_circle(x, y, 2, null, 0xffff00)));  // Path
 	return simplify ? simplify_path(path) : path;
 }
 
@@ -186,7 +281,7 @@ function neighbours(position, step, single_map) {
 			}
 
 			const new_position = [pq_x + i, pq_y + j, map];
-			if (can_move(position, new_position)) {
+			if (Geometry.can_move(position, new_position)) {
 				points.push(new_position);
 			}
 		}
@@ -199,45 +294,94 @@ function neighbours(position, step, single_map) {
 
 	// Doors
 	for (let door of G.maps[map].doors) {
-		if (!window.is_door_close(map, door, position[0], position[1]) || !window.can_use_door(map, door, position[0], position[1])) {
+		if (!is_door_close(map, door, position[0], position[1]) || !can_use_door(map, door, position[0], position[1])) {
 			continue;
 		}
 		const new_map = door[4];
 		const spawn = door[5] || 0;
 		const new_x = G.maps[new_map].spawns[spawn][0];
 		const new_y = G.maps[new_map].spawns[spawn][1];
-		points.push([new_x, new_y, new_map]);
+		points.push([new_x, new_y, new_map, spawn]);
+	}
+
+	// Transporter
+	const transporter = G.maps[map].npcs.find((npc) => npc.id === 'transporter');
+	if (transporter && Util.distance(position[0], position[1], transporter.position[0], transporter.position[1]) < 75) {
+		for (let [place, spawn] of Object.entries(G.npcs.transporter.places)) {
+			const new_x = G.maps[place].spawns[spawn][0];
+			const new_y = G.maps[place].spawns[spawn][1];
+			points.push([new_x, new_y, place, spawn]);
+		}
 	}
 
 	return points;
 }
 
 /**
- * Can our character move from `here` to `there`?
+ * Are we close to this door?
  *
- * @param {[number, number, string]} here Starting position (`x1`, `y1`, `map`).
- * @param {[number, number, string]} there Ending position (`x2`, `y2`, `map`).
- * @returns {boolean} True if can move unobstructed, otherwise false.
+ * @param {string} map Current map.
+ * @param {Array} door Door tuple.
+ * @param {number} x Current x-coordinate.
+ * @param {number} y Current y-cooordinate.
  */
-function can_move(here, there) {
-	if (here[2] !== there[2]) {
-		// Can't move between maps
+function is_door_close(map, door, x, y) {
+	const p = G.maps[map].spawns[door[6]];
+
+	// Are we close to the spawn point?
+	if (Util.distance(x, y, p[0], p[1]) < DOOR_RANGE) {
+		return true;
+	}
+
+	// Are we close to the door region?
+	if (Geometry.box_distance(
+		{x: x, y: y, width: DOOR_CHAR_WIDTH, height: DOOR_CHAR_HEIGHT},
+		{x: door[0], y: door[1], width: door[2], height: door[3]}) < DOOR_RANGE) {
+		return true;
+	}
+
+	return false;
+}
+
+/**
+ * Can we use this door?
+ *
+ * @param {string} map Current map.
+ * @param {Array} door Door tuple.
+ * @param {number} x Current x-coordinate.
+ * @param {number} y Current y-cooordinate.
+ */
+function can_use_door(map, door, x, y) {
+	const p = G.maps[map].spawns[door[6]];
+
+	// TODO: Check if we have the right key
+	if (door[7]) {
 		return false;
 	}
 
-	return window.can_move({
-		map: here[2],
-		x: here[0], y: here[1],
-		going_x: there[0], going_y: there[1],
-		base: character.base,
-	});
+	// Can we move directly to the spawn point?
+	if (Util.distance(x, y, p[0], p[1]) < DOOR_RANGE
+		&& Geometry.can_move([x, y, map], [p[0], p[1], map])) {
+		return true;
+	}
+
+	// Can we move to the door region?
+	if (Geometry.box_distance(
+		{x: x, y: y, width: DOOR_CHAR_WIDTH, height: DOOR_CHAR_HEIGHT},
+		{x: door[0], y: door[1], width: door[2], height: door[3]}) < DOOR_RANGE) {
+
+		// TODO: Can we actually move there?
+		return true;
+	}
+
+	return false;
 }
 
 /**
  * Simplify path by removing unnessisary segments.
  *
- * @param {Array<[number, number, string]>} path Path to simplify.
- * @return {Array<[number, number, string]>}
+ * @param {Array<Waypoint>} path Path to simplify.
+ * @return {Array<Waypoint>}
  */
 function simplify_path(path) {
 	const new_path = [];
@@ -247,7 +391,9 @@ function simplify_path(path) {
 		new_path.push(path[i]);
 
 		let j = i + 2;  // We know i + 1 is valid, so start at i + 2
-		while (j < path.length && Util.distance(path[i][0], path[i][1], path[j][0], path[j][1]) < MAX_SEGMENT && can_move(path[i], path[j])) {
+		while (j < path.length
+			&& Util.distance(path[i][0], path[i][1], path[j][0], path[j][1]) < MAX_SEGMENT
+			&& Geometry.can_move(path[i], path[j])) {
 			j++;
 		}
 		i = j - 1;  // last valid position

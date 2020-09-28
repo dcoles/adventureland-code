@@ -70,6 +70,7 @@ class Character {
 	get target() { return character.target; }
 	get in() { return character.in; }
 	get map() { return character.map; }
+	get base() { return character.base; }
 	get x() { return character.x; }
 	get y() { return character.y; }
 	get real_x() { return character.real_x; }

@@ -100,3 +100,30 @@ export function collide(a_min, a_max, b_min, b_max, v) {
 	const u1_min = Math.min(...u1);
 	return u0_max <= u1_min && u0_max <= 1 && u1_min >= 0;
 }
+
+/**
+ * @typedef Box
+ * @property x x-coordinate of center.
+ * @property y y-coordinate of center.
+ * @property width Width in pixels.
+ * @property height Height in pixels.
+ */
+
+/**
+ * Calculate the distance between two boxes.
+ *
+ * @param {Box} a First box.
+ * @param {Box} b Second box.
+ */
+export function box_distance(a, b) {
+	// Bounding box of the two boxes
+	const left = Math.min(a.x - a.width / 2, b.x - b.width / 2);
+	const top = Math.min(a.y - a.height / 2, b.y - b.height / 2);
+	const right = Math.max(a.x + a.width / 2, b.x + b.width / 2);
+	const bottom = Math.max(a.y + a.height / 2, b.y + b.height / 2);
+
+	// Distance between A and B
+	const dx = Math.max(0, (right - left) - a.width - b.width);
+	const dy = Math.max(0, (bottom - top) - a.height - b.height);
+	return Util.vector_length([dx, dy]);
+}

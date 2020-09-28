@@ -65,7 +65,7 @@ export function debug(text, obj) {
  */
 export function log(level, text, obj) {
 	const color = LOG_COLORS[level] || '';
-	const name = window.character.bot ? window.character.name : 'main';
+	const name = self.character && self.character.bot ? self.character.name : 'main';
 	const prefix = `[${level.toUpperCase()}] <${name}>`;
 
 	if (obj) {
