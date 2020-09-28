@@ -215,13 +215,13 @@ export function pathfind(dest, options) {
 				continue;
 			}
 
-			edge.push([next_dist + heuristic(next, target), next]);
+			const priority = next_dist + heuristic(next, target);
+			const pos = Util.bsearch(edge, priority, (i, array) => array[i][0]);
+			edge.splice(pos, null, [priority, next]);
+
 			came_from[next_key] = current;
 			dist_so_far[next_key] = next_dist;
 		}
-
-		// Order by distance
-		edge.sort(([c1, _p1], [c2, _p2]) => c1 - c2);
 	}
 
 	if (!found) {

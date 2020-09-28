@@ -227,7 +227,7 @@ export function random_choice(choices) {
 /**
  * Binary search a sorted array.
  *
- * @param {number[]} array Sorted array.
+ * @param {*[]} array Sorted array.
  * @param {number} n Number to search for.
  * @param {Function} [index] Optional indexing function `function (i, array)`.
  * @returns {number} Index where value `n` should be located.
