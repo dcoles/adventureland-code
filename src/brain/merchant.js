@@ -260,7 +260,7 @@ export class MerchantBrain extends Brain {
 			.filter(([id, npc]) => npc.quest && find_npc(id))
 			.map(([id, npc]) => [npc.quest, id]));
 
-		for (let [slot_num, item] of exchangeable) {
+		for (let [slot, item] of exchangeable) {
 			const item_details = G.items[item.name];
 			const npc_id = quests.get(item_details.quest) || 'exchange';
 
@@ -273,13 +273,13 @@ export class MerchantBrain extends Brain {
 				continue;
 			}
 
-			while (character.items[slot_num]) {
+			while (character.items[slot] && character.items[slot].name == item.name && character.items[slot].q >= item_details.e) {
 				// Wait until exchanging the previous item completes
 				if (window.character.q.exchange) {
 					await this._sleep(window.character.q.exchange.ms);
 				}
 
-				exchange(slot_num);
+				exchange(slot);
 				await this._idle();
 			}
 		}
