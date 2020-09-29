@@ -4,8 +4,8 @@ import * as Color from '/color.js';
 import * as Geometry from '/geometry.js';
 import * as Util from '/util.js';
 
-const S = 8;
-const WIDTH = 20;
+const S = 16;
+const WIDTH = 10;
 
 /**
  * Try to move to position, if possible.
@@ -14,9 +14,15 @@ const WIDTH = 20;
  * @param {number} y y map-coordinate.
  */
 window.on_map_click = function(x, y) {
+	// Snap to grid
+	x = Util.quantize(x, S);
+	y = Util.quantize(y, S);
+
+	console.log('Trying to move to', x, y);
 	if (Geometry.can_move([character.x, character.y, character.map], [x, y, character.map])) {
 		move(x, y).then(_ => {
 			clear_drawings();
+			draw_lines();
 			draw_grid();
 		});
 	}
