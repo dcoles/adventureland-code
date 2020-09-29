@@ -78,19 +78,29 @@ export function collide(a_min, a_max, b_min, b_max, v) {
 	let u0 = [-Infinity, -Infinity];
 	let u1 = [-Infinity, -Infinity];
 	for (let i = 0; i < 2; i++) {
+		if (v[i] === 0) {
+			if (a_max[i] >= b_min[i] && a_min[i] <= b_max[i]) {
+				// Overlapping
+				u1[i] = Infinity;
+			} else {
+				u0[i] = Infinity;
+			}
+			continue;
+		}
+
 		if (a_max[i] < b_min[i] && v[i] < 0) {
 			// A left/above of B and converging
 			u0[i] = (a_max[i] - b_min[i]) / v[i];
-		} else if (a_min[i] > b_max[i] && v[i] >= 0) {
+		} else if (a_min[i] > b_max[i] && v[i] > 0) {
 			// A right/below of B and converging
 			u0[i] = (a_min[i] - b_max[i]) / v[i];
 		}
 
 		if (a_min[i] < b_max[i] && v[i] < 0) {
-			// A left/above of B and converging
+			// A left/above of B and diverging
 			u1[i] = (a_min[i] - b_max[i]) / v[i];
-		} else if (a_max[i] > b_min[i] && v[i] >= 0) {
-			// A right/below of B and converging
+		} else if (a_max[i] > b_min[i] && v[i] > 0) {
+			// A right/below of B and diverging
 			u1[i] = (a_max[i] - b_min[i]) / v[i];
 		}
 	}
