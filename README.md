@@ -16,6 +16,13 @@ Development is done primarily using [Visual Studio Code](https://code.visualstud
 It is recommended to use the [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer)
 extention to allow loading code directly from the editor.
 
+Alternatively a small [Python webserver is available](python/code_server.py):
+
+```bash
+pip install -r requirements.txt
+python3 code_server.py
+```
+
 ## Remote-Code Loader
 
 A simple remote code loader is provided in [docs/examples/simple_loader.js](docs/examples/simple_loader.js).
