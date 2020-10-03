@@ -1,6 +1,7 @@
 // Brain for a merchant
 // @ts-check
 import * as Adventure from '/adventure.js';
+import * as Bank from '/bank.js';
 import * as Character from '/character.js';
 import * as Entity from '/entity.js';
 import * as Item from '/item.js';
@@ -304,15 +305,17 @@ export class MerchantBrain extends Brain {
 
 		// Store items
 		for (let [i, item] of Item.indexed_items()) {
-			const bank = bank_sort(item);
+			const bank = pick_account(item);
 			if (!bank) {
 				continue;
 			}
 			window.bank_store(i, bank);
 		}
 
-		// Wait for the game to catch up...
-		await Util.sleep(250);
+		// Sort items
+		for (let name of Bank.accounts().keys()) {
+			await Bank.sort_account(name);
+		}
 
 		// Do stocktake
 		this._stocktake();
@@ -497,7 +500,7 @@ async function upgrade_all(name, max_level, scroll) {
  * @param {Item} item Item ID (e.g. "hpbelt").
  * @returns {string} Bank "pack".
  */
-function bank_sort(item) {
+function pick_account(item) {
 	const details = G.items[item.name];
 	if (!details) {
 		return null;
