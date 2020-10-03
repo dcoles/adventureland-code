@@ -20,6 +20,7 @@ export async function busy(msg, future) {
 			set_message(`${msg.padStart(3 - n, NBSP)}${'.'.repeat(n)}`);
 			await Util.sleep(Util.IDLE_MS);
 		}
+		set_message('');
 	});
 
 	try {
@@ -44,6 +45,7 @@ export async function ticker(msg, future) {
 			set_message(`${msg.slice(n)}${msg.slice(0, n)}`.slice(0, STATUS_WIDTH));
 			await Util.sleep(Util.IDLE_MS);
 		}
+		set_message('')
 	});
 
 	try {
