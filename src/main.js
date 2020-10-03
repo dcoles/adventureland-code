@@ -228,15 +228,6 @@ async function main() {
 		window.character.all((name, data) => console.debug('CEVENT:', name, data));
 	}
 
-	// Log combat events
-	if (!character.bot) {
-		BattleLog.monitor({party: true});
-	}
-
-	// Show XP/s and GOLD/s
-	Widgets.stat_monitor('xp');
-	Widgets.stat_monitor('gold')
-
 	// Map snippets
 	Adventure.map_snippet('G', 'Code.set_state("Return Home")');
 	Adventure.map_snippet('H', 'Code.set_home()');
@@ -254,9 +245,18 @@ async function main() {
 	Command.register('go', location => movement.pathfind_move(location), ['location']);
 	Command.register('c', call_character_command, ['character', 'command'], ['arg1', 'arg2', 'arg3', 'arg4'])
 
-	// Start our bots
-	if (Adventure.get('start_bots') && character.ctype !== 'merchant') {
-		_start_bots();
+	if (!character.bot) {
+		// Log combat events
+		BattleLog.monitor({party: true});
+
+		// Show XP/s and GOLD/s
+		Widgets.stat_monitor('xp');
+		Widgets.stat_monitor('gold')
+
+		// Start our bots
+		if (Adventure.get('start_bots') && character.ctype !== 'merchant') {
+			_start_bots();
+		}
 	}
 
 	// Auto pause on AFK
