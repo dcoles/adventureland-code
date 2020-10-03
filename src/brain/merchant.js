@@ -66,20 +66,18 @@ export class MerchantBrain extends Brain {
 		this.vending_duration = DEFAULT_VENDING_DURATION;
 		this.tasks = {};
 
-		this.should_collect = true;
-		this.should_vend = true;
-		//this.should_collect = false;
-		//this.should_vend = false;
+		this.should_bank = false;
+		this.should_collect = false;
 
 		// States
-		this.states = {
-			Collect: {next: 'Compound'},
-			Compound: {next: 'Upgrade'},
-			Upgrade: {next: 'Exchange'},
-			Exchange: {next: 'Bank'},
-			Bank: {next: 'Vend'},
-			Vend: {next: 'Collect'},
-		}
+		this.states = [
+			{name: 'Compound', predicate: () => this.items_to_compound().length >= 1},
+			{name: 'Upgrade', predicate: () => this.items_to_upgrade().length >= 1},
+			{name: 'Exchange', predicate: () => this.items_to_exchange().length >= 1},
+			{name: 'Bank', predicate: () => this.should_bank},
+			{name: 'Collect', predicate: () => this.should_collect},
+			{name: 'Vend'},
+		]
 	}
 
 	get state_name() {
@@ -174,10 +172,19 @@ export class MerchantBrain extends Brain {
 		// Close our stand if it was open
 		this.close_stand();
 
-		window.set_message(this.state.name);
-		const state = this.states[this.state.name];
-		await this._current_state();
-		this.state.name = state.next;
+		for (let state of this.states) {
+			if (state.predicate && !state.predicate()) {
+				continue;
+			}
+
+			this.state.name = state.name;
+			window.set_message(state.name);
+			await this._current_state();
+			return;
+		}
+
+		Logging.error('No states found!')
+		this.stop();
 	}
 
 	/** Collect items from other characters. */
@@ -211,80 +218,108 @@ export class MerchantBrain extends Brain {
 					break;
 				}
 
-				await movement.pathfind_move({x: c.x, y: c.y, map: c.map}, {range: 250}, {avoid: true});
+				await UI.busy('Collect', movement.pathfind_move({x: c.x, y: c.y, map: c.map}, {range: 250}, {avoid: true}));
 			}
 		}
 
 		// Warp back to town
 		await character.town();
+
+		this.should_collect = false;
+		this.should_bank = true;
 	}
 
 	/** Upgrade the merch! */
 	async _upgrade() {
-		const upgradeable = Item.indexed_items({upgradeable: true});
+		const upgradeable = this.items_to_upgrade();
 		if (upgradeable.length < 1) {
+			Logging.warn('Nothing to upgrade?');
 			return;
 		}
 
-		Logging.info('Upgrading items');
-		for (let [_, item] of upgradeable) {
-			window.set_message('Upgrade');
-			await upgrade_all(item.name, MAX_UPGRADE[item.name] || DEFAULT_MAX_UPGRADE);
-		}
+		const item = upgradeable[0][1];
+		await upgrade_all(item.name, MAX_UPGRADE[item.name] || DEFAULT_MAX_UPGRADE);
+
+		this.should_bank = true;
+	}
+
+	items_to_upgrade() {
+		return Item.indexed_items({upgradeable: true})
+			.filter(([_, item]) => item.level < (MAX_UPGRADE[item.name] || DEFAULT_MAX_UPGRADE));
 	}
 
 	/** Compound items! */
 	async _compound() {
-		const compoundable = Item.indexed_items({compoundable: true});
+		const compoundable = this.items_to_compound();
 		if (compoundable.length < 1) {
+			Logging.warn('Nothing to compound?');
 			return;
 		}
 
-		Logging.info('Compounding items');
-		window.set_message('Compound');
-		for (let [_, item] of compoundable) {
-			await compound_all(item.name, MAX_COMPOUND[item.name] || DEFAULT_MAX_COMPOUND);
+		const set = compoundable[0];
+		await compound_all(set.name, MAX_COMPOUND[set.name] || DEFAULT_MAX_COMPOUND);
+
+		this.should_bank = true;
+	}
+
+	items_to_compound() {
+		const to_compound = [];
+		const counts = new Map();
+		for (let [slot, item] of Item.indexed_items({ compoundable: true })
+			.filter(([_, item]) => item.level < (MAX_COMPOUND[item.name] || DEFAULT_MAX_COMPOUND))) {
+			const key = `${item.name}@${item.level}`;
+			if (!counts.has(key)) {
+				counts.set(key, {name: item.name, level: item.level, slots: []});
+			}
+
+			const set = counts.get(key);
+			set.slots.push(slot);
+
+			if (set.slots.length == 3) {
+				to_compound.push(set);
+				counts.delete(key);
+			}
 		}
+
+		return to_compound;
 	}
 
 	/** Exchange items for goodies! */
 	async _exchange() {
-		const exchangeable = Item.indexed_items({exchangeable: true});
+		const exchangeable = this.items_to_exchange();
 		if (exchangeable.length < 1) {
+			Logging.warn('Nothing to exchange?');
 			return;
 		}
 
-		Logging.info('Exchanging items');
+		const [slot, item] = exchangeable[0];
+		const item_details = G.items[item.name];
+		const npc_id = Item.npc_for_quest(item_details.quest);
 
-		// Build a map of Quest IDs → NPC IDs
-		// If we can't find the NPC's location, assume we can exchange at Xyn
-		const quests = new Map(Object.entries(G.npcs)
-			.filter(([id, npc]) => npc.quest && find_npc(id))
-			.map(([id, npc]) => [npc.quest, id]));
-
-		for (let [slot, item] of exchangeable) {
-			const item_details = G.items[item.name];
-			const npc_id = quests.get(item_details.quest) || 'exchange';
-
-			Logging.info(`Exchanging ${item_details.name} with ${G.npcs[npc_id].name}`);
-			try {
-				await movement.pathfind_move(npc_id);
-			} catch (e) {
-				// Couldn't find them?
-				Logging.warn(`Couldn't move to NPC ${G.npcs[npc_id].name}`, e);
-				continue;
-			}
-
-			while (character.items[slot] && character.items[slot].name == item.name && character.items[slot].q >= item_details.e) {
-				// Wait until exchanging the previous item completes
-				if (window.character.q.exchange) {
-					await this._sleep(window.character.q.exchange.ms);
-				}
-
-				exchange(slot);
-				await this._idle();
-			}
+		Logging.info(`Exchanging ${item_details.name} with ${G.npcs[npc_id].name}`);
+		try {
+			await movement.pathfind_move(npc_id);
+		} catch (e) {
+			// Couldn't find them?
+			Logging.warn(`Couldn't move to NPC ${G.npcs[npc_id].name}`, e);
+			return;
 		}
+
+		while (character.items[slot] && character.items[slot].name == item.name && character.items[slot].q >= item_details.e) {
+			// Wait until exchanging the previous item completes
+			if (window.character.q.exchange) {
+				await UI.busy('Exchange', this._sleep(window.character.q.exchange.ms));
+			}
+
+			exchange(slot);
+			await this._idle();
+		}
+
+		this.should_bank = true;
+	}
+
+	items_to_exchange() {
+		return Item.indexed_items({exchangeable: true});
 	}
 
 	/** Unload at the bank. */
@@ -324,6 +359,8 @@ export class MerchantBrain extends Brain {
 		await this._retrieve_upgradeable();
 		await this._retrieve_compoundable();
 		await this._retrieve_exchangeable();
+
+		this.should_bank = false;
 	}
 
 	/** Retrieve upgradable items. */
@@ -405,10 +442,6 @@ export class MerchantBrain extends Brain {
 
 	/** Vendor some goods. */
 	async _vend() {
-		if (!this.should_vend) {
-			return;
-		}
-
 		Logging.info('Vending items');
 		await movement.pathfind_move(this.home);
 
@@ -416,6 +449,8 @@ export class MerchantBrain extends Brain {
 		this.open_stand();
 		await this.countdown(Util.date_add(this.vending_duration), this.state_name);
 		this.close_stand();
+
+		this.should_collect = true;
 	}
 
 	open_stand() {
@@ -535,22 +570,18 @@ function stocktake() {
 	}
 
 	const stock = new Map();
-	for (let [pack_name, pack] of Object.entries(character.bank)) {
-		if (pack_name === "gold") {
-			continue;
-		}
-
-		for (let i=0; i< pack.length; i++) {
-			if (!pack[i]) {
+	for (let [account_name, account] of Bank.accounts().entries()) {
+		for (let i=0; i< account.length; i++) {
+			if (!account[i]) {
 				continue;
 			}
 
-			const item_id = pack[i].name;
+			const item_id = account[i].name;
 			if (!stock.has(item_id)) {
 				stock.set(item_id, []);
 			}
 
-			stock.get(item_id).push([pack_name, i, pack[i]]);
+			stock.get(item_id).push([account_name, i, account[i]]);
 		}
 	}
 
