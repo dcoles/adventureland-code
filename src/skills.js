@@ -194,9 +194,10 @@ class Skill {
 	 * @param {object} [target] Target of skill (if required).
 	 * @param {object} [extra_args] Extra args for skill.
 	 * @param {Function} [condition] Condition for casting the skill.
+	 * @returns {Promise<boolean>} Resolves true if the task wasn't cancelled.
 	 */
 	async autouse(target, extra_args, condition) {
-		await this._create_autouse_task(async (task) => {
+		const task = this._create_autouse_task(async (task) => {
 			Logging.info(`Autousing ${this.skill.name}`);
 
 			while (!task.is_cancelled()) {
@@ -233,20 +234,30 @@ class Skill {
 				}
 			}
 		});
+
+		try {
+			await Promise.resolve(task);
+		} catch (e) {
+			if (!(e instanceof Task.CancelledError)) {
+				throw e;
+			}
+		}
+
+		return !task.is_cancelled();
 	}
 
 	/**
 	 * Create autouse task.
 	 *
 	 * @param {Task.Async} async Async function that implements this task.
-	 * @returns {Promise} Resolves when this task is complete.
+	 * @returns {Task.Task}
 	 */
 	_create_autouse_task(async) {
 		this.cancel_autouse();
 
-		const task = Task.create(async);
-		Skill.autouse[this.cooldown_id] = [this.skill_id, task];
-		return task.result();
+		this.task = Task.create(async);
+		Skill.autouse[this.cooldown_id] = [this.skill_id, this.task];
+		return this.task;
 	}
 
 	/**

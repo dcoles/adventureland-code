@@ -2,7 +2,7 @@
 // @ts-check
 
 /** Thrown when a task has been cancelled. */
-class CancelledError extends Error {
+export class CancelledError extends Error {
 	constructor() {
 		super();
 	}
@@ -21,7 +21,7 @@ class CancelledError extends Error {
  * if it has been cancelled. Failing to do so will result in the Task
  * running longer than required and still having its result discarded.
  */
-class Task {
+export class Task {
 	/**
 	 * Create a new Task based on an `async` function.
 	 *
@@ -29,38 +29,28 @@ class Task {
 	 */
 	constructor(task) {
 		this._state = Task.RUNNING;
-		this._result = null;
-		this._waiters = [];
-
-		// Immediately schedule the async
-		task(this).then(result => {
+		this._task = task(this).then((result, error) => {
 			if (this.is_cancelled()) {
-				result = new CancelledError();
-			} else {
-				this._result = result;
-				this._state = Task.SUCCEEDED;
-			}
-
-			// Call waiters
-			for (let waiter of this._waiters) {
-				waiter.resolve(result);
-			}
-			this._waiters = []
-		}).catch(result => {
-			if (this.is_cancelled()) {
-				result = new CancelledError();
-			} else {
-				console.warn('Task failed', result);
-				this._result = result;
+				throw new CancelledError();
+			} else if (error) {
 				this._state = Task.FAILED;
+				throw error;
+			} else {
+				this._state = Task.SUCCEEDED;
+				return result;
 			}
-
-			// Call waiters
-			for (let waiter of this._waiters) {
-				waiter.reject(result);
-			}
-			this._waiters = []
 		});
+	}
+
+	/**
+	 * Thenable.
+	 *
+	 * @param {*} fulfilled Value if fulfilled.
+	 * @param {*} rejected Value if rejected.
+	 * @returns {PromiseLike} Chained promise.
+	 */
+	then(fulfilled, rejected) {
+		return this._task.then(fulfilled, rejected);
 	}
 
 	/** Is the task running? */
@@ -90,33 +80,6 @@ class Task {
 
 		this._state = Task.CANCELLED;
 		return true;
-	}
-
-	/**
-	 * Get the result of this Task.
-	 *
-	 * @returns {Promise<any,Error>}
-	 */
-	result() {
-		return new Promise((resolve, reject) => {
-			switch (this._state) {
-				case Task.FAILED:
-					reject(this._result);
-					return;
-
-				case Task.SUCCEEDED:
-					resolve(this._result);
-					return;
-
-				case Task.CANCELLED:
-					reject(new CancelledError());
-					return;
-
-				default:
-					this._waiters.push({resolve: resolve, reject: reject});
-					return;
-			}
-		});
 	}
 }
 

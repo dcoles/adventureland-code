@@ -185,11 +185,11 @@ class Movement {
 	 *
 	 * @param {Pathfind.Waypoint[]} path Path to follow (`x`, `y`, `map`).
 	 * @param {MovementOptions} [options] Path movement options.
-	 * @returns {Promise} Resolves when this movement completes.
+	 * @returns {Promise<boolean>} Resolves to true if movement wasn't cancelled.
 	 */
 	async follow_path(path, options) {
 		options = options || {};
-		this._create_task(async (task) => {
+		const task = this._create_task(async (task) => {
 			Logging.debug(`Following path: ${path.map(([x, y, map]) => `${x.toFixed()},${y.toFixed()}@${map}`).join('; ')}`);
 			let distance_traveled = 0;
 			for (let p of path) {
@@ -236,7 +236,15 @@ class Movement {
 			}
 		});
 
-		return this.task.result();
+		try {
+			await Promise.resolve(task);
+		} catch (e) {
+			if (!(e instanceof Task.CancelledError)) {
+				throw e;
+			}
+		}
+
+		return !task.is_cancelled();
 	}
 
 	/**
@@ -291,10 +299,12 @@ class Movement {
 	 * Create a movement task.
 	 *
 	 * @param {Task.Async} async Async function that implements this task.
+	 * @returns {Task.Task}
 	 */
 	_create_task(async) {
 		this.stop();
 		this.task = Task.create(async);
+		return this.task;
 	}
 }
 
