@@ -103,6 +103,25 @@ export function is_exchangeable(item) {
 }
 
 /**
+ * Calculate the value of a item stack.
+ *
+ * @param {Item} item Item
+ */
+export function stack_value(item) {
+	return (item.q || 1) * value(item);
+}
+
+/**
+ * Calculate the value of a single item.
+ *
+ * @param {Item} item Item
+ */
+export function value(item) {
+	// By default, this is the price a merchant will pay
+	return parent.calculate_item_value(item);
+}
+
+/**
  * What is the minimum scroll level we must use to upgrade this item?
  *
  * @param {string} item_id Item ID (e.g. `"hpamulet"`).
