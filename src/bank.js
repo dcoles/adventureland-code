@@ -1,7 +1,7 @@
 // Bank functions
 // @ts-check
 import * as Item from '/item.js';
-import * as Util from '/util.js';
+import * as Game from '/game.js';
 
 /**
  * Bank item accounts.
@@ -62,7 +62,7 @@ export async function sort_account(name) {
 		// Only move an item if needed
 		if (i != k) {
 			bank_move(name, k, i);
-			await new Promise(resolve => parent.socket.once('player', resolve));
+			await Game.next_event('player');
 		}
 	}
 }
