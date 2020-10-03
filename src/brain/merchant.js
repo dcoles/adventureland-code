@@ -18,29 +18,6 @@ import { Brain } from '/brain/brain.js';
 const N_COMPOUNDED = 3;
 
 // Highest levels to upgrade/compound to
-const MAX_UPGRADE = {
-	'cclaw': 6,
-	'fireblade': 5,
-	'firestaff': 4,
-	'gloves1': 5,
-	'helmet': 5,
-	'helmet1': 5,
-	'mace': 6,
-	'quiver': 5,
-	'shoes': 5,
-	'wattire': 5,
-	'wcap': 6,
-	'wshoes': 6,
-}
-const MAX_COMPOUND = {
-	'hpbelt': 3,
-	'hpamulet': 3,
-	'ringsj': 3,
-	'dexearring': 2,
-	'intearring': 2,
-	'strearring': 2,
-	'vitearring': 2,
-}
 const DEFAULT_MAX_UPGRADE = 0;
 const DEFAULT_MAX_COMPOUND = 0;
 
@@ -78,6 +55,8 @@ export class MerchantBrain extends Brain {
 			{name: 'Collect', predicate: () => this.state.should_collect},
 			{name: 'Vend'},
 		]
+
+		this.data = {};
 	}
 
 	get state_name() {
@@ -163,6 +142,24 @@ export class MerchantBrain extends Brain {
 				}
 			}
 		});
+
+		// Task for updating merchant data
+		this.tasks['update_data'] = Task.create(async task => {
+			const regulator = new Util.Regulator(Util.MINUTE_MS);
+			while (!task.is_cancelled()) {
+				await regulator.regulate();
+
+				Logging.info('Updating merchant data');
+				const url = new URL('/data/merchant.json', import.meta.url);
+				const response = await fetch(url);
+				try {
+					this.data = await response.json();
+				} catch (e) {
+					Logging.error('Failed to update data', e);
+				}
+				Logging.debug('Merchant data', this.data);
+			}
+		})
 	}
 
 	/**
@@ -196,7 +193,7 @@ export class MerchantBrain extends Brain {
 		}
 
 		const set = compoundable[0];
-		await compound_all(set.name, MAX_COMPOUND[set.name] || DEFAULT_MAX_COMPOUND);
+		await compound_all(set.name, this.max_compound(set));
 
 		this.state.should_bank = true;
 	}
@@ -205,7 +202,7 @@ export class MerchantBrain extends Brain {
 		const to_compound = [];
 		const counts = new Map();
 		for (let [slot, item] of Item.indexed_items({ compoundable: true })
-			.filter(([_, item]) => item.level < (MAX_COMPOUND[item.name] || DEFAULT_MAX_COMPOUND))) {
+			.filter(([_, item]) => item.level < this.max_compound(item))) {
 			const key = `${item.name}@${item.level}`;
 			if (!counts.has(key)) {
 				counts.set(key, {name: item.name, level: item.level, slots: []});
@@ -223,6 +220,10 @@ export class MerchantBrain extends Brain {
 		return to_compound;
 	}
 
+	max_compound(item) {
+		return this.data.max_compound?.[item.name] ?? DEFAULT_MAX_COMPOUND;
+	}
+
 	/** Upgrade the merch! */
 	async _upgrade() {
 		const upgradeable = this.items_to_upgrade();
@@ -232,14 +233,18 @@ export class MerchantBrain extends Brain {
 		}
 
 		const item = upgradeable[0][1];
-		await upgrade_all(item.name, MAX_UPGRADE[item.name] || DEFAULT_MAX_UPGRADE);
+		await upgrade_all(item.name, this.max_upgrade(item));
 
 		this.state.should_bank = true;
 	}
 
 	items_to_upgrade() {
 		return Item.indexed_items({upgradeable: true})
-			.filter(([_, item]) => item.level < (MAX_UPGRADE[item.name] || DEFAULT_MAX_UPGRADE));
+			.filter(([_, item]) => item.level < this.max_upgrade(item));
+	}
+
+	max_upgrade(item) {
+		return this.data.max_upgrade?.[item.name] ?? DEFAULT_MAX_UPGRADE;
 	}
 
 	/** Exchange items for goodies! */
@@ -326,7 +331,7 @@ export class MerchantBrain extends Brain {
 		const to_upgrade = [];
 		for (let items of this.stock.values()) {
 			for (let [pack, pack_slot, item] of items) {
-				if (!Item.is_upgradeable(item) || item.level >= (MAX_UPGRADE[item.name] || DEFAULT_MAX_UPGRADE)) {
+				if (!Item.is_upgradeable(item) || item.level >= this.max_upgrade(item)) {
 					continue;
 				}
 
@@ -344,7 +349,7 @@ export class MerchantBrain extends Brain {
 			// Group by item level
 			const by_level = []
 			for (let [pack, pack_slot, item] of items) {
-				if (!Item.is_compoundable(item) || item.level >= (MAX_COMPOUND[item.name] || DEFAULT_MAX_COMPOUND)) {
+				if (!Item.is_compoundable(item) || item.level >= this.max_compound(item)) {
 					continue;
 				}
 
