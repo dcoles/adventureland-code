@@ -2,6 +2,12 @@
 // @ts-check
 import * as Util from '/util.js';
 
+// Build a map of Quest IDs → NPC IDs
+// If we can't find the NPC's location, assume we can exchange at Xyn
+const QUEST_NPCS = new Map(Object.entries(G.npcs)
+	.filter(([id, npc]) => npc.quest && find_npc(id))
+	.map(([id, npc]) => [npc.quest, id]));
+
 /**
  * Criteria for matching items.
  *
@@ -142,4 +148,14 @@ export function find_free_inventory_slot(after) {
 
 	// No available space
 	return -1;
+}
+
+/**
+ * Find the NPC associated with a quest.
+ *
+ * @param {string} name Quest name.
+ * @returns {string} NPC ID
+ */
+export function npc_for_quest(name) {
+	return QUEST_NPCS.get(name) || 'exchange';
 }
