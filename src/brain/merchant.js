@@ -7,6 +7,7 @@ import * as Item from '/item.js';
 import * as Logging from '/logging.js';
 import * as Movement from '/movement.js';
 import * as Task from '/task.js';
+import * as UI from '/ui.js';
 import * as Util from '/util.js';
 
 // Brain
@@ -449,7 +450,7 @@ async function compound_all(name, max_level, scroll) {
 
 			try {
 				Logging.info(`Compounding ${G.items[name].name} (${level} to ${level+1}) ${scroll_}`);
-				await window.compound(i_items[i][0], i_items[i+1][0], i_items[i+2][0], i_scroll);
+				await UI.busy('Compound', window.compound(i_items[i][0], i_items[i+1][0], i_items[i+2][0], i_scroll));
 			} catch (e) {
 				Logging.warn('Compounding failed', e);
 			}
@@ -482,7 +483,7 @@ async function upgrade_all(name, max_level, scroll) {
 
 			try {
 				Logging.info(`Upgrading ${G.items[name].name} (${level} to ${level+1}) ${scroll_}`);
-				await window.upgrade(i_items[i][0], i_scroll);
+				await UI.busy('Upgrade', window.upgrade(i_items[i][0], i_scroll));
 			} catch (e) {
 				Logging.warn('Upgrading failed', e);
 			}
