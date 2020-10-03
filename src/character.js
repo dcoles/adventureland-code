@@ -3,6 +3,7 @@
 
 import * as Adventure from '/adventure.js';
 import * as Entity from '/entity.js';
+import * as Game from '/game.js';
 import * as Movement from '/movement.js';
 import * as Util from '/util.js';
 import * as Skills from '/skills.js';
@@ -136,9 +137,7 @@ class Character {
 	 */
 	async town() {
 		await this.skills.use_town.use_when_ready();
-		do {
-			await Util.sleep(character.c.town && character.c.town.ms || Util.IDLE_MS);
-		} while (character.c.town)
+		await Game.next_event('new_map');
 	}
 
 	/** Are we fully healed? */
