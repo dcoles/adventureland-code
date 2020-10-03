@@ -87,6 +87,19 @@ function bank_retrieve(pack, pack_slot, inventory_slot)
 }
 
 /**
+ * Move an item inside the Bank.
+ *
+ * @param {string} pack Bank pack (one of "items0"-"items7")
+ * @param {number} slot1 Slot of the first item (0-41).
+ * @param {number} slot2 Slot of the second item (0-41).
+ */
+function bank_move(pack, slot1, slot2) {
+	if(!character.bank) return game_log("Not inside the bank");
+
+	parent.socket.emit("bank", {operation: "move", a: slot1, b: slot2, pack: pack})
+}
+
+/**
  * Try to move to position.
  *
  * @param {number} x x-coordinate.
