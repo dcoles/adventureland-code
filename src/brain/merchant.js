@@ -66,16 +66,16 @@ export class MerchantBrain extends Brain {
 		this.vending_duration = DEFAULT_VENDING_DURATION;
 		this.tasks = {};
 
-		this.should_bank = false;
-		this.should_collect = false;
+		this.state.should_bank ??= false;
+		this.state.should_collect ??= false;
 
 		// States
 		this.states = [
 			{name: 'Compound', predicate: () => this.items_to_compound().length >= 1},
 			{name: 'Upgrade', predicate: () => this.items_to_upgrade().length >= 1},
 			{name: 'Exchange', predicate: () => this.items_to_exchange().length >= 1},
-			{name: 'Bank', predicate: () => this.should_bank},
-			{name: 'Collect', predicate: () => this.should_collect},
+			{name: 'Bank', predicate: () => this.state.should_bank},
+			{name: 'Collect', predicate: () => this.state.should_collect},
 			{name: 'Vend'},
 		]
 	}
@@ -187,67 +187,6 @@ export class MerchantBrain extends Brain {
 		this.stop();
 	}
 
-	/** Collect items from other characters. */
-	async _collect() {
-		if (!this.should_collect) {
-			return;
-		}
-
-		for (let char of Adventure.get_characters()) {
-			if (char.name === character.name || !char.online) {
-				continue;
-			}
-
-			const server = window.server.region + window.server.id;
-			if (char.server !== server) {
-				// Not on this sever!
-				continue;
-			}
-
-			Logging.info(`Collecting from ${char.name}`);
-			const regulator = new Util.Regulator(Util.SECOND_MS);
-			while (Entity.get_entities({name: char.name}).length === 0) {
-				await regulator.regulate();
-
-				if (this.is_interrupted()) {
-					return;
-				}
-
-				const c = Brain.get_character(char.name);
-				if (!c.online || c.server !== server) {
-					break;
-				}
-
-				await UI.busy('Collect', movement.pathfind_move({x: c.x, y: c.y, map: c.map}, {range: 250}, {avoid: true}));
-			}
-		}
-
-		// Warp back to town
-		await character.town();
-
-		this.should_collect = false;
-		this.should_bank = true;
-	}
-
-	/** Upgrade the merch! */
-	async _upgrade() {
-		const upgradeable = this.items_to_upgrade();
-		if (upgradeable.length < 1) {
-			Logging.warn('Nothing to upgrade?');
-			return;
-		}
-
-		const item = upgradeable[0][1];
-		await upgrade_all(item.name, MAX_UPGRADE[item.name] || DEFAULT_MAX_UPGRADE);
-
-		this.should_bank = true;
-	}
-
-	items_to_upgrade() {
-		return Item.indexed_items({upgradeable: true})
-			.filter(([_, item]) => item.level < (MAX_UPGRADE[item.name] || DEFAULT_MAX_UPGRADE));
-	}
-
 	/** Compound items! */
 	async _compound() {
 		const compoundable = this.items_to_compound();
@@ -259,7 +198,7 @@ export class MerchantBrain extends Brain {
 		const set = compoundable[0];
 		await compound_all(set.name, MAX_COMPOUND[set.name] || DEFAULT_MAX_COMPOUND);
 
-		this.should_bank = true;
+		this.state.should_bank = true;
 	}
 
 	items_to_compound() {
@@ -282,6 +221,25 @@ export class MerchantBrain extends Brain {
 		}
 
 		return to_compound;
+	}
+
+	/** Upgrade the merch! */
+	async _upgrade() {
+		const upgradeable = this.items_to_upgrade();
+		if (upgradeable.length < 1) {
+			Logging.warn('Nothing to upgrade?');
+			return;
+		}
+
+		const item = upgradeable[0][1];
+		await upgrade_all(item.name, MAX_UPGRADE[item.name] || DEFAULT_MAX_UPGRADE);
+
+		this.state.should_bank = true;
+	}
+
+	items_to_upgrade() {
+		return Item.indexed_items({upgradeable: true})
+			.filter(([_, item]) => item.level < (MAX_UPGRADE[item.name] || DEFAULT_MAX_UPGRADE));
 	}
 
 	/** Exchange items for goodies! */
@@ -315,7 +273,7 @@ export class MerchantBrain extends Brain {
 			await this._idle();
 		}
 
-		this.should_bank = true;
+		this.state.should_bank = true;
 	}
 
 	items_to_exchange() {
@@ -360,7 +318,7 @@ export class MerchantBrain extends Brain {
 		await this._retrieve_compoundable();
 		await this._retrieve_exchangeable();
 
-		this.should_bank = false;
+		this.state.should_bank = false;
 	}
 
 	/** Retrieve upgradable items. */
@@ -440,6 +398,48 @@ export class MerchantBrain extends Brain {
 		this.last_stocktake = new Date();
 	}
 
+	/** Collect items from other characters. */
+	async _collect() {
+		if (!this.state.should_collect) {
+			return;
+		}
+
+		for (let char of Adventure.get_characters()) {
+			if (char.name === character.name || !char.online) {
+				continue;
+			}
+
+			const server = window.server.region + window.server.id;
+			if (char.server !== server) {
+				// Not on this sever!
+				continue;
+			}
+
+			Logging.info(`Collecting from ${char.name}`);
+			const regulator = new Util.Regulator(Util.SECOND_MS);
+			while (Entity.get_entities({name: char.name}).length === 0) {
+				await regulator.regulate();
+
+				if (this.is_interrupted()) {
+					return;
+				}
+
+				const c = Brain.get_character(char.name);
+				if (!c.online || c.server !== server) {
+					break;
+				}
+
+				await movement.pathfind_move({x: c.x, y: c.y, map: c.map}, {range: 250}, {avoid: true});
+			}
+		}
+
+		// Warp back to town
+		await character.town();
+
+		this.state.should_collect = false;
+		this.state.should_bank = true;
+	}
+
 	/** Vendor some goods. */
 	async _vend() {
 		Logging.info('Vending items');
@@ -450,7 +450,7 @@ export class MerchantBrain extends Brain {
 		await this.countdown(Util.date_add(this.vending_duration), this.state_name);
 		this.close_stand();
 
-		this.should_collect = true;
+		this.state.should_collect = true;
 	}
 
 	open_stand() {
