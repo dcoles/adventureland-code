@@ -4,6 +4,7 @@ import * as Adventure from '/adventure.js';
 import * as Color from '/color.js';
 import * as Draw from '/draw.js';
 import * as Entity from '/entity.js';
+import * as Game from '/game.js';
 import * as Logging from '/logging.js';
 import * as Pathfind from '/pathfind.js';
 import * as Task from '/task.js';
@@ -342,12 +343,9 @@ export function get_location_by_name(name) {
  * @param {number} spawn Spawn point index (see `G.maps[].spawn`).
  * @returns {Promise} Resolves when transported to new map.
  */
-function transport(map, spawn) {
+async function transport(map, spawn) {
 	window.transport(map, spawn || 0);
-	return new Promise((resolve, reject) => {
-		window.game.once('new_map', resolve);
-		window.setInterval(() => reject({reason: 'timeout'}), Util.SECOND_MS);
-	});
+	await Game.next_event('new_map');
 }
 
 /**
