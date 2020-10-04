@@ -9,14 +9,27 @@
  * @returns {Promise} Resolves to event data when event condition is met.
  */
 export function next_event(name, condition) {
-	return new Promise(resolve => {
+	return new Promise((resolve, reject) => {
+		const socket = parent.socket;
+
 		function on(data) {
-			if (!condition || condition(data)) {
-				parent.socket.off(name, on);
-				resolve(data);
+			var triggered;
+			try {
+				triggered = !condition || condition(data);
+			} catch (e) {
+				socket.off(name, on);
+				reject(e);
+				return;
 			}
+
+			if (!triggered) {
+				return;
+			}
+
+			socket.off(name, on);
+			resolve(data);
 		}
 
-		parent.socket.on(name, on);
+		socket.on(name, on);
 	});
 }
