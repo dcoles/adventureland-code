@@ -1,6 +1,7 @@
 {
 	"max_upgrade": {
 		"cclaw": 6,
+		"dagger": 1,
 		"fireblade": 6,
 		"firestaff": 6,
 		"gloves1": 5,
@@ -11,17 +12,19 @@
 		"shoes": 5,
 		"wattire": 5,
 		"wcap": 6,
-		"wshoes": 7
+		"wshoes": 7,
+		"xmashat": 1,
+		"xmasshoes": 1
 	},
 
 	"max_compound": {
 		"hpbelt": 3,
 		"hpamulet": 3,
 		"ringsj": 3,
-		"dexearring": 2,
-		"intearring": 2,
-		"strearring": 2,
-		"vitearring": 2,
+		"dexearring": 3,
+		"intearring": 3,
+		"strearring": 3,
+		"vitearring": 3,
 		"rednose": 1
 	}
 }
