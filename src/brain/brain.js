@@ -4,6 +4,7 @@ import * as Adventure from '/adventure.js';
 import * as Character from '/character.js';
 import * as Entity from '/entity.js';
 import * as Logging from '/logging.js';
+import * as Task from '/task.js';
 import * as Util from '/util.js';
 
 const character = Character.get_character();
@@ -48,6 +49,7 @@ export class Brain {
 		this.target = null;
 		this.target_difficulty = 0;
 		this.home = null;
+		this.tasks = {};
 	}
 
 	/**
@@ -81,6 +83,24 @@ export class Brain {
 	resume() {
 		Logging.warn('Resuming event loop');
 		this.state.stopped = false;
+	}
+
+	/**
+	 * Create a long running task.
+	 *
+	 * Creating a new task with the same name will result in the old task being cancelled.
+	 *
+	 * @param {string} name Task name.
+	 * @param {Task.Async} body Task body.
+	 */
+	create_task(name, body) {
+		if (this.tasks[name]) {
+			this.tasks[name].cancel();
+		}
+
+		const task = Task.create(body);
+		this.tasks[name] = task;
+		return task;
 	}
 
 	/**

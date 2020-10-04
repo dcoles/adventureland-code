@@ -41,7 +41,6 @@ export class MerchantBrain extends Brain {
 		this.home = {x: -120, y: 0, map: 'main'};  // Home for vending
 		this.stock = null;  // Track bank contents
 		this.vending_duration = DEFAULT_VENDING_DURATION;
-		this.tasks = {};
 
 		this.state.should_bank ??= false;
 		this.state.should_collect ??= false;
@@ -72,7 +71,7 @@ export class MerchantBrain extends Brain {
 		this.state.name = this.state.name in this.states ? this.state.name : 'Collect';
 
 		// Task for keeping us healthy
-		this.tasks['regen_autocast'] = Task.create(async (task) => {
+		this.create_task('regen_autocast', async task => {
 			const regulator = new Util.Regulator(Util.SECOND_MS);
 			while (!task.is_cancelled()) {
 				// Ensure we don't spin too fast
@@ -91,7 +90,7 @@ export class MerchantBrain extends Brain {
 		});
 
 		// Task for casting Merchant's Luck
-		this.tasks['mluck'] = Task.create(async (task) => {
+		this.create_task('mluck', async task => {
 			const regulator = new Util.Regulator(Util.SECOND_MS);
 			while (!task.is_cancelled()) {
 				await regulator.regulate();
@@ -124,7 +123,7 @@ export class MerchantBrain extends Brain {
 		});
 
 		// Task for joining parties
-		this.tasks['party'] = Task.create(async (task) => {
+		this.create_task('party', async task => {
 			const regulator = new Util.Regulator(Util.SECOND_MS);
 			while (!task.is_cancelled()) {
 				await regulator.regulate();
@@ -144,7 +143,7 @@ export class MerchantBrain extends Brain {
 		});
 
 		// Task for updating merchant data
-		this.tasks['update_data'] = Task.create(async task => {
+		this.create_task('update_data', async task => {
 			const regulator = new Util.Regulator(Util.MINUTE_MS);
 			while (!task.is_cancelled()) {
 				await regulator.regulate();
