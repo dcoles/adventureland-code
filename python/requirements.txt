@@ -1,1 +1,3 @@
 aiohttp
+chrome-devtools-protocol
+pyee
