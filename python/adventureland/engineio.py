@@ -110,10 +110,10 @@ class EngineIO:
                 await self.runner
 
         if self.socket:
-            await self.socket.close()
+            await self.socket.disconnect()
 
         if self.session:
-            await self.session.close()
+            await self.session.disconnect()
 
         self.socket = None
         self.session = None
