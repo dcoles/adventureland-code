@@ -50,16 +50,19 @@ class EngineIO:
     VERSION = 3
     DEFAULT_PATH = '/engine.io'
 
-    def __init__(self, url: str, path: str = None):
+    def __init__(self, url: str, *, path: str = None, query: dict = None):
         """
         Create new Engine.IO client.
 
         :param url: Server URL.
         :param path: Engine path (default: "/engine.io").
+        :param query: Additional URL query parameters.
         """
         path = path or self.DEFAULT_PATH
+        query = query or {}
         self.url = url
         self.path = path
+        self.query = query
         self.session: Optional[aiohttp.ClientSession] = None
         self.socket: Optional[aiohttp.ClientWebSocketResponse] = None
         self.runner: Optional[asyncio.Task] = None
@@ -76,7 +79,7 @@ class EngineIO:
     @property
     def connection_url(self) -> str:
         """Full connection URL"""
-        params = {"EIO": self.VERSION, "transport": "websocket"}
+        params = dict(self.query, EIO=self.VERSION, transport="websocket")
         return urljoin(self.url, f'{self.path}/?{urlencode(params)}')
 
     async def connect(self):

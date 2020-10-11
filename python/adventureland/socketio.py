@@ -79,18 +79,25 @@ class SocketIO:
     VERSION = 3
     DEFAULT_PATH = '/socket.io'
 
-    def __init__(self, url: str, path: str = None):
+    def __init__(self, url: str, *, path: str = None, **options):
         """
         Create new Socket.IO client.
 
         :param url: Server URL.
         :param path: Socket path (default: "/socket.io").
+        :param options: Additional Engine.IO options.
         """
         path = path or self.DEFAULT_PATH
-        self.engine = engineio.EngineIO(url, path)
+        self.engine = engineio.EngineIO(url, path=path, **options)
         self.engine.on_message = self._feed_packet
         self._handlers = collections.defaultdict(set)
         self._loop = asyncio.get_event_loop()
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
 
     def _feed_packet(self, data: str):
         """
