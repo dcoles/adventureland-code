@@ -1,7 +1,9 @@
 import asyncio
 import logging
+import os
 import shlex
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 from typing import Optional, Tuple
@@ -28,7 +30,7 @@ class BrowserProcess:
         :path: Path to chrome executable.
         :headless: If set to True, run headless in the background.
         """
-        temp_dir = Path(tempfile.mkdtemp('.chrome'))
+        temp_dir = temp_user_dir()
         args = [
             '--disable-background-timer-throttling',
             '--disable-breakpad',
@@ -76,6 +78,8 @@ class BrowserProcess:
             while True:
                 try:
                     shutil.rmtree(self.temp_dir)
+                except FileNotFoundError:
+                    break
                 except OSError as e:
                     # On Windows crash-pad might still be using the user directory.
                     # See https://github.com/GoogleChrome/puppeteer/issues/2778.
@@ -188,3 +192,12 @@ class Browser:
         """Close the browser."""
         await self.target(cdp.browser.close())
         await self.client.disconnect()
+
+
+def temp_user_dir() -> Path:
+    """Path for temporary user directory."""
+    dir = os.environ.get('XDG_CACHE_HOME', f'{os.environ["HOME"]}/.cache')
+
+    # mktemp isn't a great option, but we need to let Chrome create the directory
+    # Using a per-user temporary directory prevents most of the issues with it
+    return Path(tempfile.mktemp('.chrome', dir=dir))
