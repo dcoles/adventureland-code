@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import shlex
 import shutil
 import tempfile
 from pathlib import Path
@@ -41,6 +42,7 @@ class BrowserProcess:
         args.append('about:blank')
 
         try:
+            logger.debug('Running %s %s', path, ' '.join(map(shlex.quote, args)))
             process = await asyncio.create_subprocess_exec(path, *args)
         except OSError:
             shutil.rmtree(temp_dir, True)
@@ -59,15 +61,18 @@ class BrowserProcess:
     async def terminate(self):
         """Terminate the browser process and cleanup userdata."""
         if self.process:
+            logger.debug('Terminating browser (PID: %d)', self.process.pid)
             self.process.terminate()
             try:
                 await asyncio.wait_for(self.process.wait(), self.TERMINATE_TIMEOUT)
             except asyncio.TimeoutError:
+                logger.warning('Sending SIGKILL (PID: %d)', self.process.pid)
                 self.process.kill()
 
             self.process = None
 
         if self.temp_dir:
+            logger.debug('Removing %s', self.temp_dir)
             while True:
                 try:
                     shutil.rmtree(self.temp_dir)
@@ -75,7 +80,6 @@ class BrowserProcess:
                     # On Windows crash-pad might still be using the user directory.
                     # See https://github.com/GoogleChrome/puppeteer/issues/2778.
                     # If so, just try again after a second
-                    logger.warning(e)
                     await asyncio.sleep(1)
                 else:
                     break
@@ -84,6 +88,7 @@ class BrowserProcess:
 
     async def wait_for_devtools_port(self) -> Tuple[int, str]:
         """Wait for userdata port to be available."""
+        logger.debug('Waiting for DevToolsActivePort file to be written')
         port_path = self.temp_dir / self.DEVTOOLS_ACTIVE_PORT_FILENAME
         while True:
             try:
