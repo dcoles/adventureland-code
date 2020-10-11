@@ -207,9 +207,6 @@ class SocketIO:
         if not self.engine.connected:
             await self.engine.connect()
 
-        await self.send_packet(SocketIOPacket(SocketIOPacket.Type.CONNECT))
-        await self.next_event('connect')
-
     async def close(self):
         """
         Close connection.
