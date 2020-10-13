@@ -1,20 +1,37 @@
 {
 	"max_upgrade": {
+		"blade": 6,
 		"cclaw": 6,
-		"dagger": 1,
+		"coat": 8,
+		"coat1": 5,
+		"candycanesword": 5,
+		"dagger": 6,
 		"fireblade": 6,
 		"firestaff": 6,
 		"gloves1": 5,
-		"helmet": 5,
+		"helmet": 6,
 		"helmet1": 5,
 		"mace": 6,
-		"quiver": 6,
+		"merry": 5,
+		"mittens": 5,
+		"mushroomstaff": 6,
+		"pants1": 5,
+		"phelmet": 3,
+		"pmace": 5,
+		"quiver": 7,
 		"shoes": 5,
+		"stinger": 5,
+		"staff": 6,
+		"t2bow": 5,
+		"throwingstars": 5,
+		"warmscarf": 5,
 		"wattire": 5,
-		"wcap": 6,
+		"wcap": 7,
+		"wgloves": 5,
 		"wshoes": 7,
-		"xmashat": 1,
-		"xmasshoes": 1
+		"xmashat": 6,
+		"xmasshoes": 6,
+		"xmaspants": 6
 	},
 
 	"max_compound": {
@@ -22,9 +39,14 @@
 		"hpamulet": 3,
 		"ringsj": 3,
 		"dexearring": 3,
+		"dexring": 3,
+		"intamulet": 3,
 		"intearring": 3,
+		"stramulet": 3,
 		"strearring": 3,
+		"strring": 3,
 		"vitearring": 3,
+		"vitring": 3,
 		"rednose": 1
 	}
 }
