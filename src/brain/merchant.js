@@ -28,6 +28,7 @@ const COMPOUND_PACK = 'items1';
 
 // Misc
 const MAX_GOLD = 1_000_000;
+const MIN_GOLD = 1_000_000;
 const DEFAULT_VENDING_DURATION = 15 * Util.MINUTE_MS;
 const MLUCK_MIN_MS = 58 * Util.MINUTE_MS;  // Every 2 minutes
 
@@ -298,6 +299,8 @@ export class MerchantBrain extends Brain {
 		// Deposit excess gold
 		if (character.gold > MAX_GOLD) {
 			window.bank_deposit(character.gold - MAX_GOLD);
+		} else if (character.gold < MIN_GOLD) {
+			window.bank_withdraw(MIN_GOLD - character.gold);
 		}
 
 		// Store items
