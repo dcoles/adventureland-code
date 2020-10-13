@@ -192,7 +192,16 @@ export class MerchantBrain extends Brain {
 		}
 
 		const set = compoundable[0];
-		await compound_all(set.name, this.max_compound(set));
+		try {
+			await compound_all(set.name, this.max_compound(set));
+		} catch (e) {
+			switch (e.reason) {
+				case 'cost':
+					break;
+				default:
+					throw e;
+			}
+		}
 
 		this.state.should_bank = true;
 	}
@@ -232,7 +241,16 @@ export class MerchantBrain extends Brain {
 		}
 
 		const item = upgradeable[0][1];
-		await upgrade_all(item.name, this.max_upgrade(item));
+		try {
+			await upgrade_all(item.name, this.max_upgrade(item));
+		} catch (e) {
+			switch (e.reason) {
+				case 'cost':
+					break;
+				default:
+					throw e;
+			}
+		}
 
 		this.state.should_bank = true;
 	}
