@@ -343,7 +343,45 @@ export function get_location_by_name(name) {
 		return npc;
 	}
 
+	// Monster
+	const monster = find_monster(name);
+	if (monster.length !== 0) {
+		return Util.random_choice(monster);
+	}
+
 	throw new MovementError(`Could not find location: ${name}`);
+}
+
+/**
+ * Find monster by name.
+ *
+ * @param {string} name Monster name.
+ * @returns {MapLocation[]} Array of map locations.
+ */
+function find_monster(name) {
+	const locations = [];
+	for (let [map_name, map] of Object.entries(G.maps)) {
+		if (!map.monsters) {
+			continue;
+		}
+
+		for (let monster of map.monsters) {
+			if (monster.type !== name) {
+				continue;
+			}
+
+			if (monster.position) {
+				locations.push({x: monster.position[0], y: monster.position[1], map: map_name});
+			} else {
+				// Find center of pack
+				const x = monster.boundary[0] + (monster.boundary[2] - monster.boundary[0]) / 2;
+				const y = monster.boundary[1] + (monster.boundary[3] - monster.boundary[1]) / 2;
+				locations.push({x: x, y: y, map: map_name});
+			}
+		}
+	}
+
+	return locations;
 }
 
 /**
