@@ -503,19 +503,31 @@ async function compound_all(name, max_level, scroll) {
 
 		// Combine!
 		for (let i=0; i<i_items.length-2; i+=3) {
-			let i_scroll = Item.find({name: scroll_});
-			if (i_scroll === -1 || character.items[i_scroll].q < 1) {
-				// Need more scrolls
-				await window.buy_with_gold(scroll_, 5);
-				i_scroll = Item.find({name: scroll_});
-			}
+			let done = false;
+			let need = 1;
+			do {
+				let i_scroll = Item.find({name: scroll_});
+				if (i_scroll === -1 || character.items[i_scroll].q < need) {
+					// Need more scrolls
+					await window.buy_with_gold(scroll_, need);
+					i_scroll = Item.find({name: scroll_});
+				}
 
-			try {
-				Logging.info(`Compounding ${G.items[name].name} (${level} to ${level+1}) ${scroll_}`);
-				await UI.busy('Compound', window.compound(i_items[i][0], i_items[i+1][0], i_items[i+2][0], i_scroll));
-			} catch (e) {
-				Logging.warn('Compounding failed', e);
-			}
+				try {
+					Logging.info(`Compounding ${G.items[name].name} (${level} to ${level+1}) ${scroll_}`);
+					await UI.busy('Compound', window.compound(i_items[i][0], i_items[i+1][0], i_items[i+2][0], i_scroll));
+					done = true;
+				} catch (e) {
+					if (e.reason === 'scroll_quantity') {
+						// Not enough scrolls
+						need = e.need - e.have;
+					} else {
+						Logging.warn('Compounding failed', e);
+						done = true;
+					}
+				}
+
+			} while (!done)
 		}
 	}
 }
@@ -536,19 +548,28 @@ async function upgrade_all(name, max_level, scroll) {
 
 		// Upgrade!
 		for (let i=0; i<i_items.length; i++) {
-			let i_scroll = Item.find({name: scroll_});
-			if (i_scroll === -1 || character.items[i_scroll].q < 1) {
-				// Need more scrolls
-				await window.buy_with_gold(scroll_, 5);
-				i_scroll = Item.find({name: scroll_});
-			}
+			let need = 1;
+			do {
+				let i_scroll = Item.find({name: scroll_});
+				if (i_scroll === -1 || character.items[i_scroll].q < need) {
+					// Need more scrolls
+					await window.buy_with_gold(scroll_, need);
+					i_scroll = Item.find({name: scroll_});
+				}
 
-			try {
-				Logging.info(`Upgrading ${G.items[name].name} (${level} to ${level+1}) ${scroll_}`);
-				await UI.busy('Upgrade', window.upgrade(i_items[i][0], i_scroll));
-			} catch (e) {
-				Logging.warn('Upgrading failed', e);
-			}
+				try {
+					Logging.info(`Upgrading ${G.items[name].name} (${level} to ${level+1}) ${scroll_}`);
+					await UI.busy('Upgrade', window.upgrade(i_items[i][0], i_scroll));
+				} catch (e) {
+					if (e.reason === 'scroll_quantity') {
+						// Not enough scrolls
+						need = e.need - e.have;
+						continue
+					} else {
+						Logging.warn('Upgrading failed', e);
+					}
+				}
+			} while (false)
 		}
 	}
 }
