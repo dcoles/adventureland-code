@@ -26,8 +26,8 @@ const UPGRADE_PACK = 'items0';
 const COMPOUND_PACK = 'items1';
 
 // Misc
-const MAX_GOLD = 1_000_000;
-const MIN_GOLD = 1_000_000;
+const TARGET_GOLD = 5_000_000;
+const MIN_GOLD = 2_000_000;
 const DEFAULT_VENDING_DURATION = 15 * Util.MINUTE_MS;
 const MLUCK_MIN_MS = G.conditions.mluck.duration - (2 * Util.MINUTE_MS);  // Every 2 minutes
 
@@ -47,8 +47,8 @@ export class MerchantBrain extends Brain {
 
 		// States
 		this.states = [
-			{name: 'Compound', predicate: () => this.items_to_compound().length >= 1},
-			{name: 'Upgrade', predicate: () => this.items_to_upgrade().length >= 1},
+			{name: 'Compound', predicate: () => this.items_to_compound().length >= 1 && character.gold > MIN_GOLD},
+			{name: 'Upgrade', predicate: () => this.items_to_upgrade().length >= 1 && character.gold > MIN_GOLD},
 			{name: 'Exchange', predicate: () => this.items_to_exchange().length >= 1},
 			{name: 'Bank', predicate: () => this.state.should_bank},
 			{name: 'Collect', predicate: () => this.state.should_collect},
@@ -314,10 +314,10 @@ export class MerchantBrain extends Brain {
 		}
 
 		// Deposit excess gold
-		if (character.gold > MAX_GOLD) {
-			window.bank_deposit(character.gold - MAX_GOLD);
-		} else if (character.gold < MIN_GOLD) {
-			window.bank_withdraw(MIN_GOLD - character.gold);
+		if (character.gold > TARGET_GOLD) {
+			window.bank_deposit(character.gold - TARGET_GOLD);
+		} else if (character.gold < TARGET_GOLD) {
+			window.bank_withdraw(TARGET_GOLD - character.gold);
 		}
 
 		// Store items
