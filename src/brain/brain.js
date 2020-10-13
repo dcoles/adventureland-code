@@ -294,6 +294,7 @@ export class Brain {
 		Logging.info(`Character died at ${time_of_death}`);
 
 		character.stop_all();
+		this.set_target(null);
 		await this._respawn();
 	}
 
