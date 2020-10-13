@@ -7,7 +7,6 @@ import * as Entity from '/entity.js';
 import * as Item from '/item.js';
 import * as Logging from '/logging.js';
 import * as Movement from '/movement.js';
-import * as Task from '/task.js';
 import * as UI from '/ui.js';
 import * as Util from '/util.js';
 
@@ -30,7 +29,7 @@ const COMPOUND_PACK = 'items1';
 const MAX_GOLD = 1_000_000;
 const MIN_GOLD = 1_000_000;
 const DEFAULT_VENDING_DURATION = 15 * Util.MINUTE_MS;
-const MLUCK_MIN_MS = 58 * Util.MINUTE_MS;  // Every 2 minutes
+const MLUCK_MIN_MS = G.conditions.mluck.duration - (2 * Util.MINUTE_MS);  // Every 2 minutes
 
 const character = Character.get_character();
 const movement = Movement.get_movement();
