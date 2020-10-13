@@ -93,7 +93,7 @@ export function filter(entities, criteria) {
 			return false;
 		}
 
-		if (Util.is_boolean(criteria.alive) && (character.rip === criteria.alive || character.dead === criteria.alive)) {
+		if (Util.is_boolean(criteria.alive) && is_dead(character) === criteria.alive) {
 			return false;
 		}
 
@@ -128,6 +128,15 @@ export function filter(entities, criteria) {
  */
 export function name(entity) {
 	return typeof entity === "object" ? entity.name : entity;
+}
+
+/**
+ * Is this entity dead?
+ *
+ * @param {object} entity Character or Monster.
+ */
+export function is_dead(entity) {
+	return entity.rip ?? entity.dead;
 }
 
 /**
