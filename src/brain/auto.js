@@ -26,7 +26,7 @@ const HOME_RANGE_RADIUS = 500;
 const MIN_DIFFICULTY = 0.1;
 const MAX_DIFFICULTY = 9.0;
 const MAX_GOLD = 500_000;  // Max gold before transfering
-const PRIORITY_TARGETS = ['phoenix', 'snowman', 'hen', 'rooster'];
+const PRIORITY_TARGETS = ['mrpumpkin', 'phoenix', 'snowman', 'hen', 'rooster'];
 
 export class AutoBrain extends Brain {
 	constructor() {
