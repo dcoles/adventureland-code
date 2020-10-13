@@ -59,6 +59,12 @@ export class Brain {
 		return this.interrupt || this.stopped || character.rip;
 	}
 
+	async sleep_while_interrupted() {
+		while (this.is_interrupted()) {
+			await Util.sleep(Util.SECOND_MS);
+		}
+	}
+
 	get stopped() {
 		// Bots are never stopped
 		if (character.bot) {
@@ -149,6 +155,10 @@ export class Brain {
 		if (!target) {
 			this.target = null;
 			this.target_difficulty = 0;
+			return;
+		}
+
+		if (target === this.target) {
 			return;
 		}
 
@@ -325,8 +335,6 @@ export class Brain {
 	 */
 	async _step() {
 		// Override me!
-		Logging.info('Nothing to do...');
-		window.set_message('Nothing');
 		await this._sleep();
 	}
 

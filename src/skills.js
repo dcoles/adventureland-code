@@ -73,12 +73,19 @@ class Skill {
 
 	/** Minimum level requirement to use this skill. */
 	get level() {
-		return this.skill.level || 0;
+		return this.skill.level ?? 0;
 	}
 
 	/** MP required to use this skill. */
 	get mp() {
-		return this.skill.mp || 0;
+		switch (this.skill_id) {
+			case 'attack':
+			case 'heal':
+				return character.mp_cost;
+
+			default:
+				return this.skill.mp ?? 0;
+		}
 	}
 
 	/** Can we use this skill? */
