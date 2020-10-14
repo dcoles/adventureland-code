@@ -17,4 +17,8 @@ document.head.appendChild(runner_ext);
 const main = document.createElement('script');
 main.type = 'module';
 main.textContent = `import * as Code from ${JSON.stringify(MAIN_URL)}; window.Code = Code;`;
+main.onerror = function() {
+	set_message('Load Error', 'red');
+	log('Error loading remote script', 'red');
+};
 document.head.appendChild(main);
