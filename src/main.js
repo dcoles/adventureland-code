@@ -228,6 +228,15 @@ async function main() {
 		window.character.all((name, data) => console.debug('CEVENT:', name, data));
 	}
 
+	// Log game events to the console
+	parent.socket.on('game_log', (event) => {
+		if (Util.is_object(event)) {
+			Logging.debug(`GAME: ${event.message}`);
+		} else {
+			Logging.debug(`GAME: ${event}`);
+		}
+	});
+
 	// Map snippets
 	Adventure.map_snippet('G', 'Code.set_state("Return Home")');
 	Adventure.map_snippet('H', 'Code.set_home()');
