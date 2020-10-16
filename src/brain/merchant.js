@@ -504,7 +504,6 @@ async function compound_all(name, max_level, scroll) {
 
 		// Combine!
 		for (let i=0; i<i_items.length-2; i+=3) {
-			let done = false;
 			let need = 1;
 			do {
 				let i_scroll = Item.find({name: scroll_});
@@ -517,18 +516,17 @@ async function compound_all(name, max_level, scroll) {
 				try {
 					Logging.info(`Compounding ${G.items[name].name} (${level} to ${level+1}) ${scroll_}`);
 					await UI.busy('Compound', window.compound(i_items[i][0], i_items[i+1][0], i_items[i+2][0], i_scroll));
-					done = true;
 				} catch (e) {
 					if (e.reason === 'scroll_quantity') {
 						// Not enough scrolls
 						need = e.need - e.have;
+						continue;
 					} else {
 						Logging.warn('Compounding failed', e);
-						done = true;
 					}
 				}
 
-			} while (!done)
+			} while (false)
 		}
 	}
 }
