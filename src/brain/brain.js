@@ -36,7 +36,7 @@ export class Brain {
 	 */
 	static get_state(name) {
 		let state = JSON.parse(window.localStorage.getItem('c:' + name));
-		if (!state || state.last_updated < Date.now() - Util.MINUTE_MS) {
+		if (!state || state.last_update < Date.now() - Util.MINUTE_MS) {
 			return null;
 		}
 
