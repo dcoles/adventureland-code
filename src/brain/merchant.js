@@ -19,6 +19,7 @@ const N_COMPOUNDED = 3;
 // Highest levels to upgrade/compound to
 const DEFAULT_MAX_UPGRADE = 0;
 const DEFAULT_MAX_COMPOUND = 0;
+const MAX_SCROLL_LEVEL = 1;  // Don't upgrade rare items (too expensive!)
 
 // Bank packs
 const MATERIAL_PACK = 'items0';
@@ -210,7 +211,7 @@ export class MerchantBrain extends Brain {
 		const to_compound = [];
 		const counts = new Map();
 		for (let [slot, item] of Item.indexed_items({ compoundable: true })
-			.filter(([_, item]) => item.level < this.max_compound(item))) {
+			.filter(([_, item]) => item.level < this.max_compound(item) && Item.scroll_level(item.name, item.level) <= MAX_SCROLL_LEVEL)) {
 			const key = `${item.name}@${item.level}`;
 			if (!counts.has(key)) {
 				counts.set(key, {name: item.name, level: item.level, slots: []});
@@ -257,7 +258,7 @@ export class MerchantBrain extends Brain {
 
 	items_to_upgrade() {
 		return Item.indexed_items({upgradeable: true})
-			.filter(([_, item]) => item.level < this.max_upgrade(item));
+			.filter(([_, item]) => item.level < this.max_upgrade(item) && Item.scroll_level(item.name, item.level) <= MAX_SCROLL_LEVEL);
 	}
 
 	max_upgrade(item) {
