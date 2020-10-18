@@ -20,6 +20,7 @@ const character = Adventure.get_character();
  * @property {boolean} [owner] If true, entity must be owned by us.
  * @property {boolean} [party] If true, entity must be in our party.
  * @property {number} [min_xp] Entity must give at least this much XP.
+ * @property {number} [max_distance] Entity must be no further than this distance.
  * @property {boolean} [path_check] Entity must be directly reachable.
  * @property {Function} [filter] General-purpose filter function.
  */
@@ -112,6 +113,10 @@ export function filter(entities, criteria) {
 		}
 
 		if (criteria.min_xp && entity.xp < criteria.min_xp) {
+			return false;
+		}
+
+		if (Util.is_number(criteria.max_distance) && distance_between(character, entity) > criteria.max_distance) {
 			return false;
 		}
 
