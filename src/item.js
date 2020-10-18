@@ -9,11 +9,22 @@ const QUEST_NPCS = new Map(Object.entries(G.npcs)
 	.map(([id, npc]) => [npc.quest, id]));
 
 /**
+ * Item grade.
+ */
+export const Grade = {
+	COMMON: 0,
+	HIGH: 1,
+	RARE: 2,
+	LEGENDARY: 3,
+}
+
+/**
  * Criteria for matching items.
  *
  * @typedef ItemCriteria
  * @property {string} [name] Item name/ID
  * @property {number} [level] Item level
+ * @property {number} [max_grade] Maximum item grade
  * @property {boolean} [upgradeable] Is item upgradeable?
  * @property {boolean} [compoundable] Is item compoundable?
  * @property {boolean} [exchangeable] Is item exchangeable?
@@ -56,6 +67,10 @@ export function match(item, criteria) {
 	}
 
 	if (Number.isInteger(criteria.level) && item.level !== criteria.level) {
+		return false;
+	}
+
+	if (Number.isInteger(criteria.max_grade) && grade(item) > criteria.max_grade) {
 		return false;
 	}
 
@@ -119,6 +134,15 @@ export function stack_value(item) {
 export function value(item) {
 	// By default, this is the price a merchant will pay
 	return parent.calculate_item_value(item);
+}
+
+/**
+ * Grade of an item.
+ *
+ * @param {Item} item Item
+ */
+export function grade(item) {
+	return window.item_grade(item);
 }
 
 /**
