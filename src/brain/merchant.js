@@ -20,11 +20,13 @@ const N_COMPOUNDED = 3;
 const DEFAULT_MAX_UPGRADE = 0;
 const DEFAULT_MAX_COMPOUND = 0;
 const MAX_SCROLL_LEVEL = 1;  // Don't upgrade rare items (too expensive!)
+const MAX_GRADE = Item.Grade.HIGH;
 
 // Bank packs
 const MATERIAL_PACK = 'items0';
 const UPGRADE_PACK = 'items0';
 const COMPOUND_PACK = 'items1';
+const DONT_STORE_TYPES = new Set(['stand', 'uscroll', 'cscroll', 'pscroll', 'gem']);
 
 // Misc
 const TARGET_GOLD = 2_500_000;
@@ -40,7 +42,6 @@ export class MerchantBrain extends Brain {
 		super();
 
 		this.home = {x: -120, y: 0, map: 'main'};  // Home for vending
-		this.stock = null;  // Track bank contents
 		this.vending_duration = DEFAULT_VENDING_DURATION;
 
 		this.state.should_bank ??= false;
@@ -315,13 +316,16 @@ export class MerchantBrain extends Brain {
 			window.bank_withdraw(TARGET_GOLD - character.gold);
 		}
 
-		// Store items
-		for (let [i, item] of Item.indexed_items()) {
-			const bank = pick_account(item);
-			if (!bank) {
-				continue;
-			}
-			window.bank_store(i, bank);
+		// Pick up items
+		await this._retrieve_compoundable();
+		await this._retrieve_upgradeable();
+		await this._retrieve_exchangeable();
+
+		// Deposit items
+		try {
+			await this._store_items();
+		} catch (e) {
+			Logging.warn('Failed to store items', e);
 		}
 
 		// Sort items
@@ -329,92 +333,127 @@ export class MerchantBrain extends Brain {
 			await Bank.sort_account(name);
 		}
 
-		// Do stocktake
-		this._stocktake();
-
-		// Pick up items
-		await this._retrieve_upgradeable();
-		await this._retrieve_compoundable();
-		await this._retrieve_exchangeable();
-
 		this.state.should_bank = false;
 	}
 
 	/** Retrieve upgradable items. */
 	async _retrieve_upgradeable() {
-		const to_upgrade = [];
-		for (let items of this.stock.values()) {
-			for (let [pack, pack_slot, item] of items) {
-				if (!Item.is_upgradeable(item) || item.level >= this.max_upgrade(item)) {
-					continue;
-				}
+		const slots = character.items.map((item, i) => [i, item]).filter(([_, item]) => !item || this.should_store(item)).map(([i, _]) => i);
+		const bank_slots = Item.bank_indexed_items().filter(([_, item]) => this.should_upgrade(item));
 
-				to_upgrade.push([pack, pack_slot]);
-			}
+		// Swap slots
+		const n = Math.min(slots.length, bank_slots.length);
+		for (let i = 0; i < n; i++) {
+			await Item.swap({slot: slots[i]}, bank_slots[i][0]);
 		}
-
-		await Item.retrieve_items(to_upgrade);
 	}
 
 	/** Retrieve compoundable items. */
 	async _retrieve_compoundable() {
-		const to_compound = [];
-		for (let items of this.stock.values()) {
-			// Group by item level
-			const by_level = []
-			for (let [pack, pack_slot, item] of items) {
-				if (!Item.is_compoundable(item) || item.level >= this.max_compound(item)) {
-					continue;
-				}
+		const slots = character.items.map((item, i) => [i, item]).filter(([_, item]) => !item || this.should_store(item)).map(([i, _]) => i);
+		const character_slots = Item.character_indexed_items().filter(([_, item]) => this.should_compound(item));
+		const bank_slots = Item.bank_indexed_items().filter(([_, item]) => this.should_compound(item));
 
-				if (!(item.level in by_level)) {
-					by_level[item.level] = [];
-				}
-
-				by_level[item.level].push([pack, pack_slot, item]);
+		// Count up sets in inventory
+		const counts = new Map();
+		for (let [_, item] of character_slots) {
+			const key = Item.key(item);
+			if (!counts.has(key)) {
+				counts.set(key, 0);
 			}
 
-			// Work out how many items will bubble up a level
-			const bubble_up = [];
-			for (let level = 0; level < by_level.length; level++) {
-				if (!(level in by_level)) {
-					continue;
-				}
+			counts.set(key, counts.get(key) + 1);
+		}
 
-				// How many new items might we have compounded?
-				bubble_up[level] = Math.floor((by_level[level].length + (bubble_up[level - 1] || 0)) / N_COMPOUNDED);
+		// Look for full sets in bank
+		const to_retrieve = [];
+		const sets = new Map();
+		for (let [location, item] of bank_slots) {
+			const key = Item.key(item);
+			if (!counts.has(key)) {
+				counts.set(key, 0);
+			}
 
-				// Retrieve items
-				for (let i = 0; i < Math.min(N_COMPOUNDED * bubble_up[level], by_level[level].length); i++) {
-					const [storage, storage_slot, _] = by_level[level][i];
-					to_compound.push([storage, storage_slot]);
-				}
+			if (!sets.has(key)) {
+				sets.set(key, [])
+			}
+
+			sets.get(key).push(location);
+			counts.set(key, counts.get(key) + 1);
+
+			if (counts.get(key) % N_COMPOUNDED === 0) {
+				to_retrieve.push(...sets.get(key));
+				sets.delete(key);
 			}
 		}
 
-		await Item.retrieve_items(to_compound);
+		// Swap slots
+		for (let i = 0; i < Math.min(to_retrieve.length, slots.length); i++) {
+			await Item.swap({slot: slots[i]}, to_retrieve[i]);
+		}
 	}
 
 	/** Retrieve exchangeable items. */
 	async _retrieve_exchangeable() {
-		const to_exchange = [];
-		for (let items of this.stock.values()) {
-			for (let [pack, pack_slot, item] of items) {
-				if (!Item.is_exchangeable(item)) {
-					continue;
-				}
+		const slots = character.items.map((item, i) => [i, item]).filter(([_, item]) => !item || this.should_store(item)).map(([i, _]) => i);
+		const bank_slots = Item.bank_indexed_items().filter(([_, item]) => this.should_exchange(item));
 
-				to_exchange.push([pack, pack_slot]);
-			}
+		// Swap slots
+		const n = Math.min(slots.length, bank_slots.length);
+		for (let i = 0; i < n; i++) {
+			await Item.swap({slot: slots[i]}, bank_slots[i][0]);
 		}
-
-		await Item.retrieve_items(to_exchange);
 	}
 
-	/** Do stocktake. */
-	_stocktake() {
-		this.stock = stocktake();
-		this.last_stocktake = new Date();
+	/** Store excess items */
+	async _store_items() {
+		for (let [i, item] of Item.indexed_items().filter(([_, item]) => this.should_store(item))) {
+			const account = pick_account(item);
+			if (account) {
+				await Item.store(i, account);
+			}
+		}
+	}
+
+	/**
+	 * Should we store this item in the bank?
+	 *
+	 * @param {Item} item
+	 * @returns {boolean}
+	 */
+	should_store(item) {
+		const item_type = G.items[item.name].type;
+		return !this.should_upgrade(item) && !this.should_compound(item) && !this.should_exchange(item) && !DONT_STORE_TYPES.has(item_type);
+	}
+
+	/**
+	 * Should we upgrade this item?
+	 *
+	 * @param {Item} item
+	 * @returns {boolean}
+	 */
+	should_upgrade(item) {
+		return Item.is_upgradeable(item) && item.level < this.max_upgrade(item) && Item.grade(item) < MAX_GRADE;
+	}
+
+	/**
+	 * Should we upgrade this item?
+	 *
+	 * @param {Item} item
+	 * @returns {boolean}
+	 */
+	should_compound(item) {
+		return Item.is_compoundable(item) && item.level < this.max_compound(item) && Item.grade(item) < MAX_GRADE;
+	}
+
+	/**
+	 * Should we upgrade this item?
+	 *
+	 * @param {Item} item
+	 * @returns {boolean}
+	 */
+	should_exchange(item) {
+		return Item.is_exchangeable(item) && !item.name.startsWith('candy');
 	}
 
 	/** Collect items from other characters. */

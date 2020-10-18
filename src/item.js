@@ -289,3 +289,13 @@ export function find_free_inventory_slot(after) {
 export function npc_for_quest(name) {
 	return QUEST_NPCS.get(name) || 'exchange';
 }
+
+/**
+ * Return string key for an item.
+ *
+ * @param {Item} item Item.
+ * @returns {string} String suitable for use as a key.
+ */
+export function key(item) {
+	return item.level ? `${item.name}@${item.level}` : item.name;
+}
