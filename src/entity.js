@@ -93,7 +93,7 @@ export function filter(entities, criteria) {
 			return false;
 		}
 
-		if (Util.is_boolean(criteria.alive) && is_dead(character) === criteria.alive) {
+		if (Util.is_boolean(criteria.alive) && is_dead(entity) === criteria.alive) {
 			return false;
 		}
 
