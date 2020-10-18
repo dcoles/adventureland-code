@@ -1,5 +1,6 @@
 // Item upgrades and compounding
 // @ts-check
+import * as Game from '/game.js';
 import * as Util from '/util.js';
 
 // Build a map of Quest IDs → NPC IDs
@@ -198,6 +199,51 @@ export function scroll_level(item_id, item_level) {
 }
 
 /**
+ * Swap the contents of two slots.
+ *
+ * @param {ItemLocation} a First slot
+ * @param {ItemLocation} b Second slot
+ * @returns {Promise} Resolves when swap completes.
+ */
+export async function swap(a, b) {
+	if (a.bank && b.bank) {
+		// Bank-Bank
+		if (a.bank !== a.bank) {
+			throw new Error('Not Implemented');
+		}
+		window.bank_move(a.bank, a.slot, b.slot)
+	} else if (a.bank) {
+		// Bank-Inventory
+		window.bank_swap(a.bank, a.slot, b.slot);
+	} else if (b.bank) {
+		// Inventory-Bank
+		window.bank_swap(b.bank, b.slot, a.slot);
+	} else {
+		// Inventory-Inventory
+		window.swap(a.slot, b.slot);
+	}
+
+	await Game.next_event('player');
+}
+
+/**
+ * Store item in bank.
+ *
+ * @param {number} slot Inventory source slot (0-41).
+ * @param {string} account Bank account (e.g. "items0").
+ * @param {number} [account_slot] Bank account destination slot (0-41; default: auto).
+ * @returns {Promise} Resolves when item is stored.
+ */
+export async function store(slot, account, account_slot) {
+	window.bank_store(slot, account, account_slot);
+
+	const result = await Promise.race([Game.next_event('player'), Game.next_event('game_response', r => r === 'storage_full')]);
+	if (Util.is_string(result)) {
+		throw {reason: result};
+	}
+}
+
+/**
  * Retrieve a list of items from the bank.
  *
  * @param {Array<[string, number]>} items Items to retrieve (pack, pack_slot).
@@ -213,7 +259,7 @@ export async function retrieve_items(items) {
 		window.bank_retrieve(pack, pack_slot, free_slot);
 	}
 
-	await Util.idle();
+	await Game.next_event('player');
 }
 
 /**

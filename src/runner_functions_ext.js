@@ -63,8 +63,7 @@ function bank_store(inventory_slot, pack, pack_slot)
 		if(!pack) pack=cp;
 	}
 
-	// This call can be used manually to pull items, swap items and so on - str is from 0 to 41, it's the storage slot #
-	parent.socket.emit("bank",{operation:"swap",pack:pack,str:pack_slot,inv:inventory_slot});
+	bank_swap(pack, pack_slot, inventory_slot);
 }
 
 /**
@@ -83,6 +82,20 @@ function bank_retrieve(pack, pack_slot, inventory_slot)
 	if(!character.bank[pack] || !character.bank[pack][pack_slot]) return game_log("No item in that spot");
 	if(!(inventory_slot>=0)) inventory_slot=-1; // the server interprets -1 as first slot available
 
+	bank_swap(pack, pack_slot, inventory_slot);
+}
+
+/**
+ * Swap slots between bank and inventory.
+ *
+ * @param {string} pack Bank pack (one of "items0"-"items7").
+ * @param {number} pack_slot Bank pack slot number (0-41).
+ * @param {number} inventory_slot Inventory slot number (0-41).
+ */
+function bank_swap(pack, pack_slot, inventory_slot) {
+	if(!character.bank) return game_log("Not inside the bank");
+
+	// This call can be used manually to pull items, swap items and so on - str is from 0 to 41, it's the storage slot #
 	parent.socket.emit("bank",{operation:"swap",pack:pack,str:pack_slot,inv:inventory_slot});
 }
 
