@@ -295,7 +295,8 @@ export class MerchantBrain extends Brain {
 	}
 
 	items_to_exchange() {
-		return Item.indexed_items({exchangeable: true});
+		return Item.indexed_items({exchangeable: true})
+			.filter(([_, item]) => !item.name.startsWith('candy'));
 	}
 
 	/** Unload at the bank. */
