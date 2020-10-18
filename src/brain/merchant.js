@@ -27,8 +27,8 @@ const UPGRADE_PACK = 'items0';
 const COMPOUND_PACK = 'items1';
 
 // Misc
-const TARGET_GOLD = 5_000_000;
-const MIN_GOLD = 2_000_000;
+const TARGET_GOLD = 2_500_000;
+const MIN_GOLD = 1_000_000;
 const DEFAULT_VENDING_DURATION = 15 * Util.MINUTE_MS;
 const MLUCK_MIN_MS = G.conditions.mluck.duration - Util.MINUTE_MS;  // Once per minute
 
