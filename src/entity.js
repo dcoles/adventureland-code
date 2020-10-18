@@ -51,10 +51,16 @@ export function get_party_members(criteria) {
  * Return nearby entities.
  *
  * @param {Criteria} criteria Criteria to filter entities by.
+ * @param {boolean} [include_self=false] Should our character be included?
  * @returns {Array} Character objects.
  */
-export function get_entities(criteria) {
-	return filter(Object.values(Adventure.get_entities()), criteria);
+export function get_entities(criteria, include_self) {
+	const entities = Object.values(Adventure.get_entities());
+	if (include_self) {
+		entities.push(window.character);
+	}
+
+	return filter(entities, criteria);
 }
 
 /**
