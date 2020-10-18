@@ -30,7 +30,7 @@ const COMPOUND_PACK = 'items1';
 const TARGET_GOLD = 5_000_000;
 const MIN_GOLD = 2_000_000;
 const DEFAULT_VENDING_DURATION = 15 * Util.MINUTE_MS;
-const MLUCK_MIN_MS = G.conditions.mluck.duration - (2 * Util.MINUTE_MS);  // Every 2 minutes
+const MLUCK_MIN_MS = G.conditions.mluck.duration - Util.MINUTE_MS;  // Once per minute
 
 const character = Character.get_character();
 const movement = Movement.get_movement();
@@ -105,13 +105,7 @@ export class MerchantBrain extends Brain {
 					continue;
 				}
 
-				for (let char of Entity.get_entities({type: 'character'})) {
-					// Should we cast on this character?
-					// Don't cast on other merchants, since this tends to start a buff-war
-					if (char.npc || char.ctype === 'merchant' || Entity.distance_between(character, char) > G.skills.mluck.range) {
-						continue;
-					}
-
+				for (let char of Entity.get_entities({type: 'character', max_distance: G.skills.mluck.range, npc: false}, true)) {
 					// Do they have a recent buff from us (or a strong buff)?
 					if (char.s.mluck && (char.s.mluck.ms > MLUCK_MIN_MS || (char.s.mluck.strong && char.s.mluck.f !== character.name))) {
 						continue;
