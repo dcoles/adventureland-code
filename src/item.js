@@ -30,15 +30,56 @@ export const Grade = {
  * @property {boolean} [exchangeable] Is item exchangeable?
  */
 
+ /**
+  * @typedef ItemLocation
+  * @property {number} slot Item slot index.
+  * @property {string} [bank] If set, gives the name of the bank account.
+  */
+
 /**
  * Get indexed character items.
  *
  * @param {ItemCriteria} [criteria] Filter the returned items.
- * @returns {[number, object][]} Array of `[index, item]` tuples.
+ * @returns {[number, Item][]} Array of `[index, item]` tuples.
 */
 export function indexed_items(criteria) {
 	criteria = criteria || {};
 	return character.items.map((item, index) => [index, item]).filter(([_, item]) => match(item, criteria));
+}
+
+/**
+ * Get current inventory items including location.
+ *
+ * @param {ItemCriteria} [criteria] Items must match this criteria.
+ * @returns {[ItemLocation, Item][]} Array of `[item_location, item]` tuples.
+ */
+export function character_indexed_items(criteria) {
+	criteria = criteria ?? {};
+	return character.items.map((item, slot) => [{slot: slot}, item])
+		.filter(([_, item]) => match(item, criteria));
+}
+
+/**
+ * Get current bank items including location.
+ *
+ * @param {ItemCriteria} [criteria] Items must match this criteria.
+ * @returns {[ItemLocation, Item][] | null} Array of `[item_location, item]` tuples or null if not in the bank.
+ */
+export function bank_indexed_items(criteria) {
+	criteria = criteria ?? {};
+	if (!character.bank) {
+		return null;
+	}
+
+	const items = [];
+	for (let [account_name, account_items] of Object.entries(character.bank)
+		.filter(([name, _]) => name !== 'gold')) {
+
+		items.push(...account_items.map((item, slot) => [{slot: slot, bank: account_name}, item])
+			.filter(([_, item]) => match(item, criteria)));
+	}
+
+	return items;
 }
 
 /**
