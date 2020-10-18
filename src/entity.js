@@ -88,7 +88,7 @@ export function filter(entities, criteria) {
 			return false;
 		}
 
-		if (Util.is_boolean(criteria.npc) && entity.npc !== criteria.npc) {
+		if (Util.is_boolean(criteria.npc) && (entity.npc ?? false) !== criteria.npc) {
 			return false;
 		}
 
