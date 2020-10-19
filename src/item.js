@@ -281,6 +281,29 @@ export function find_free_inventory_slot(after) {
 }
 
 /**
+ * Find empty bank account slot.
+ *
+ * @param {string} account_name Account to search.
+ * @returns {number} Account index or -1 if no space available.
+ */
+export function find_free_bank_slot(account_name) {
+	if (!character.bank) {
+		game_log("Not inside bank");
+		return -1;
+	}
+
+	const account = character.bank[account_name];
+	for (let i = 0; i < account.length; i++) {
+		if (!account[i]) {
+			return i;
+		}
+	}
+
+	// No available space
+	return -1;
+}
+
+/**
  * Find the NPC associated with a quest.
  *
  * @param {string} name Quest name.

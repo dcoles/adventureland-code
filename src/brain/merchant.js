@@ -410,9 +410,16 @@ export class MerchantBrain extends Brain {
 	async _store_items() {
 		for (let [i, item] of Item.indexed_items().filter(([_, item]) => this.should_store(item))) {
 			const account = pick_account(item);
-			if (account) {
-				await Item.store(i, account);
+			if (!account) {
+				continue;
 			}
+
+			const slot = Item.find_free_bank_slot(account);
+			if (slot == -1) {
+				continue;
+			}
+
+			await Item.store(i, account);
 		}
 	}
 
