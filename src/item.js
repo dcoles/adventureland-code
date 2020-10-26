@@ -288,11 +288,16 @@ export function find_free_inventory_slot(after) {
  */
 export function find_free_bank_slot(account_name) {
 	if (!character.bank) {
-		game_log("Not inside bank");
+		game_log('Not inside bank');
 		return -1;
 	}
 
 	const account = character.bank[account_name];
+	if (!account) {
+		game_log(`No such account: ${account_name}`);
+		return -1;
+	}
+
 	for (let i = 0; i < account.length; i++) {
 		if (!account[i]) {
 			return i;

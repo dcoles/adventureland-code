@@ -22,15 +22,10 @@ const DEFAULT_MAX_COMPOUND = 0;
 const MAX_SCROLL_LEVEL = 1;  // Don't upgrade rare items (too expensive!)
 const MAX_GRADE = Item.Grade.HIGH;
 
-// Bank packs
-const MATERIAL_PACK = 'items0';
-const UPGRADE_PACK = 'items0';
-const COMPOUND_PACK = 'items1';
-const DONT_STORE_TYPES = new Set(['stand', 'uscroll', 'cscroll', 'pscroll', 'gem']);
-
 // Misc
 const TARGET_GOLD = 2_500_000;
 const MIN_GOLD = 1_000_000;
+const DONT_STORE_TYPES = new Set(['stand', 'uscroll', 'cscroll', 'pscroll', 'gem']);
 const DEFAULT_VENDING_DURATION = 15 * Util.MINUTE_MS;
 const MLUCK_MIN_MS = G.conditions.mluck.duration - Util.MINUTE_MS;  // Once per minute
 
@@ -225,7 +220,7 @@ export class MerchantBrain extends Brain {
 	}
 
 	max_compound(item) {
-		return this.data.max_compound?.[item.name] ?? DEFAULT_MAX_COMPOUND;
+		return this.data.items?.max_compound?.[item.name] ?? DEFAULT_MAX_COMPOUND;
 	}
 
 	/** Upgrade the merch! */
@@ -257,7 +252,7 @@ export class MerchantBrain extends Brain {
 	}
 
 	max_upgrade(item) {
-		return this.data.max_upgrade?.[item.name] ?? DEFAULT_MAX_UPGRADE;
+		return this.data.items?.max_upgrade?.[item.name] ?? DEFAULT_MAX_UPGRADE;
 	}
 
 	/** Exchange items for goodies! */
@@ -409,7 +404,7 @@ export class MerchantBrain extends Brain {
 	/** Store excess items */
 	async _store_items() {
 		for (let [i, item] of Item.indexed_items().filter(([_, item]) => this.should_store(item))) {
-			const account = pick_account(item);
+			const account = this.pick_account(item);
 			if (!account) {
 				continue;
 			}
@@ -421,6 +416,29 @@ export class MerchantBrain extends Brain {
 
 			await Item.store(i, account);
 		}
+	}
+
+	/**
+	 * Decide which bank slot an item should go in.
+	 *
+	 * @param {Item} item Item ID (e.g. "hpbelt").
+	 * @returns {string} Bank "pack".
+	 */
+	pick_account(item) {
+		const details = G.items[item.name];
+		if (!details) {
+			return null;
+		}
+
+		if (Item.is_upgradeable(item)) {
+			return this.data.items?.accounts?.upgradable;
+		}
+
+		if (Item.is_compoundable(item)) {
+			return this.data.items?.accounts?.compoundable;
+		}
+
+		return this.data.items?.accounts?.[details.type];
 	}
 
 	/**
@@ -612,36 +630,6 @@ async function upgrade_all(name, max_level, scroll) {
 			} while (false)
 		}
 	}
-}
-
-/**
- * Decide which bank slot an item should go in.
- *
- * @param {Item} item Item ID (e.g. "hpbelt").
- * @returns {string} Bank "pack".
- */
-function pick_account(item) {
-	const details = G.items[item.name];
-	if (!details) {
-		return null;
-	}
-
-	if (Item.is_upgradeable(item)) {
-		return UPGRADE_PACK;
-	}
-
-	if (Item.is_compoundable(item)) {
-		return COMPOUND_PACK;
-	}
-
-	switch (details.type) {
-		case 'material':
-		case 'quest':
-			return MATERIAL_PACK;
-	}
-
-	// No idea!
-	return null;
 }
 
 /**
