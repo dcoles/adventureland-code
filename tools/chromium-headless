@@ -1,0 +1,13 @@
+#!/bin/bash
+# Start a headless version of Chromium
+# WARNING: Listening on a non-private address means that anyone can access this
+# instance of the browser and the data stored in its profile.
+
+CHROMIUM=chromium
+ADDRESS=127.0.0.1
+PORT=9222
+WINDOW_SIZE=1024,768
+
+exec "${CHROMIUM}" --headless --window-size="${WINDOW_SIZE}" \
+    --remote-debugging-address="${ADDRESS}" --remote-debugging-port="${PORT}" \
+    "$@"
