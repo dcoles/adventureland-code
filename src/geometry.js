@@ -1,6 +1,7 @@
 // Functions for working with Geometry
 // @ts-check
 import * as Util from '/util.js';
+import * as AABB from '/aabb.js';
 
 /**
  * Can our character move from `here` to `there`?
@@ -39,7 +40,7 @@ export function can_move(here, there) {
 		const x2 = y_line[2];
 
 		// Do the bounding boxes collide?
-		if (collide([x1, y], [x2, y], here_min, here_max, v)) {
+		if (AABB.intersect_moving([[x1, y], [x2, y]], [here_min, here_max], [0, 0], v)) {
 			return false;
 		}
 	}
@@ -53,62 +54,12 @@ export function can_move(here, there) {
 		const y2 = x_line[2];
 
 		// Do the bounding boxes collide?
-		if (collide([x, y1], [x, y2], here_min, here_max, v)) {
+		if (AABB.intersect_moving([[x, y1], [x, y2]], [here_min, here_max], [0, 0], v)) {
 			return false;
 		}
 	}
 
 	return true;
-}
-
-/**
- * Do two bounding-boxes collide?
- *
- * @see https://www.gamasutra.com/view/feature/131790/simple_intersection_tests_for_games.php?page=3
- *
- * @param {[number, number]} a_min Bounds of first line (min).
- * @param {[number, number]} a_max Bounds of first line (max).
- * @param {[number, number]} b_min Bounds of second line (min).
- * @param {[number, number]} b_max Bounds of second line (max).
- * @param {[number, number]} v Relative displacement of `b` from `a`'s reference.
- * @returns True if lines collide, else false.
- */
-export function collide(a_min, a_max, b_min, b_max, v) {
-	// Iterate over axis and find time first/last overlap
-	let u0 = [-Infinity, -Infinity];
-	let u1 = [-Infinity, -Infinity];
-	for (let i = 0; i < 2; i++) {
-		if (v[i] === 0) {
-			if (a_max[i] >= b_min[i] && a_min[i] <= b_max[i]) {
-				// Overlapping
-				u1[i] = Infinity;
-			} else {
-				u0[i] = Infinity;
-			}
-			continue;
-		}
-
-		if (a_max[i] < b_min[i] && v[i] < 0) {
-			// A left/above of B and converging
-			u0[i] = (a_max[i] - b_min[i]) / v[i];
-		} else if (a_min[i] > b_max[i] && v[i] > 0) {
-			// A right/below of B and converging
-			u0[i] = (a_min[i] - b_max[i]) / v[i];
-		}
-
-		if (a_min[i] < b_max[i] && v[i] < 0) {
-			// A left/above of B and diverging
-			u1[i] = (a_min[i] - b_max[i]) / v[i];
-		} else if (a_max[i] > b_min[i] && v[i] > 0) {
-			// A right/below of B and diverging
-			u1[i] = (a_max[i] - b_min[i]) / v[i];
-		}
-	}
-
-	// Can only overlap if first overlap time is before the last overlap time
-	const u0_max = Math.max(...u0);
-	const u1_min = Math.min(...u1);
-	return u0_max <= u1_min && u0_max <= 1 && u1_min >= 0;
 }
 
 /**

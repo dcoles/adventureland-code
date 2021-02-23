@@ -47,33 +47,24 @@ function draw_grid() {
 	const here = [character.x, character.y, character.map];
 	console.log('Drawing Grid...')
 
-	// Built-in can-move
-	console.time('builtin');
+	// Our move
 	for (let i = -WIDTH; i < WIDTH; i++) {
 		for (let j = -WIDTH; j < WIDTH; j++) {
 			const there = [Util.quantize(here[0], S) + S * i, Util.quantize(here[1], S) + S * j, here[2]];
-			if (can_move_to(there[0], there[1])) {
+			const can_builtin_move = can_move_to(there[0], there[1]);
+			const can_our_move = Geometry.can_move(here, there);
+
+			if (can_our_move) {
+				draw_circle(there[0], there[1], 2, null, Color.GREEN);
+			}
+
+			if (can_builtin_move) {
 				draw_circle(there[0], there[1], 3, null, Color.BLUE);
 			} else {
 				draw_circle(there[0], there[1], 1, null, Color.RED);
 			}
 		}
 	}
-	console.timeEnd('builtin');
-
-	// Our move
-	console.time('our');
-	for (let i = -WIDTH; i < WIDTH; i++) {
-		for (let j = -WIDTH; j < WIDTH; j++) {
-			const there = [Util.quantize(here[0], S) + S * i, Util.quantize(here[1], S) + S * j, here[2]];
-			if (Geometry.can_move(here, there)) {
-				draw_circle(there[0], there[1], 2, null, Color.GREEN);
-			} else {
-				draw_circle(there[0], there[1], 1, null, Color.RED);
-			}
-		}
-	}
-	console.timeEnd('our');
 }
 
 /**

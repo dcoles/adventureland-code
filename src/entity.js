@@ -1,6 +1,7 @@
 // Functions for working with entities.
 // @ts-check
 
+import * as AABB from '/aabb.js';
 import * as Adventure from '/adventure.js';
 import * as Util from '/util.js';
 
@@ -236,8 +237,6 @@ export function difficulty(entity) {
  * Note: This is based off the entities current velocity, so should that
  * change the actual result may be different.
  *
- * @see https://www.gamasutra.com/view/feature/131790/simple_intersection_tests_for_games.php?page=3
- *
  * @param {object} a First entity.
  * @param {object} b Second entity.
  * @param {number} [t_max] Max seconds to consider (default: forever).
@@ -246,46 +245,23 @@ export function difficulty(entity) {
 export function will_collide(a, b, t_max) {
 	t_max = t_max || Infinity;
 
-	const a_width = Adventure.get_width(a);
-	const a_height = Adventure.get_height(a);
-	const b_width = Adventure.get_width(b);
-	const b_height = Adventure.get_height(b);
+	return AABB.intersect_moving(aabb(a), aabb(b), [a.vx, a.vy], [b.vx, b.vy], t_max) !== null;
+}
 
-	// Bounding boxes
-	const a_max = [a.x + a_width / 2, a.y + a_height / 2];
-	const a_min = [a.x - a_width / 2, a.y - a_height / 2];
-	const b_max = [b.x + b_width / 2, b.y + b_height / 2];
-	const b_min = [b.x - b_width / 2, b.y - b_height / 2];
+/**
+ * Return Axis-Aligned Bounding Box (min-max) for an entity.
+ *
+ * @param {*} entity Entity
+ * @returns {[[number, number], [number, number]]} [min, max] AABB
+ */
+export function aabb(entity) {
+	const width = Adventure.get_width(entity);
+	const height = Adventure.get_height(entity);
 
-	// Solve from the reference frame of A (B in motion)
-	// v = v_b - v_a
-	const v = [b.vx - a.vx, b.vy - a.vy];
+	const min = [entity.x - width / 2, entity.y - height / 2];
+	const max = [entity.x + width / 2, entity.y + height / 2];
 
-	// Iterate over axes and find start/end overlap times
-	let u0 = [0, 0];
-	let u1 = [0, 0];
-	for (let i = 0; i < 2; i++) {
-		if (a_max[i] < b_min[i] && v[i] < 0) {
-			// A to the left|above of B and B approaching
-			u0[i] = (a_max[i] - b_min[i]) / v[i];
-		} else if (b_max[i] < a_min[i] && v[i] > 0) {
-			// B to the left|above of A and B approaching
-			u0[i] = (a_min[i] - b_max[i]) / v[i];
-		}
-
-		if (b_max[i] > a_min[i] && v[i] < 0) {
-			// B to the right|below of A and B approaching
-			u1[i] = (a_min[i] - b_max[i]) / v[i];
-		} else if (a_max[i] > b_min[i] && v[i] > 0) {
-			// A to the right|below of B and B approaching
-			u1[i] = (a_max[i] - b_min[i]) / v[i];
-		}
-	}
-
-	// Can only overlap if first overlap time is before the last overlap time
-	const u0_max = Math.max(...u0);
-	const u1_min = Math.min(...u1);
-	return u0_max < u1_min && u0_max <= t_max + 0.250;  // Slight fudge
+	return [min, max];
 }
 
 /**
