@@ -538,13 +538,11 @@ export class MerchantBrain extends Brain {
 	}
 
 	open_stand() {
-		// TODO: Upstream to runner_functions.js
-		window.open_merchant(Item.find({name: 'stand0'}));
+		window.open_stand(Item.find({name: 'stand0'}));
 	}
 
 	close_stand() {
-		// TODO: Upstream to runner_functions.js
-		window.close_merchant();
+		window.close_stand();
 	}
 }
 
