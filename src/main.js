@@ -268,14 +268,13 @@ async function main() {
 		}
 	}
 
-	// Auto pause on AFK
 	if (AUTO_PAUSE) {
-		window.setInterval(() => {
-			if (window.character.afk ^ window.is_paused()) {
-				Logging.info('Toggling pause');
+		// Auto pause if window is not visible
+		document.addEventListener('visibilitychange', () => {
+			if (parent.document.visibilityState !== 'visible' ^ window.is_paused()) {
 				window.pause();
 			}
-		}, Util.IDLE_MS);
+		}, false);
 	}
 
 	// Start running!
