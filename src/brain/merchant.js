@@ -19,8 +19,7 @@ const N_COMPOUNDED = 3;
 // Highest levels to upgrade/compound to
 const DEFAULT_MAX_UPGRADE = 0;
 const DEFAULT_MAX_COMPOUND = 0;
-const MAX_SCROLL_LEVEL = 1;  // Don't upgrade rare items (too expensive!)
-const MAX_GRADE = Item.Grade.HIGH;
+const MAX_GRADE = Item.Grade.RARE;  // Don't upgrade rare items (too expensive!)
 
 // Misc
 const TARGET_GOLD = 2_500_000;
@@ -222,7 +221,7 @@ export class MerchantBrain extends Brain {
 		const to_compound = [];
 		const counts = new Map();
 		for (let [slot, item] of Item.indexed_items({ compoundable: true })
-			.filter(([_, item]) => item.level < this.max_compound(item) && Item.scroll_level(item.name, item.level) <= MAX_SCROLL_LEVEL)) {
+			.filter(([_, item]) => this.should_compound(item))) {
 			const key = `${item.name}@${item.level}`;
 			if (!counts.has(key)) {
 				counts.set(key, {name: item.name, level: item.level, slots: []});
@@ -269,7 +268,7 @@ export class MerchantBrain extends Brain {
 
 	items_to_upgrade() {
 		return Item.indexed_items({upgradeable: true})
-			.filter(([_, item]) => item.level < this.max_upgrade(item) && Item.scroll_level(item.name, item.level) <= MAX_SCROLL_LEVEL);
+			.filter(([_, item]) => this.should_upgrade(item));
 	}
 
 	max_upgrade(item) {
@@ -312,7 +311,7 @@ export class MerchantBrain extends Brain {
 
 	items_to_exchange() {
 		return Item.indexed_items({exchangeable: true})
-			.filter(([_, item]) => !item.name.startsWith('candy'));
+			.filter(([_, item]) => this.should_exchange(item));
 	}
 
 	/** Unload at the bank. */
@@ -500,7 +499,7 @@ export class MerchantBrain extends Brain {
 	 * @returns {boolean}
 	 */
 	should_exchange(item) {
-		return Item.is_exchangeable(item) && !item.name.startsWith('candy');
+		return Item.is_exchangeable(item);
 	}
 
 	/** Collect items from other characters. */
