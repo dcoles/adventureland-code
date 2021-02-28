@@ -148,7 +148,16 @@ export function vector_add(v1, v2) {
  * @param {number[]} v2 Second vector.
  */
 export function vector_difference(v1, v2) {
-	return v1.map((x, i) => x - v2[i]);
+	// This function is performance critical!
+	// Using map is much slower than a loop!
+
+	let v = new Array(v1.length);
+
+	for (let i = 0; i < v1.length; i++) {
+		v[i] = v1[i] - v2[i];
+	}
+
+	return v;
 }
 
 /**
