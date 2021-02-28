@@ -246,7 +246,7 @@ export function bsearch(array, n, index) {
 	let r = array.length - 1;
 
 	while (l <= r) {
-		const mid = Math.floor((l + r) / 2);
+		const mid = (l + r) >> 1;
 		const value = index ? index(mid, array) : array[mid];
 		if (value < n) {
 			l = mid + 1;
