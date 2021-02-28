@@ -302,6 +302,11 @@ export class MerchantBrain extends Brain {
 				await UI.busy('Exchange', this._sleep(window.character.q.exchange.ms));
 			}
 
+			if (Item.find_free_inventory_slot() == -1) {
+				// No space left!
+				break;
+			}
+
 			exchange(slot);
 			await this._idle();
 		}
