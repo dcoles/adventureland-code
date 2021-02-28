@@ -39,11 +39,9 @@ export class MerchantBrain extends Brain {
 		this.home = {x: -120, y: 0, map: 'main'};  // Home for vending
 		this.vending_duration = DEFAULT_VENDING_DURATION;
 
-		this.state.should_bank ??= false;
-		this.state.should_collect ??= false;
-
 		// States
 		this.states = [
+			{name: 'Sell', predicate: () => this.state.items_to_sell.length >= 1},
 			{name: 'Compound', predicate: () => this.items_to_compound().length >= 1 && character.gold > MIN_GOLD},
 			{name: 'Upgrade', predicate: () => this.items_to_upgrade().length >= 1 && character.gold > MIN_GOLD},
 			{name: 'Exchange', predicate: () => this.items_to_exchange().length >= 1},
@@ -66,6 +64,10 @@ export class MerchantBrain extends Brain {
 	async _init() {
 		// Default state is Collect
 		this.state.name = this.state.name in this.states ? this.state.name : 'Collect';
+
+		this.state.should_bank ??= false;
+		this.state.should_collect ??= false;
+		this.state.items_to_sell ??= [];
 
 		// Task for keeping us healthy
 		this.create_task('regen_autocast', async task => {
@@ -172,6 +174,25 @@ export class MerchantBrain extends Brain {
 
 		Logging.error('No states found!')
 		this.stop();
+	}
+
+	/** Sell item at vendor */
+	async _sell() {
+		if (this.state.items_to_sell.length < 1) {
+			Logging.warn('Nothing to sell?');
+			return;
+		}
+
+		await movement.pathfind_move('basics');
+
+		for (let item of this.state.items_to_sell) {
+			const index = Item.find(item);
+			if (index !== -1) {
+				window.sell(index, item.q ?? 1);
+			}
+		}
+
+		this.state.items_to_sell = [];
 	}
 
 	/** Compound items! */
