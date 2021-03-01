@@ -188,6 +188,20 @@ export function grade(item) {
 }
 
 /**
+ * What is the minimum level for a certain grade of a particular item.
+ * @param {Item} item Item
+ * @param {number} grade Item grade
+ * @returns {number} Level
+ */
+export function min_level_for_grade(item, grade) {
+	if (grade === Grade.COMMON) {
+		return 0;
+	}
+
+	return G.items[item.name].grades[grade - 1];
+}
+
+/**
  * What is the minimum scroll level we must use to upgrade this item?
  *
  * @param {string} item_id Item ID (e.g. `"hpamulet"`).

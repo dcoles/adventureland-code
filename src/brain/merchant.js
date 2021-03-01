@@ -240,7 +240,7 @@ export class MerchantBrain extends Brain {
 	}
 
 	max_compound(item) {
-		return this.data.items?.max_compound?.[item.name] ?? DEFAULT_MAX_COMPOUND;
+		return Math.min(this.data.items?.max_compound?.[item.name] ?? DEFAULT_MAX_COMPOUND, Item.min_level_for_grade(item, MAX_GRADE));
 	}
 
 	/** Upgrade the merch! */
@@ -272,7 +272,7 @@ export class MerchantBrain extends Brain {
 	}
 
 	max_upgrade(item) {
-		return this.data.items?.max_upgrade?.[item.name] ?? DEFAULT_MAX_UPGRADE;
+		return Math.min(this.data.items?.max_upgrade?.[item.name] ?? DEFAULT_MAX_UPGRADE, Item.min_level_for_grade(item, MAX_GRADE));
 	}
 
 	/** Exchange items for goodies! */
