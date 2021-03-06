@@ -1,142 +1,361 @@
 // Behavor Tree
 import * as Util from '/util.js';
+import * as Logging from '/logging.js';
 
-/** Sequence of tasks. */
-function sequence(...tasks) {
-	return async () => {
-		for (let task of tasks) {
-			if (!await task()) {
-				return false;
-			}
-		}
-
-		return true;
-	};
-}
-
-/** Selector of tasks. */
-function fallback(...tasks) {
-	return async () => {
-		for (let task of tasks) {
-			if (await task()) {
-				return true;
-			}
-		}
-
-		return false
-	};
-}
-
-/** Decorator that makes a task always succeeed. */
-function success(task) {
-	return async () => {
-		await task();
-		return true;
-	};
-}
-
-/** Pause a task for `ms` milliseconds. */
-function pause(task, ms) {
-	return async () => {
-		await Util.sleep(ms);
-		return await task();
-	};
-}
-
-/** Task to select nearest monster. */
-function target_nearest_monster() {
-	return async () => {
-		let target = get_nearest_monster();
-		change_target(target);
-
-		return target != null;
-	};
-}
-
-/** Task to move to target. */
-function move_to_target() {
-	return async () => {
-		let target = get_target();
-		if (!target) {
-			return false;
-		}
-
-		await xmove(target.real_x, target.real_y);
-		return true;
-	};
-}
-
-/** Task ticker that ticks every `interval_ms` milliseconds. */
-async function tick(task, interval_ms) {
-	while (true) {
-		await task(),
-		await Util.sleep(interval_ms)
+class Node {
+	/**
+	 * Tick this node.
+	 *
+	 * @returns {Promise<"success"|"failure"|"running">}
+	 */
+	async tick() {
+		return Node.SUCCESS;
 	}
 }
 
+Node.SUCCESS = "success";
+Node.FAILURE = "failure";
+Node.RUNNING = "running";
+
+/** Tick nodes in sequence, returning FAILURE on the first failed node; otherwise SUCCESS. */
+class Sequence extends Node {
+	constructor(...children) {
+		super();
+		this.children = children;
+	}
+
+	async tick() {
+		for (let child of this.children) {
+			const status = await child.tick();
+			switch (status) {
+				case Node.RUNNING:
+				case Node.FAILURE:
+					return status;
+				case Node.SUCCESS:
+					continue;
+				default:
+					throw Error('Unknown status: ' + status);
+			}
+		}
+		return Node.SUCCESS;
+	}
+}
+
+/** Tick nodes in sequence, returning SUCCESS on the first successful node; otherwise FAILURE. */
+class Fallback extends Node {
+	constructor(...children) {
+		super();
+		this.children = children;
+	}
+
+	async tick() {
+		for (let child of this.children) {
+			const status = await child.tick();
+			switch (status) {
+				case Node.RUNNING:
+				case Node.SUCCESS:
+					return status;
+				case Node.FAILURE:
+					continue;
+				default:
+					throw Error('Unknown status: ' + status);
+			}
+		}
+		return Node.FAILURE;
+	}
+}
+
+/** Tick nodes in parallel, returning FAILURE if any node fails; otherwise SUCCESS. */
+class Parallel extends Node {
+	constructor(...children) {
+		super()
+		this.children = children;
+	}
+
+	async tick() {
+		const statuses = await Promise.all(this.children.map(c => c.tick()));
+		let result = Node.SUCCESS;
+		for (let status of statuses) {
+			switch (status) {
+				case Node.FAILURE:
+					return Node.FAILURE;
+				case Node.RUNNING:
+					result = Node.RUNNING;
+			}
+		}
+		return result;
+	}
+}
+
+/** A condition that returns either SUCCESS or FAILURE. */
+class Condition extends Node {
+	constructor(condition) {
+		super();
+		this.condition = condition;
+	}
+
+	async tick() {
+		if (this.condition()) {
+			return Node.SUCCESS;
+		} else {
+			return Node.FAILURE;
+		}
+	}
+}
+
+/** A decorator for other nodes. */
+class Decorator extends Node {
+	constructor(child) {
+		super();
+		this.child = child;
+	}
+
+	async tick() {
+		return await this.child.tick();
+	}
+}
+
+/** Decorator that ticks a node until it fails. */
+class RepeatUntilFailure extends Decorator {
+	async tick() {
+		const status = await this.child.tick();
+		switch (status) {
+			case Node.RUNNING:
+			case Node.SUCCESS:
+				return Node.RUNNING;
+			case Node.FAILURE:
+				return Node.FAILURE;
+			default:
+				throw Error('Unknown status: ' + status);
+		}
+	}
+}
+
+/** Wait for `skill_id` to be ready. */
+class WaitForSkillReady extends Node {
+	constructor(skill_id) {
+		super();
+		this.skill_id = skill_id;
+	}
+
+	async tick() {
+		if (is_on_cooldown(this.skill_id)) {
+			return Node.RUNNING;
+		} else {
+			return Node.SUCCESS;
+		}
+	}
+}
+
+/** Attempt to use `skill_id`. */
+class UseSkill extends Node {
+	constructor(skill_id) {
+		super();
+		this.skill_id = skill_id;
+	}
+
+	async tick() {
+		const target = get_target();
+
+		switch (this.skill_id) {
+			case 'attack':
+				attack(target);
+				break;
+			case 'heal':
+				heal(target);
+				break;
+			default:
+				use_skill(this.skill_id, target);
+		}
+
+		// Give time for timers to update
+		Util.idle();
+
+		return Node.SUCCESS;
+	}
+}
+
+/** Attempot to target nearest monster. */
+class TargetNearestMonster extends Node {
+	async tick() {
+		const target = get_nearest_monster();
+		change_target(target);
+
+		return target !== null ? Node.SUCCESS : Node.FAILURE;
+	}
+}
+
+/** Attempt to move to target. */
+class MoveTo extends Node {
+	constructor(target) {
+		super();
+		this.target = target;
+	}
+
+	async tick() {
+		const target = this.target ?? get_target();
+		if (!target) {
+			return Node.SUCCESS;
+		}
+
+		try {
+			await xmove(target.x, target.y);
+		} catch (e) {
+			Logging.warn('MoveTo failed', e);
+			return Node.FAILURE;
+		}
+
+		return Node.SUCCESS;
+	}
+}
+
+class Respawn extends Node {
+	async tick() {
+		Logging.info('Respawning in 15 seconds...');
+
+		await Util.sleep(15_000);
+		respawn();
+		await Util.sleep(1_000);
+
+		return Node.SUCCESS;
+	}
+}
+
+class Loot extends Node {
+	async tick() {
+		loot();
+
+		return Node.SUCCESS;
+	}
+}
+
+class Idle extends Node {
+	async tick() {
+		set_message('IDLE');
+		return Node.RUNNING;
+	}
+}
+
+/**
+ * Node ticker.
+ *
+ * @param {Node} child Node to tick.
+ * @param {number?} interval_ms Tick interval in milliseconds.
+ */
+class Root extends Node {
+	constructor(child, interval_ms) {
+		super()
+		this.child = child;
+		this.interval_ms = interval_ms ?? 250;
+		this.running = false;
+	}
+
+	async tick() {
+		return await this.child.tick();
+	}
+
+	async run() {
+		this.running = true;
+		while (this.running) {
+			await this.tick();
+			await Util.sleep(this.interval_ms)
+		}
+	}
+}
+
+/** Is target dead? */
+function is_dead(target) {
+	!target || target.dead
+}
+
 function main() {
-	// Task to respawn 15 seconds after death.
-	const respawn_task = sequence(
-		() => character.rip,
-		pause(success(respawn), 15_000)
-	);
-
-	// Task to loot chests.
-	const looting_task = success(loot);
-
-	// Task to regen HP using potions.
-	const regen_hp_task = sequence(
-		() => character.hp < character.max_hp,
-		() => !is_on_cooldown('use_hp'),
-		fallback(
-			sequence(
-				() => character.hp < character.max_hp - 200 && locate_item('hpot0') != -1,
-				success(() => use_skill('use_hp')),
-			),
-			success(() => use_skill('regen_hp')),
+	const regen_hp_task = new Fallback(
+		new Condition(() => character.hp == character.max_hp),
+		new RepeatUntilFailure(
+			new Sequence(
+				new WaitForSkillReady('use_hp'),
+				new Fallback(
+					new Sequence(
+						new Condition(() => character.hp < character.max_hp - 200),
+						new Condition(() => locate_item('hpot0') != -1),
+						new UseSkill('use_hp'),
+					),
+					new UseSkill('regen_hp')
+				)
+			)
 		)
 	);
 
-	// Task to regen MP using potions.
-	const regen_mp_task = sequence(
-		() => character.mp < character.max_mp,
-		() => !is_on_cooldown('use_mp'),
-		fallback(
-			sequence(
-				() => character.mp < character.max_mp - 300 && locate_item('mpot0') != -1,
-				success(() => use_skill('use_mp')),
-			),
-			success(() => use_skill('regen_mp')),
+	const regen_mp_task = new Fallback(
+		new Condition(() => character.mp == character.max_mp),
+		new RepeatUntilFailure(
+			new Sequence(
+				new WaitForSkillReady('use_hp'),
+				new Fallback(
+					new Sequence(
+						new Condition(() => character.hp < character.max_hp - 200),
+						new Condition(() => locate_item('mpot0') != -1),
+						new UseSkill('use_mp'),
+					),
+					new UseSkill('regen_mp')
+				)
+			)
 		)
 	);
 
-	// Task to regen HP or MP.
-	const regen_task = fallback(
-		sequence(
-			() => character.mp > 50,
-			regen_hp_task,
+	const attack_task = new Fallback(
+		new Condition(() => is_dead(get_target())),
+		new Sequence(
+			new Condition(() => is_in_range(get_target())),
+			new RepeatUntilFailure(
+				new Sequence(
+					new WaitForSkillReady('attack'),
+					new UseSkill('attack'),
+				),
+			),
 		),
-		regen_mp_task,
+		new MoveTo(),
 	);
 
-	// Task to find and attack monsters.
-	const attack_task = sequence(
-		fallback(
-			() => get_targeted_monster() != null,
-			target_nearest_monster(),
+	const find_monster_task = new Fallback(
+		new Condition(() => get_targeted_monster()),
+		new Sequence(
+			new Condition(() => character.hp / character.max_hp > 0.8),
+			new TargetNearestMonster(),
 		),
-		fallback(
-			() => is_in_range(get_target()),
-			move_to_target(),
-		),
-		() => can_attack(get_target()),
-		async () => await attack(get_target()),
 	);
 
-	tick(respawn_task, 1_000).catch(e => console.log('Respawn task failed:', e));
-	tick(looting_task, 1_000).catch(e => console.log('Looting task failed:', e));
-	tick(regen_task, 250).catch(e => console.log('Attack task failed:', e));
-	tick(attack_task, 250).catch(e => console.log('Attack task failed:', e));
+	const main_task = new Sequence(
+		// Respawn on death
+		new Fallback(
+			new Condition(() => !character.rip),
+			new Respawn(),
+		),
+
+		new Parallel(
+			// Looting
+			new Loot(),
+
+			// HP/MP regeneration
+			new Sequence(
+				new Fallback(
+					new Condition(() => character.mp / character.max_mp > 0.2),
+					regen_mp_task,
+				),
+				regen_hp_task,
+				regen_mp_task,
+			),
+
+			// Attack
+			new Sequence(
+				find_monster_task,
+				attack_task,
+			),
+		),
+	);
+
+	const root = new Root(main_task);
+	root.run().catch(e => Logging.error('Main task failed', e));
 }
 
 main()
