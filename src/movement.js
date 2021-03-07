@@ -177,7 +177,7 @@ class Movement {
 		DEBUG_MOVEMENT && Draw.add_list('debug_kite', window.draw_line(entity_pos[0], entity_pos[1], char_pos[0], char_pos[1], null, Color.RED));
 		DEBUG_MOVEMENT && Draw.add_list('debug_kite', window.draw_line(entity_pos[0], entity_pos[1], new_pos[0], new_pos[1], null, Color.BLUE));
 		const max_distance = Math.min(Math.max(character.speed * remaining_move_time, MIN_MOVE_DIST), MAX_MOVE_DIST);
-		await this.move(new_pos[0], new_pos[1], {max_distance: max_distance});
+		await move(new_pos[0], new_pos[1], {max_distance: max_distance});
 	}
 
 	/**
@@ -219,7 +219,7 @@ class Movement {
 
 					// How far should we move?
 					const dist = options.max_distance ? Math.min(segment_distance, options.max_distance - distance_traveled) : segment_distance;
-					await this.move(p[0], p[1], {max_distance: dist, avoid: options.avoid});
+					await move(p[0], p[1], {max_distance: dist, avoid: options.avoid});
 
 					// Record distance traveled
 					distance_traveled += Util.distance(current_pos[0], current_pos[1], character.real_x, character.real_y);
@@ -247,53 +247,6 @@ class Movement {
 		return !task.is_cancelled();
 	}
 
-	/**
-	 * Move to position.
-	 *
-	 * @param {number} x x-coordinate.
-	 * @param {number} y y-coordinate.
-	 * @param {object} options Movement options.
-	 */
-	async move(x, y, options) {
-		return this.move_to({x: x, y: y}, options)
-	}
-
-	/**
-	 * Move towards a target.
-	 *
-	 * @param {object} target Target to move towards.
-	 * @param {object} [options] Movement options.
-	 * @param {number} [options.max_distance] Maximum distance to move.
-	 * @param {boolean} [options.avoid] If true, try and avoid other entities.
-	 */
-	async move_to(target, options) {
-		let dest = [target.x, target.y];
-		const current_pos = Movement.current_position();
-		const dist = Util.distance(current_pos[0], current_pos[1], dest[0], dest[1]);
-
-		DEBUG_MOVEMENT && Draw.clear_list('debug_move');
-		DEBUG_MOVEMENT && Draw.add_list('debug_move', draw_circle(dest[0], dest[1], 3, null, Color.BLUE));
-
-		if (target.moving) {
-			// First order approximation
-			const t = Entity.movement_time(window.character, dist);
-			dest = Util.vector_add(dest, movement_compensation(target, t));
-		}
-
-		if (options.max_distance && dist > options.max_distance) {
-			// Respect `max_distance`
-			const v = Util.vector_resize(Util.vector_difference(dest, current_pos), options.max_distance);
-			dest = Util.vector_add(current_pos, v);
-		}
-
-		if (options.avoid) {
-			// Avoid collision with other entities
-			dest = collision_avoidance(dest);
-		}
-
-		DEBUG_MOVEMENT && Draw.add_list('debug_move', draw_line(current_pos[0], current_pos[1], dest[0], dest[1]));
-		await window.move(dest[0], dest[1]);
-	}
 
 	/**
 	 * Create a movement task.
@@ -394,6 +347,54 @@ function find_monster(name) {
 async function transport(map, spawn) {
 	window.transport(map, spawn || 0);
 	await Game.next_event('new_map');
+}
+
+/**
+ * Move to position.
+ *
+ * @param {number} x x-coordinate.
+ * @param {number} y y-coordinate.
+ * @param {object} options Movement options.
+ */
+export async function move(x, y, options) {
+	return move_to({x: x, y: y}, options)
+}
+
+/**
+ * Move towards a target.
+ *
+ * @param {object} target Target to move towards.
+ * @param {object} [options] Movement options.
+ * @param {number} [options.max_distance] Maximum distance to move.
+ * @param {boolean} [options.avoid] If true, try and avoid other entities.
+ */
+export async function move_to(target, options) {
+	let dest = [target.x, target.y];
+	const current_pos = Movement.current_position();
+	const dist = Util.distance(current_pos[0], current_pos[1], dest[0], dest[1]);
+
+	DEBUG_MOVEMENT && Draw.clear_list('debug_move');
+	DEBUG_MOVEMENT && Draw.add_list('debug_move', draw_circle(dest[0], dest[1], 3, null, Color.BLUE));
+
+	if (target.moving) {
+		// First order approximation
+		const t = Entity.movement_time(window.character, dist);
+		dest = Util.vector_add(dest, movement_compensation(target, t));
+	}
+
+	if (options.max_distance && dist > options.max_distance) {
+		// Respect `max_distance`
+		const v = Util.vector_resize(Util.vector_difference(dest, current_pos), options.max_distance);
+		dest = Util.vector_add(current_pos, v);
+	}
+
+	if (options.avoid) {
+		// Avoid collision with other entities
+		dest = collision_avoidance(dest);
+	}
+
+	DEBUG_MOVEMENT && Draw.add_list('debug_move', draw_line(current_pos[0], current_pos[1], dest[0], dest[1]));
+	await window.move(dest[0], dest[1]);
 }
 
 /**

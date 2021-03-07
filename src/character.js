@@ -226,7 +226,7 @@ class Character {
 			return;
 		}
 
-		await movement.move_to(target, {max_distance: distance, avoid: args.avoid});
+		await Movement.move_to(target, {max_distance: distance, avoid: args.avoid});
 	}
 
 	/**
