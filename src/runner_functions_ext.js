@@ -27,13 +27,3 @@ function bank_move(pack, slot1, slot2) {
 
 	parent.socket.emit("bank", {operation: "move", a: slot1, b: slot2, pack: pack})
 }
-
-
-/**
- * Override `smart_move` with `pathfind_move`.
- *
- * @param {object|string} dest
- */
-async function smart_move(dest) {
-	await Code.movement.pathfind_move(dest);
-}

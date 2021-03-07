@@ -212,6 +212,15 @@ window.on_destroy = function() {
 	_stop_bots();
 }
 
+/**
+ * Override `smart_move` with `pathfind_move`.
+ *
+ * @param {object|string} dest
+ */
+window.smart_move = async function(dest) {
+	await movement.pathfind_move(dest);
+}
+
 /** Main function */
 async function main() {
 	Logging.info('== Starting CODE ==');
