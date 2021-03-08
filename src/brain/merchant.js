@@ -1,6 +1,5 @@
 // Brain for a merchant
 // @ts-check
-import * as Adventure from '/adventure.js';
 import * as Bank from '/bank.js';
 import * as Character from '/character.js';
 import * as Entity from '/entity.js';
@@ -307,7 +306,7 @@ export class MerchantBrain extends Brain {
 				break;
 			}
 
-			exchange(slot);
+			window.exchange(slot);
 			await this._idle();
 		}
 
@@ -446,7 +445,7 @@ export class MerchantBrain extends Brain {
 	/**
 	 * Decide which bank slot an item should go in.
 	 *
-	 * @param {Item} item Item ID (e.g. "hpbelt").
+	 * @param {AdventureLand.Item} item Item ID (e.g. "hpbelt").
 	 * @returns {string} Bank "pack".
 	 */
 	pick_account(item) {
@@ -469,7 +468,7 @@ export class MerchantBrain extends Brain {
 	/**
 	 * Should we store this item in the bank?
 	 *
-	 * @param {Item} item
+	 * @param {AdventureLand.Item} item
 	 * @returns {boolean}
 	 */
 	should_store(item) {
@@ -480,7 +479,7 @@ export class MerchantBrain extends Brain {
 	/**
 	 * Should we upgrade this item?
 	 *
-	 * @param {Item} item
+	 * @param {AdventureLand.Item} item
 	 * @returns {boolean}
 	 */
 	should_upgrade(item) {
@@ -490,7 +489,7 @@ export class MerchantBrain extends Brain {
 	/**
 	 * Should we upgrade this item?
 	 *
-	 * @param {Item} item
+	 * @param {AdventureLand.Item} item
 	 * @returns {boolean}
 	 */
 	should_compound(item) {
@@ -500,7 +499,7 @@ export class MerchantBrain extends Brain {
 	/**
 	 * Should we upgrade this item?
 	 *
-	 * @param {Item} item
+	 * @param {AdventureLand.Item} item
 	 * @returns {boolean}
 	 */
 	should_exchange(item) {
@@ -513,7 +512,7 @@ export class MerchantBrain extends Brain {
 			return;
 		}
 
-		for (let char of Adventure.get_characters()) {
+		for (let char of window.get_characters()) {
 			if (char.name === character.name || !char.online) {
 				continue;
 			}
@@ -653,38 +652,4 @@ async function upgrade_all(name, max_level, scroll) {
 			} while (false)
 		}
 	}
-}
-
-/**
- * Take stock of what's in the bank.
- *
- * @returns {Map<String,Array<[string,number,Item]>>} Mapping of `"item_id[:level]"` to Array of `[pack, index, item]`.
- */
-function stocktake() {
-	if (character.map !== 'bank') {
-		throw new Error('Not in bank');
-	}
-
-	const stock = new Map();
-	for (let [account_name, account] of Bank.accounts().entries()) {
-		for (let i=0; i< account.length; i++) {
-			if (!account[i]) {
-				continue;
-			}
-
-			const item_id = account[i].name;
-			if (!stock.has(item_id)) {
-				stock.set(item_id, []);
-			}
-
-			stock.get(item_id).push([account_name, i, account[i]]);
-		}
-	}
-
-	// Sort each set of items by level
-	for (let items of stock.values()) {
-		items.sort(([_p1, _i1, item1], [_p2, _i2, item2]) => 'level' in item1 ? item1.level - item2.level : 0);
-	}
-
-	return stock;
 }

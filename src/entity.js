@@ -5,8 +5,6 @@ import * as AABB from '/aabb.js';
 import * as Adventure from '/adventure.js';
 import * as Util from '/util.js';
 
-const character = Adventure.get_character();
-
 /**
  * Filter criteria.
  *
@@ -30,7 +28,7 @@ const character = Adventure.get_character();
  * Return nearest monsters.
  *
  * @param {Criteria} [criteria] Criteria for matching monster.
- * @returns {Array<Monster>} Monsters ordered from nearest to furthest away.
+ * @returns {AdventureLand.Monster[]} Monsters ordered from nearest to furthest away.
  */
 export function get_nearby_monsters(criteria) {
 	criteria = criteria || {};
@@ -41,7 +39,7 @@ export function get_nearby_monsters(criteria) {
  * Return nearby party members ordered by HP ratio.
  *
  * @param {Criteria} [criteria] Criteria to filter entities by.
- * @returns {Array} Character objects.
+ * @returns {AdventureLand.Character[]} Character objects.
  */
 export function get_party_members(criteria) {
 	criteria = criteria || {};
@@ -109,7 +107,7 @@ export function filter(entities, criteria) {
 			return false;
 		}
 
-		if (Util.is_boolean(criteria.party) && entity.name in Adventure.get_party() !== criteria.party) {
+		if (Util.is_boolean(criteria.party) && entity.name in window.get_party() !== criteria.party) {
 			return false;
 		}
 
@@ -121,7 +119,7 @@ export function filter(entities, criteria) {
 			return false;
 		}
 
-		if (criteria.path_check && !Adventure.can_move_to(entity)) {
+		if (criteria.path_check && !window.can_move_to(entity)) {
 			return false;
 		}
 
@@ -251,12 +249,12 @@ export function will_collide(a, b, t_max) {
 /**
  * Return Axis-Aligned Bounding Box (min-max) for an entity.
  *
- * @param {*} entity Entity
+ * @param {AdventureLand.Entity} entity Entity
  * @returns {[[number, number], [number, number]]} [min, max] AABB
  */
 export function aabb(entity) {
-	const width = Adventure.get_width(entity);
-	const height = Adventure.get_height(entity);
+	const width = window.get_width(entity);
+	const height = window.get_height(entity);
 
 	const min = [entity.x - width / 2, entity.y - height / 2];
 	const max = [entity.x + width / 2, entity.y + height / 2];

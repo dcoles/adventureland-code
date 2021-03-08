@@ -97,6 +97,8 @@ declare namespace AdventureLand {
 		in: string;
 		/** The map your character is in */
 		map: string;
+		real_x: number;
+		real_y: number;
 		x: number;
 		y: number;
 		vision: [number, number];
@@ -104,6 +106,8 @@ declare namespace AdventureLand {
 		owner: string;
 		/** Set for your character */
 		me: number;
+		/** Set if character is a bot */
+		bot: boolean,
 		guild: string;
 		/** Merchant stand type */
 		stand: boolean;
@@ -125,9 +129,9 @@ declare namespace AdventureLand {
 		pdps: number
 		s: Status;
 		/** Channeling actions */
-		c: object;
+		c: any;
 		/** Progressed actions */
-		q: object;
+		q: any;
 		/** Owner ID's of your friends */
 		friends: Array<string>;
 		/** Speed on the X-axis */
@@ -138,6 +142,28 @@ declare namespace AdventureLand {
 		from_y?: number;
 		going_x?: number;
 		going_y?: number;
+	}
+
+	/**
+	 * Character info, as returned by `get_characters()`.
+	 */
+	interface CharacterInfo {
+		cx: {
+			hair: string;
+			head: string;
+		};
+		id: string;
+		in: string;
+		level: number;
+		map: string;
+		name: string;
+		online: number;
+		secret: string;
+		server: string;
+		skin: string;
+		type: string;
+		x: number;
+		y: number;
 	}
 
 	/**
@@ -251,4 +277,8 @@ declare namespace AdventureLand {
 		map?: string;
 	}
 
+	/**
+	 * A generic entity.
+	 */
+	type Entity = Character | Monster;
 }

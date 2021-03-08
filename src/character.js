@@ -1,7 +1,6 @@
 // Character namespace
 // @ts-check
 
-import * as Adventure from '/adventure.js';
 import * as Entity from '/entity.js';
 import * as Game from '/game.js';
 import * as Movement from '/movement.js';
@@ -79,8 +78,8 @@ class Character {
 	get moving() { return character.moving; }
 	get vx() { return character.vx; }
 	get vy() { return character.vy; }
-	get width() { return Adventure.get_width(character); }
-	get height() { return Adventure.get_height(character); }
+	get width() { return window.get_width(character); }
+	get height() { return window.get_height(character); }
 	get items() { return character.items; }
 	get bank() { return character.bank; }
 
@@ -102,11 +101,11 @@ class Character {
 	 * @param {object|string} target New target.
 	 */
 	change_target(target) {
-		if (target instanceof String) {
-			target = get_entity(target);
+		if (Util.is_string(target)) {
+			target = window.get_entity(target);
 		}
 
-		Adventure.change_target(target);
+		window.change_target(target);
 	}
 
 	/**
@@ -114,7 +113,7 @@ class Character {
 	 *
 	 * Returns `null` if not a monster or the target is dead.
 	 *
-	 * @returns {Monster}
+	 * @returns {AdventureLand.Monster}
 	 */
 	get_targeted_monster() {
 		return window.get_targeted_monster();
@@ -157,8 +156,8 @@ class Character {
 	 * @param {string} [skill_id="attack"] Specific skill to check.
 	 */
 	is_in_range(target, skill_id) {
-		if (target instanceof String) {
-			target = get_entity(target);
+		if (Util.is_string(target)) {
+			target = window.get_entity(target);
 		}
 
 		return window.is_in_range(target, skill_id);
@@ -177,8 +176,8 @@ class Character {
 	 * @returns {number|null} Distance in pixels or or `null` if entity is not on the same map.
 	 */
 	distance_between(entity) {
-		if (entity instanceof String) {
-			entity = get_entity(entity);
+		if (Util.is_string(entity)) {
+			entity = window.get_entity(entity);
 		}
 
 		if (!entity) {
@@ -211,7 +210,7 @@ class Character {
 	async move_towards(target, distance, args) {
 		args = args || {};
 
-		if (target instanceof String) {
+		if (Util.is_string(target)) {
 			target = get_entity(target);
 		}
 
@@ -236,7 +235,7 @@ class Character {
 	 */
 	stop(action) {
 		movement.stop();
-		Adventure.stop(action);
+		window.stop(action);
 	}
 
 	/**
@@ -244,9 +243,9 @@ class Character {
 	 */
 	stop_all() {
 		movement.stop();
-		Adventure.stop('move');
-		Adventure.stop('town');
-		Adventure.stop('revival');
+		window.stop('move');
+		window.stop('town');
+		window.stop('revival');
 
 		// Cancel all autouse/autocasts
 		for (let [_, skill] of Object.entries(this.skills)) {

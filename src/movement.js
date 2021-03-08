@@ -93,13 +93,13 @@ class Movement {
 	 *
 	 * This can be used as a drop-in replacement for `smart_move`.
 	 *
-	 * @param {MapLocation|string} dest Location to move to.
+	 * @param {AdventureLand.MapLocation|string} dest Location to move to.
 	 * @param {Pathfind.PathfindOptions} [pathfind_options] Options for pathfinding behaviour.
 	 * @param {MovementOptions} [movement_options] Options for path movement behaviour.
 	 * @returns {Promise} Resolves when location is reached.
 	 */
 	async pathfind_move(dest, pathfind_options, movement_options) {
-		if (typeof dest === 'string') {
+		if (Util.is_string(dest)) {
 			dest = get_location_by_name(dest);
 		}
 
@@ -119,7 +119,7 @@ class Movement {
 	/**
 	 * Attempt to kite the target.
 	 *
-	 * @param {Monster} entity Entity to kite.
+	 * @param {AdventureLand.Entity} entity Entity to kite.
 	 */
 	async kite(entity) {
 		const targeted = entity.target === character.name;
@@ -164,7 +164,7 @@ class Movement {
 				entity_pos[1] + target_distance * Math.sin(theta)
 			];
 
-			if (Adventure.can_move_to(new_pos[0], new_pos[1])) {
+			if (window.can_move_to(new_pos[0], new_pos[1])) {
 				break;
 			}
 		}
@@ -277,7 +277,7 @@ export function get_movement() {
  * Get location by name.
  *
  * @param {string} name Location name.
- * @returns {MapLocation}
+ * @returns {AdventureLand.MapLocation}
  */
 export function get_location_by_name(name) {
 	// Named location
@@ -309,7 +309,7 @@ export function get_location_by_name(name) {
  * Find monster by name.
  *
  * @param {string} name Monster name.
- * @returns {MapLocation[]} Array of map locations.
+ * @returns {AdventureLand.MapLocation[]} Array of map locations.
  */
 function find_monster(name) {
 	const locations = [];
@@ -413,7 +413,7 @@ function movement_compensation(target, t) {
  * @param {[number, number]} dest Desired destination.
  */
 function collision_avoidance(dest) {
-	if (Adventure.can_move_to(dest[0], dest[1]) && !will_collide_moving_to(dest)) {
+	if (window.can_move_to(dest[0], dest[1]) && !will_collide_moving_to(dest)) {
 		return dest;
 	}
 
@@ -433,7 +433,7 @@ function collision_avoidance(dest) {
 			const new_dest = Util.vector_add(dest, v);
 			DEBUG_COLLISION && Draw.add_list('debug_collision', window.draw_line(dest[0], dest[1], new_dest[0], new_dest[1], null, Color.BLUE));
 
-			if (!Adventure.can_move_to(new_dest[0], new_dest[1])) {
+			if (!window.can_move_to(new_dest[0], new_dest[1])) {
 				// Unreachable position.
 				DEBUG_COLLISION && Draw.add_list('debug_collision', window.draw_circle(new_dest[0], new_dest[1], 2, null, Color.RED));
 				continue;

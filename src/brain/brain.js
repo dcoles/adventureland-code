@@ -1,6 +1,5 @@
 // Brain base class
 // @ts-check
-import * as Adventure from '/adventure.js';
 import * as Character from '/character.js';
 import * as Entity from '/entity.js';
 import * as Logging from '/logging.js';
@@ -313,7 +312,7 @@ export class Brain {
 			await Util.sleep(remaining > 1 ? 250 : remaining * Util.SECOND_MS);
 		}
 
-		Adventure.respawn();
+		respawn();
 		while (character.rip) {
 			await this._idle();
 		}

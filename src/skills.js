@@ -1,6 +1,5 @@
 // @ts-check
 
-import * as Adventure from '/adventure.js';
 import * as Logging from '/logging.js';
 import * as Task from '/task.js';
 import * as Util from '/util.js';
@@ -103,7 +102,7 @@ class Skill {
 	 * @returns {boolean}
 	 */
 	is_in_range(target) {
-		return Adventure.is_in_range(target, this.skill_id);
+		return window.is_in_range(target, this.skill_id);
 	}
 
 	/**
@@ -121,7 +120,7 @@ class Skill {
 	 * @returns {boolean}
 	 */
 	is_on_cooldown() {
-		return Adventure.is_on_cooldown(this.skill_id);
+		return window.is_on_cooldown(this.skill_id);
 	}
 
 	/**

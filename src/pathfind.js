@@ -42,7 +42,7 @@ export class PathfindError extends Error {
  * Consists of a (`x`, `y`, `map`, `spawn`) tuple.
  * Spawn is optional and only provided for map changes.
  *
- * @typedef {Array<number, number, string, number?>} Waypoint
+ * @typedef {Array<[number, number, string, number?]>} Waypoint
  */
 
 /**
@@ -143,7 +143,7 @@ export class PathfindWorker {
 /**
  * Find path to location.
  *
- * @param {MapLocation} dest Location to find path to.
+ * @param {AdventureLand.MapLocation} dest Location to find path to.
  * @param {PathfindOptions} [options] Options for controlling pathfinding behaviour.
  * @returns {Waypoint[]} Path found.
  * @throws {PathfindError} If path could not be found.

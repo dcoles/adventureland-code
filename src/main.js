@@ -78,7 +78,7 @@ export function start() {
 
 /** Start bots. */
 export function start_bots() {
-	Adventure.set('start_bots', true);
+	window.set('start_bots', true);
 	_start_bots();
 }
 
@@ -89,25 +89,25 @@ function _start_bots() {
 		}
 
 		Logging.info('Starting bot', name);
-		Adventure.start_character(name, BOT_SCRIPT);
+		window.start_character(name, BOT_SCRIPT);
 	}
 }
 
 /** Stop bots. */
 export function stop_bots() {
-	Adventure.set('start_bots', false);
+	window.set('start_bots', false);
 	_stop_bots();
 }
 
 function _stop_bots() {
-	const chars = Adventure.get_characters();
+	const chars = window.get_characters();
 	for (let [name, state] of Object.entries(window.get_active_characters())) {
 		if (state === 'self') {
 			continue;
 		}
 
 		Logging.info('Stopping bot', name);
-		Adventure.stop_character(name);
+		window.stop_character(name);
 	}
 }
 
@@ -167,9 +167,9 @@ export function get_home() {
  * @param {string} name Name of the character who sent the invitation.
  */
 window.on_party_invite = function(name) {
-	for (let char of Adventure.get_characters()) {
+	for (let char of window.get_characters()) {
 		if (char.name === name) {
-			Adventure.accept_party_request(name);
+			window.accept_party_invite(name);
 		}
 	}
 }
@@ -181,9 +181,9 @@ window.on_party_invite = function(name) {
 */
 window.on_party_request = function(name) {
 	// Accept our characters
-	for (let char of Adventure.get_characters()) {
+	for (let char of window.get_characters()) {
 		if (char.name === name) {
-			Adventure.accept_party_request(name);
+			window.accept_party_request(name);
 		}
 	}
 }
@@ -214,11 +214,9 @@ window.on_destroy = function() {
 
 /**
  * Override `smart_move` with `pathfind_move`.
- *
- * @param {object|string} dest
  */
 window.smart_move = async function(dest) {
-	await movement.pathfind_move(dest);
+	return await movement.pathfind_move(dest);
 }
 
 /** Main function */
@@ -238,7 +236,7 @@ async function main() {
 	}
 
 	// Log game events to the console
-	parent.socket.on('game_log', (event) => {
+	window.get_socket().on('game_log', (event) => {
 		if (Util.is_object(event)) {
 			Logging.debug(`GAME: ${event.message}`);
 		} else {
@@ -272,7 +270,7 @@ async function main() {
 		Widgets.stat_monitor('gold')
 
 		// Start our bots
-		if (Adventure.get('start_bots') && character.ctype !== 'merchant') {
+		if (window.get('start_bots') && character.ctype !== 'merchant') {
 			_start_bots();
 		}
 	}
@@ -280,7 +278,7 @@ async function main() {
 	if (AUTO_PAUSE) {
 		// Auto pause if window is not visible
 		document.addEventListener('visibilitychange', () => {
-			if (parent.document.visibilityState !== 'visible' ^ window.is_paused()) {
+			if ((parent.document.visibilityState !== 'visible') !== window.is_paused()) {
 				window.pause();
 			}
 		}, false);

@@ -116,7 +116,7 @@ export class AutoBrain extends Brain {
 		location = location || {x: character.x, y: character.y, map: character.map};
 
 		Logging.info(`Setting home: ${Entity.location_to_string(location)}`);
-		Adventure.set('home', location);
+		set('home', location);
 		this.home = location;
 
 		return location;
@@ -128,7 +128,7 @@ export class AutoBrain extends Brain {
 	 * @returns {object|null} Home location.
 	 */
 	get_home() {
-		return Adventure.get('home');
+		return get('home');
 	}
 
 	async _init() {
@@ -178,7 +178,7 @@ export class AutoBrain extends Brain {
 			return;
 		}
 
-		Adventure.send_party_request(this.leader_name);
+		send_party_request(this.leader_name);
 	}
 
 	/** Timer tick */
