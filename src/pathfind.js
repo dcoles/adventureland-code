@@ -149,10 +149,10 @@ export class PathfindWorker {
  * @throws {PathfindError} If path could not be found.
  */
 export function pathfind(dest, options) {
-	options = options || {};
+	options = options ?? {};
 	const single_map = 'single_map' in options ? options.single_map : false;
 	const simplify = 'simplify' in options ? options.simplify : true;
-	const map = dest.map || character.map;
+	const map = dest.map ?? character.map;
 
 	if (single_map && map !== character.map) {
 		throw new PathfindError('Destination outside current map!');
@@ -160,7 +160,7 @@ export function pathfind(dest, options) {
 
 	const origin = [character.x, character.y, character.map];
 	const origin_key = position_to_string(origin);
-	const target = [dest.x, dest.y, map];
+	const target = [dest.x ?? 0, dest.y ?? 0, map];
 	const target_key = position_to_string(target);
 
 	// Unsearched edge
