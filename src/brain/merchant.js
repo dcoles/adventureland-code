@@ -40,9 +40,9 @@ export class MerchantBrain extends Brain {
 		// States
 		this.states = [
 			{name: 'Sell', predicate: () => this.state.items_to_sell.length >= 1},
-			{name: 'Compound', predicate: () => this.items_to_compound().length >= 1 && character.gold > MIN_GOLD},
-			{name: 'Upgrade', predicate: () => this.items_to_upgrade().length >= 1 && character.gold > MIN_GOLD},
-			{name: 'Exchange', predicate: () => this.items_to_exchange().length >= 1},
+			{name: 'Compound', predicate: () => this.items_to_compound().length >= 1 && character.gold > MIN_GOLD && window.character.esize},
+			{name: 'Upgrade', predicate: () => this.items_to_upgrade().length >= 1 && character.gold > MIN_GOLD && window.character.esize},
+			{name: 'Exchange', predicate: () => this.items_to_exchange().length >= 1 && window.character.esize},
 			{name: 'Bank', predicate: () => this.state.should_bank},
 			{name: 'Collect', predicate: () => this.state.should_collect},
 			{name: 'Vend'},
