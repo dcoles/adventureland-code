@@ -96,7 +96,7 @@ export function find(criteria) {
 /**
  * Does this item match certain criteria?
  *
- * @param {Item} item
+ * @param {AdventureLand.Item} item
  * @param {ItemCriteria} criteria
  */
 export function match(item, criteria) {
@@ -134,7 +134,7 @@ export function match(item, criteria) {
 /**
  * Is this item upgradeable?
  *
- * @param {Item} item Item ID (e.g. "helm")
+ * @param {AdventureLand.Item} item Item ID (e.g. "helm")
  */
 export function is_upgradeable(item) {
 	return 'upgrade' in G.items[item.name];
@@ -143,7 +143,7 @@ export function is_upgradeable(item) {
 /**
  * Is this item upgradeable?
  *
- * @param {Item} item Item
+ * @param {AdventureLand.Item} item Item
  */
 export function is_compoundable(item) {
 	return 'compound' in G.items[item.name];
@@ -152,7 +152,7 @@ export function is_compoundable(item) {
 /**
  * Is this item exchangeable?
  *
- * @param {Item} item Item object
+ * @param {AdventureLand.Item} item Item object
  */
 export function is_exchangeable(item) {
 	// Check if we have at least the required number of items to exchange
@@ -162,7 +162,7 @@ export function is_exchangeable(item) {
 /**
  * Calculate the value of a item stack.
  *
- * @param {Item} item Item
+ * @param {AdventureLand.Item} item Item
  */
 export function stack_value(item) {
 	return (item.q || 1) * value(item);
@@ -171,7 +171,7 @@ export function stack_value(item) {
 /**
  * Calculate the value of a single item.
  *
- * @param {Item} item Item
+ * @param {AdventureLand.Item} item Item
  */
 export function value(item) {
 	// By default, this is the price a merchant will pay
@@ -181,7 +181,7 @@ export function value(item) {
 /**
  * Grade of an item.
  *
- * @param {Item} item Item
+ * @param {AdventureLand.Item} item Item
  */
 export function grade(item) {
 	return window.item_grade(item);
@@ -189,7 +189,7 @@ export function grade(item) {
 
 /**
  * What is the minimum level for a certain grade of a particular item.
- * @param {Item} item Item
+ * @param {AdventureLand.Item} item Item
  * @param {number} grade Item grade
  * @returns {number} Level
  */
@@ -335,7 +335,7 @@ export function npc_for_quest(name) {
 /**
  * Return string key for an item.
  *
- * @param {Item} item Item.
+ * @param {AdventureLand.Item} item Item.
  * @returns {string} String suitable for use as a key.
  */
 export function key(item) {
