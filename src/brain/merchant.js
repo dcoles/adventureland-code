@@ -596,6 +596,7 @@ async function compound_all(name, max_level, scroll) {
 
 				try {
 					Logging.info(`Compounding ${G.items[name].name} (${level} to ${level+1}) ${scroll_}`);
+					await character.skills.massproduction.use_when_ready();
 					await UI.busy('Compound', window.compound(i_items[i][0], i_items[i+1][0], i_items[i+2][0], i_scroll));
 				} catch (e) {
 					if (e.reason === 'scroll_quantity') {
@@ -639,6 +640,7 @@ async function upgrade_all(name, max_level, scroll) {
 
 				try {
 					Logging.info(`Upgrading ${G.items[name].name} (${level} to ${level+1}) ${scroll_}`);
+					await character.skills.massproduction.use_when_ready();
 					await UI.busy('Upgrade', window.upgrade(i_items[i][0], i_scroll));
 				} catch (e) {
 					if (e.reason === 'scroll_quantity') {
